@@ -3,19 +3,180 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 249, 249, 249;
+  --background-end-rgb: 249, 249, 249;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  line-height: 1.6;
+  background-color: #f9f9f9;
+  margin: 0;
+}
+
+/* RTL Support */
+html[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+}
+
+html[dir="rtl"] .menu {
+  float: right;
+}
+
+html[dir="ltr"] .menu {
+  float: left;
+}
+
+/* Article Styles */
+article {
+  @apply max-w-[900px];
+}
+
+article h1 {
+  @apply text-4xl pt-5 font-semibold tracking-tight;
+}
+
+article h2 {
+  @apply text-3xl font-semibold mt-6 tracking-tight text-[#021429];
+}
+
+article h3 {
+  @apply text-2xl pt-4 font-normal text-[#120b2b] tracking-tight;
+}
+
+article h4, article h5, article h6 {
+  @apply pt-4 font-normal text-gray-600;
+}
+
+article p, article ul li {
+  @apply text-lg leading-relaxed my-4;
+}
+
+article img {
+  @apply w-full my-6 rounded-lg shadow-md;
+}
+
+/* Blog Post Card */
+.latest-blog-post {
+  @apply bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden mb-5 pt-0;
+}
+
+.latest-blog-post:hover {
+  @apply -translate-y-1 shadow-xl;
+}
+
+.latest-blog-post .article-link {
+  @apply block no-underline text-inherit;
+}
+
+.latest-blog-post figure {
+  @apply m-0 relative overflow-hidden h-[200px];
+}
+
+.latest-blog-post figure img {
+  @apply transition-transform duration-300 object-cover w-full h-full;
+}
+
+.latest-blog-post:hover figure img {
+  @apply scale-105;
+}
+
+.latest-blog-post .category {
+  @apply absolute top-2.5 left-2.5 bg-[rgb(0,121,196)] text-white px-2 py-1 text-xs rounded-full uppercase cursor-pointer transition-colors duration-300;
+}
+
+.latest-blog-post .category:hover {
+  @apply bg-[rgb(74,243,215)];
+}
+
+.latest-blog-post .content {
+  @apply px-5 py-2.5;
+}
+
+.latest-blog-post h4 {
+  @apply m-0 mb-2.5 text-lg text-gray-800 leading-snug font-normal;
+}
+
+.latest-blog-post p {
+  @apply text-sm text-gray-600 m-0 leading-normal line-clamp-3;
+}
+
+/* Navigation Menu */
+.NavigationMenuContent {
+  margin-top: 0 !important;
+}
+
+.NavigationMenuTrigger {
+  padding-bottom: 0.5rem !important;
+}
+
+.NavigationMenuItem {
+  position: relative;
+}
+
+.radix-navigation-menu-content {
+  transform: translateX(-50%) !important;
+  left: 50% !important;
+}
+
+/* Hero Section */
+.hero {
+  @apply relative h-[60vh] flex items-center justify-center text-white text-center;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  background-size: cover;
+  background-position: center;
+}
+
+.hero h1 {
+  @apply text-5xl font-bold mb-4;
+}
+
+.hero .details {
+  @apply flex gap-4 justify-center text-sm opacity-90;
+}
+
+/* Share Section */
+.share {
+  @apply mt-8 pt-4 border-t border-gray-200;
+}
+
+.share h3 {
+  @apply text-lg font-semibold;
+}
+
+.share-icons {
+  @apply flex gap-2;
+}
+
+.share-icons button {
+  @apply p-3 rounded-full bg-gray-100 text-gray-700 cursor-pointer border-none transition-all duration-300;
+}
+
+.share-icons button:hover {
+  @apply bg-blue-600 text-white;
+}
+
+/* Grid and Image Effects */
+.grid {
+  @apply gap-6;
+}
+
+.aspect-video {
+  aspect-ratio: 2 / 1;
+}
+
+.group img {
+  @apply transition-transform duration-300;
+}
+
+.group:hover img {
+  @apply scale-105;
 }
