@@ -70,8 +70,17 @@ const LANG_NAMES: { [key: string]: string } = {
 const TEST_LANGS = ['en', 'fr', 'es'];
 
 // ATTENZIONE: se il modello non è valido, OpenAI genererà un errore
-const MODEL = 'gpt-3.5-turbo'; // o 'gpt-4', NON un nome personalizzato!
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const MODEL = 'gpt-4.1-mini-2025-04-14';
+
+// Conditional OpenAI initialization to prevent build failures
+let openai: OpenAI | null = null;
+try {
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+} catch (error) {
+  console.warn('[API] OpenAI initialization failed:', error);
+}
 
 export async function POST(
   req: NextRequest,

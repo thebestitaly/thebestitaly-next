@@ -65,7 +65,16 @@ const LANG_NAMES: { [key: string]: string } = {
 };
 
 const MODEL = 'gpt-4.1-mini-2025-04-14';
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Conditional OpenAI initialization to prevent build failures
+let openai: OpenAI | null = null;
+try {
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+} catch (error) {
+  console.warn('[API] OpenAI initialization failed:', error);
+}
 
 // Mapping dei nomi dei campi per i prompt
 const FIELD_NAMES = {
@@ -204,6 +213,11 @@ async function translateText(
   targetLanguage: string, 
   fieldType: string
 ): Promise<string> {
+  // Check if OpenAI is available
+  if (!openai) {
+    throw new Error('OpenAI not available - missing API key');
+  }
+  
   const fieldName = FIELD_NAMES[fieldType as keyof typeof FIELD_NAMES] || fieldType;
   
   let prompt: string;

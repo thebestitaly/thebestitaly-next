@@ -62,7 +62,16 @@ const LANG_NAMES: { [key: string]: string } = {
 };
 
 const MODEL = 'gpt-4.1-mini-2025-04-14';
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Conditional OpenAI initialization to prevent build failures
+let openai: OpenAI | null = null;
+try {
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+} catch (error) {
+  console.warn('[API] OpenAI initialization failed:', error);
+}
 
 export async function POST(
   req: NextRequest,
@@ -86,6 +95,13 @@ export async function POST(
   }
 
   // Test connessione OpenAI
+  if (!openai) {
+    console.error('[API] OpenAI not available - missing API key');
+    return NextResponse.json({ 
+      error: 'OpenAI not available - missing API key' 
+    }, { status: 500 });
+  }
+  
   try {
     console.log('[API] Testing OpenAI connection...');
     const testResponse = await openai.chat.completions.create({
@@ -275,6 +291,10 @@ export async function POST(
 // Funzione migliorata per tradurre con nomi completi delle lingue
 async function translate(text: string, source: string, target: string, type: 'description' | 'seo_title' | 'seo_summary') {
   console.log(`[TRANSLATE] Inizio traduzione ${type} da ${source} a ${target}`);
+  
+  if (!openai) {
+    throw new Error('OpenAI not available - missing API key');
+  }
   
   if (!text || text.trim() === '') {
     console.log(`[TRANSLATE] Testo vuoto per ${type}, restituisco stringa vuota`);

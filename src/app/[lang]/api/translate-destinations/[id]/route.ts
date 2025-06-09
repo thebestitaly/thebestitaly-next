@@ -62,7 +62,16 @@ const LANG_NAMES: { [key: string]: string } = {
 };
 
 const MODEL = 'gpt-4.1-mini-2025-04-14';
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Conditional OpenAI initialization to prevent build failures
+let openai: OpenAI | null = null;
+try {
+  if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+} catch (error) {
+  console.warn('[API] OpenAI initialization failed:', error);
+}
 
 export async function POST(
   req: NextRequest,
@@ -88,13 +97,13 @@ export async function POST(
   // Test connessione OpenAI
   try {
     console.log('[API] Testing OpenAI connection...');
-    const testResponse = await openai.chat.completions.create({
+    const testResponse = await openai?.chat.completions.create({
       model: MODEL,
       messages: [{ role: 'user', content: 'Hello, this is a test.' }],
       temperature: 0.3,
       max_tokens: 10,
     });
-    console.log('[API] OpenAI test successful:', testResponse.choices[0]?.message?.content);
+    console.log('[API] OpenAI test successful:', testResponse?.choices[0]?.message?.content);
   } catch (openaiError) {
     console.error('[API] OpenAI test failed:', openaiError);
     return NextResponse.json({ 
@@ -304,7 +313,7 @@ Respond with ONLY the translation:`;
   
   try {
     console.log(`[TRANSLATE] Chiamata OpenAI per ${type} (${source} → ${target})...`);
-    const response = await openai.chat.completions.create({
+    const response = await openai?.chat.completions.create({
       model: MODEL,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
