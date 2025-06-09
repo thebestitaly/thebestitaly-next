@@ -42,12 +42,12 @@ const Seo: React.FC<SEOProps> = ({ title, description, image, type = 'website', 
       <meta property="og:description" content={description} />
       <meta property="og:type" content={type} />
       <meta property="og:image" content={finalImage} />
-      <meta property="og:url" content={currentURL} />
+      {currentURL && <meta property="og:url" content={currentURL} />}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={finalImage} />
-      <link rel="canonical" href={currentURL} />
+      {currentURL && <link rel="canonical" href={currentURL} />}
 
       {schema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />

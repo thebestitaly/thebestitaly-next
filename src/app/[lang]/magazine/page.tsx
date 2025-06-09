@@ -130,10 +130,16 @@ const MagazineListPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {categoryArticles.map((article) => {
                     const articleTranslation = article.translations[0];
+                    
+                    // Only render link if we have a valid slug
+                    if (!articleTranslation?.slug_permalink) {
+                      return null;
+                    }
+                    
                     return (
                       <Link
                         key={article.id}
-                        href={`/${lang}/magazine/${articleTranslation?.slug_permalink}/`}
+                        href={`/${lang}/magazine/${articleTranslation.slug_permalink}/`}
                         className="group"
                       >
                         <div className="rounded-lg overflow-hidden shadow-lg">
@@ -163,14 +169,16 @@ const MagazineListPage: React.FC = () => {
                 </div>
 
                 {/* View All Link */}
-                <div className="mt-8 text-center">
-                  <Link
-                    href={`/${lang}/magazine/c/${translation?.slug_permalink}/`}
-                    className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    View All {translation?.nome_categoria} Articles
-                  </Link>
-                </div>
+                {translation?.slug_permalink && (
+                  <div className="mt-8 text-center">
+                    <Link
+                      href={`/${lang}/magazine/c/${translation.slug_permalink}/`}
+                      className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      View All {translation?.nome_categoria} Articles
+                    </Link>
+                  </div>
+                )}
               </section>
             );
           })}

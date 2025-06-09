@@ -2,29 +2,43 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Lingue supportate
-const supportedLanguages = ['en', 'it'];
-
+const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
+    'ro', 'nl', 'sv', 'pl', 'vi', 'id', 'el', 'uk',
+    'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja',
+    'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg',
+    'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca',
+    'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is',
+    'sw', 'zh-tw'];
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Se il pathname non ha già un parametro lingua, redirect alla versione con lingua
-  if (!pathname.match(/^\/[a-z]{2}\//)) {
-    let lang = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
-    
-    // Se la lingua non è supportata, usa 'en'
-    if (!supportedLanguages.includes(lang)) {
-      lang = 'en';
+  // Controlla se il pathname inizia già con un codice lingua supportato
+  const langMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
+  
+  if (langMatch) {
+    const lang = langMatch[1];
+    // Se la lingua è supportata, lascia passare
+    if (supportedLanguages.includes(lang)) {
+      return NextResponse.next();
     }
-
-    return NextResponse.redirect(new URL(`/${lang}${pathname}`, request.url));
+    // Se la lingua non è supportata, reindirizza a inglese
+    return NextResponse.redirect(new URL(pathname.replace(`/${lang}`, '/en'), request.url));
   }
 
-  return NextResponse.next();
+  // Se non c'è lingua nel pathname, aggiungi la lingua preferita
+  let lang = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
+  
+  // Se la lingua non è supportata, usa 'en'
+  if (!supportedLanguages.includes(lang)) {
+    lang = 'en';
+  }
+
+  return NextResponse.redirect(new URL(`/${lang}${pathname}`, request.url));
 }
 
 export const config = {
   matcher: [
-    // Skip alcuni path che non necessitano di localizzazione
+    // Escludi favicon.ico (anche con query string) e le altre directory
     '/((?!api|_next/static|_next/image|images|favicon.ico).*)',
   ],
 };

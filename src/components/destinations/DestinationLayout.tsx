@@ -76,7 +76,8 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               alt={translation?.destination_name || ""}
               fill
               className="object-cover"
-              sizes="100vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"></div>
           </div>

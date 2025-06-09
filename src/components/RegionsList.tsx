@@ -32,7 +32,7 @@ const RegionsList = () => {
               {region.image && (
                 <div className="relative h-48">
                   <img 
-                    src={`${import.meta.env.VITE_DIRECTUS_URL}/assets/${region.image}`}
+                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}`}
                     alt={translation?.destination_name}
                     className="w-full h-full object-cover"
                   />

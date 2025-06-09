@@ -10,20 +10,18 @@ interface ArticlesSidebarProps {
 }
 
 const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
-  // Usa un stato iniziale consistente
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const { data: articles, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['articles', lang],
     queryFn: () => directusClient.getArticles(lang),
-    enabled: isClient, // Abilita la query solo lato client
+    enabled: isClient,
   });
 
-  // Loading skeleton consistente tra server e client
   if (!isClient || isLoading) {
     return (
       <div className="p-4">
@@ -36,11 +34,11 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
     );
   }
 
-  if (error || !articles) {
+  if (error || !data?.articles || data.articles.length === 0) {
     return (
       <div className="bg-yellow-50 p-4 rounded-lg">
         <p className="text-yellow-700">
-          Articles are temporarily unavailable. Please check again later.
+          No articles available at the moment. Please check again later.
         </p>
       </div>
     );
@@ -50,7 +48,7 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
     <div>
       <h3 className="text-lg font-bold mb-4 text-gray-800">Latest Articles</h3>
       <ul className="space-y-4">
-        {articles.slice(0, 20).map((article) => {
+        {data.articles.slice(0, 20).map((article) => {
           const translation = article.translations?.[0];
           if (!translation?.slug_permalink || !translation?.titolo_articolo) return null;
 

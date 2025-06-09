@@ -14,15 +14,15 @@ const MagazineCategoryPage: React.FC = () => {
   const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
+    // Se non ti serve usare 'currentUrl' per SEO SSR, potresti rimuoverlo
     setCurrentUrl(window.location.href);
   }, []);
 
   const { data: articles } = useQuery({
     queryKey: ["articles", category, lang],
-    queryFn: () => directusClient.getArticlesByCategory(category || "", lang),
+    queryFn: () => directusClient.getArticlesByCategory(category || "", lang, 200), // Passa il limite di 100
     enabled: !!category,
   });
-
   const { data: categoryInfo } = useQuery({
     queryKey: ["category", category, lang],
     queryFn: async () => {
@@ -80,9 +80,17 @@ const MagazineCategoryPage: React.FC = () => {
   return (
     <div className="min-h-screen">
       <Seo
-        title={`${categoryTranslation?.seo_title || categoryTranslation?.nome_categoria || "Category"} | TheBestItaly`}
+        title={`${
+          categoryTranslation?.seo_title ||
+          categoryTranslation?.nome_categoria ||
+          "Category"
+        } | TheBestItaly`}
         description={categoryTranslation?.seo_summary || ""}
-        image={categoryInfo?.image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}` : undefined}
+        image={
+          categoryInfo?.image
+            ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`
+            : undefined
+        }
         type="website"
         schema={categorySchema}
       />
@@ -117,21 +125,27 @@ const MagazineCategoryPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {articles?.map((article) => {
             const translation = article.translations[0];
+            
+            // Only render link if we have a valid slug
+            if (!translation?.slug_permalink) {
+              return null;
+            }
+            
             return (
               <Link
                 key={article.id}
-                href={`/${lang}/magazine/${translation?.slug_permalink}/`}
+                href={`/${lang}/magazine/${translation.slug_permalink}/`}
                 className="group"
               >
                 <div className="bg-white rounded-lg overflow-hidden shadow-lg">
                   {article.image && (
-                    <div className="aspect-video overflow-hidden">
+                    <div className="relative w-[400px] h-[250px] overflow-hidden">
                       <Image
                         src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
                         alt={translation?.titolo_articolo}
-                        width={400}
-                        height={300}
+                        fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 100vw"
                       />
                     </div>
                   )}

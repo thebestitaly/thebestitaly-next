@@ -9,7 +9,7 @@ export const getDirectusImageUrl = (
 ) => {
   if (!assetId) return '';
   
-  const baseUrl = `${import.meta.env.VITE_DIRECTUS_URL}/assets/${assetId}`;
+  const baseUrl = `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${assetId}`;
   
   if (!options) return baseUrl;
   

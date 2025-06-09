@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useEffect, useRef } from 'react';
 
@@ -7,6 +6,59 @@ interface GetYourGuideWidgetProps {
   destinationName: string;
   numberOfItems?: number;
 }
+
+const languageMapping: { [key: string]: string } = {
+  'it': 'it-IT',
+  'en': 'en-US',
+  'fr': 'fr-FR',
+  'es': 'es-ES',
+  'pt': 'pt-PT',
+  'de': 'de-DE',
+  'tk': 'tr-TR',
+  'hu': 'hu-HU',
+  'ro': 'ro-RO',
+  'nl': 'nl-NL',
+  'sv': 'sv-SE',
+  'pl': 'pl-PL',
+  'vi': 'en-US',
+  'id': 'en-US',
+  'el': 'el-GR',
+  'uk': 'en-US',
+  'ru': 'ru-RU',
+  'bn': 'en-US',
+  'zh': 'zh-CN',
+  'hi': 'en-US',
+  'ar': 'en-US',
+  'fa': 'en-US',
+  'ur': 'en-US',
+  'ja': 'ja-JP',
+  'ko': 'ko-KR',
+  'am': 'en-US',
+  'cs': 'cs-CZ',
+  'da': 'da-DK',
+  'fi': 'fi-FI',
+  'af': 'en-US',
+  'hr': 'en-US',
+  'bg': 'en-US',
+  'sk': 'en-US',
+  'sl': 'en-US',
+  'sr': 'en-US',
+  'th': 'en-US',
+  'ms': 'en-US',
+  'tl': 'en-US',
+  'he': 'en-US',
+  'ca': 'en-US',
+  'et': 'en-US',
+  'lv': 'en-US',
+  'lt': 'en-US',
+  'mk': 'en-US',
+  'az': 'en-US',
+  'ka': 'en-US',
+  'hy': 'en-US',
+  'is': 'en-US',
+  'sw': 'en-US',
+  'zh-tw': 'zh-TW'
+};
 
 const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({ 
   lang, 
@@ -26,8 +78,12 @@ const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({
     if (containerRef.current) {
       containerRef.current.innerHTML = '';
       const widgetDiv = document.createElement('div');
+      
+      // Usa il mapping delle lingue invece della conversione diretta
+      const mappedLocale = languageMapping[lang.toLowerCase()] || 'en-US';
+      
       widgetDiv.setAttribute('data-gyg-href', 'https://widget.getyourguide.com/default/activities.frame');
-      widgetDiv.setAttribute('data-gyg-locale-code', `${lang}-${lang.toUpperCase()}`);
+      widgetDiv.setAttribute('data-gyg-locale-code', mappedLocale);
       widgetDiv.setAttribute('data-gyg-widget', 'activities');
       widgetDiv.setAttribute('data-gyg-number-of-items', numberOfItems.toString());
       widgetDiv.setAttribute('data-gyg-partner-id', '6JFNZ19');

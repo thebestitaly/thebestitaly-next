@@ -1,41 +1,40 @@
-"use client";
+// app/[lang]/[region]/[province]/[municipality]/page.tsx
 
-import { use, useEffect, useState } from "react";
 import DestinationLayout from "@/components/destinations/DestinationLayout";
 import directusClient from "@/lib/directus";
 
-export default function MunicipalityPage({ params: paramsPromise }) {
-  const params = use(paramsPromise); // Sblocca i params dalla Promise
+interface MunicipalityPageProps {
+  params: {
+    lang: string;
+    region: string;
+    province: string;
+    municipality: string;
+  };
+}
 
-  const [provinceId, setProvinceId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+// Anche questa è un server component
+export default async function MunicipalityPage({ params }: MunicipalityPageProps) {
+  const { lang, region, province, municipality } = params;
 
-  useEffect(() => {
-    const fetchProvinceId = async () => {
-      try {
-        const destination = await directusClient.getDestinationBySlug(params.municipality, params.lang);
-        if (destination && destination.province_id) {
-          setProvinceId(destination.province_id);
-        }
-      } catch (error) {
-        console.error("Error fetching province_id:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Esempio: fetch SSR per trovare il provinceId, ecc.
+  let provinceId: string | null = null;
 
-    fetchProvinceId();
-  }, [params.municipality, params.lang]);
-
-  if (loading) return <div>Loading...</div>;
+  try {
+    const destination = await directusClient.getDestinationBySlug(municipality, lang);
+    if (destination && destination.province_id) {
+      provinceId = destination.province_id;
+    }
+  } catch (error) {
+    console.error("Error fetching province_id:", error);
+  }
 
   return (
     <DestinationLayout
-      slug={params.municipality}
-      lang={params.lang}
-      provinceId={provinceId}  // Passa il province_id corretto
+      slug={municipality}
+      lang={lang}
+      provinceId={provinceId}
       type="municipality"
-      parentSlug={params.province}
+      parentSlug={province}
     />
   );
 }
