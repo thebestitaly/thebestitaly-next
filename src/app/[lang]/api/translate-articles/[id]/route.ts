@@ -248,6 +248,11 @@ export async function POST(
 async function translate(text: string, source: string, target: string, type: 'titolo' | 'seo' | 'content') {
   console.log(`[TRANSLATE] Inizio traduzione ${type} da ${source} a ${target}`);
   
+  // Check if OpenAI is available
+  if (!openai) {
+    throw new Error('OpenAI not available - missing API key');
+  }
+  
   if (!text || text.trim() === '') {
     console.log(`[TRANSLATE] Testo vuoto per ${type}, restituisco stringa vuota`);
     return '';
