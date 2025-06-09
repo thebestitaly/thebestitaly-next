@@ -15,7 +15,7 @@ export default function CompaniesLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Breadcrumb lang={lang} />
+      <Breadcrumb />
       {children}
     </div>
   );

@@ -25,6 +25,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const currentLang = (params?.lang as string) || "it";
 
   const getCollectionTypeAndSlug = () => {
+    if (!pathname) return null;
     const pathParts = pathname.split("/").filter(Boolean);
     if (pathParts.length < 2) return null;
     const [, pageType, ...restSegments] = pathParts;
@@ -186,7 +187,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           if (slug) {
             newPath = `/${language.code}/${pageInfo.routeType}/${slug}`;
           } else {
-            newPath = `/${language.code}${pathname.substring(currentLang.length + 1)}`;
+            newPath = pathname ? `/${language.code}${pathname.substring(currentLang.length + 1)}` : `/${language.code}`;
           }
         } else if (pageInfo.pageType === 'magazine' && translatedSlugs) {
           const slug = translatedSlugs[language.code];
@@ -196,7 +197,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             newPath = `/${language.code}/magazine/${pageInfo.slug}`;
           }
         } else {
-          newPath = `/${language.code}${pathname.substring(currentLang.length + 1)}`;
+          newPath = pathname ? `/${language.code}${pathname.substring(currentLang.length + 1)}` : `/${language.code}`;
         }
 
         const isCurrentLang = currentLang === language.code;

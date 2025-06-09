@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
 
  // Funzione per determinare se siamo in una pagina destination e il suo tipo
  const getDestinationInfo = () => {
-   const pathParts = pathname.split("/").filter(Boolean);
+   const pathParts = pathname?.split("/").filter(Boolean) || [];
    
    if (pathParts.includes('region')) {
      return { isDestination: true, type: 'region' };
@@ -52,6 +52,7 @@ const Footer: React.FC = () => {
 
  // Funzione per determinare se mostrare il language switcher
  const shouldShowLanguageSwitcher = () => {
+   if (!pathname) return false;
    const pathSegments = pathname.split('/').filter(Boolean);
    // Mostra sempre lo switcher se siamo in homepage o pagine statiche
    if (pathSegments.length <= 2) return true;  // copre /, /it, /it/experience, ecc.
@@ -158,7 +159,7 @@ const Footer: React.FC = () => {
        <div className="mt-12 pt-8 border-t border-gray-700">
          <LanguageSwitcher 
            isDestination={isDestination} 
-           type={type}
+           type={type as "region" | "province" | "municipality" | null}
          />
        </div>
      )}

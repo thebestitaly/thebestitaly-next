@@ -91,7 +91,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
       </div>
 
       {/* Breadcrumb */}
-      <Breadcrumb lang={lang} regionSlug={regionSlug} provinceSlug={provinceSlug} municipalitySlug={municipalitySlug} />
+      <Breadcrumb />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
@@ -131,7 +131,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             regionSlug={slugData.regionSlug}
             provinceSlug={slugData.provinceSlug}
             currentSlug={translation?.slug_permalink || ""}
-            provinceId={provinceId}  // Passa solo l'ID della provincia come stringa
+            provinceId={provinceId || undefined}  // Passa solo l'ID della provincia come stringa
             lang={lang}
             type={destination.type}
           />

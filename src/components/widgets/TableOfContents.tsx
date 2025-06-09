@@ -33,7 +33,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef }) => {
         tagName: el.tagName
       })) : [];
       
-      const items = Array.from(elements).map((element) => ({
+      const items = Array.from(elements || []).map((element) => ({
         id: element.id || element.textContent?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || '',
         level: Number(element.tagName.charAt(1)),
         text: element.textContent || ''
@@ -54,7 +54,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef }) => {
         { rootMargin: '-20% 0% -35% 0%' }
       );
 
-      elements.forEach((element) => observer.observe(element));
+      elements?.forEach((element) => observer.observe(element));
       return () => observer.disconnect();
     };
 

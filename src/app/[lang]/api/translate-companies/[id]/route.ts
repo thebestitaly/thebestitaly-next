@@ -66,9 +66,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[API] *** HANDLER POST TRADUZIONE COMPANIES ***');
+  console.log('[API] *** HANDLER TRANSLATE COMPANY ***');
 
   // LOG delle variabili d'ambiente
   console.log('[API] process.env.DIRECTUS_TOKEN:', process.env.DIRECTUS_TOKEN ? 'Present' : 'Missing');

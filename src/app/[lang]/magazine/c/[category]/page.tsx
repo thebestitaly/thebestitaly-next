@@ -7,7 +7,7 @@ import MagazineCategoryPage from '@/components/magazine/MagazineCategoryPage';
 const CategoryPage = () => {
   return (
     <div>
-      <MagazineCategoryPage lang="it" />
+      <MagazineCategoryPage />
     </div>
   );
 };

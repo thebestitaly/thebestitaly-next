@@ -15,7 +15,7 @@ const Breadcrumb: React.FC = () => {
   const pathname = usePathname();
 
   // Estrai i segmenti dal pathname
-  const pathSegments = pathname.split("/").filter(Boolean);
+  const pathSegments = pathname?.split("/").filter(Boolean) || [];
 
   // Recupera la lingua dal primo segmento o usa 'it' come fallback
   const lang = pathSegments[0] || "it";

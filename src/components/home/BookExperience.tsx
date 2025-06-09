@@ -8,7 +8,8 @@ import { getTranslations } from "../../lib/directus";
 const BookExperienceImage = "/images/book-experience.webp";
 
 const BookExperience: React.FC = () => {
-  const { lang = "en" } = useParams<{ lang: string }>();
+  const params = useParams<{ lang: string }>();
+  const lang = params?.lang || "en";
 
   const { data: menuTranslations, isLoading, isError } = useQuery({
     queryKey: ["translations", lang, "menu"],

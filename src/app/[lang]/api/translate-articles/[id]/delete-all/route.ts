@@ -8,11 +8,11 @@ const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL || '')
 
 export async function DELETE(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('[API] *** HANDLER DELETE ALL TRANSLATIONS ***');
   
-  const { id } = params;
+  const { id } = await params;
   
   if (!id) {
     return NextResponse.json({ 

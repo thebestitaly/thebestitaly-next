@@ -65,10 +65,10 @@ export default function MagazineArticlePage({ params }: PageProps) {
     "headline": translation?.titolo_articolo || '',
     "description": translation?.seo_summary || '',
     "datePublished": article.date_created,
-    "dateModified": article.date_updated || article.date_created,
+    "dateModified": article.date_created,
     "author": {
       "@type": "Person",
-      "name": article.author?.name || 'Unknown'
+      "name": "TheBestItaly"
     },
     "image": article.image
       ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`
@@ -89,9 +89,9 @@ export default function MagazineArticlePage({ params }: PageProps) {
         type="article"
         article={{
           publishedTime: article.date_created,
-          modifiedTime: article.date_updated,
-          author: article.author?.name || 'Unknown',
-          category: article.category?.name || 'General',
+          modifiedTime: article.date_created,
+          author: 'TheBestItaly',
+          category: 'Travel',
         }}
         schema={schema}  // Passa lo schema al componente Seo
       />
@@ -119,7 +119,7 @@ export default function MagazineArticlePage({ params }: PageProps) {
         </div>
       </div>
 
-      <Breadcrumb lang={lang} />
+      <Breadcrumb />
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">

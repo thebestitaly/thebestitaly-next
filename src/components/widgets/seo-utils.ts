@@ -56,18 +56,10 @@ export function generateMetadata({
     },
   };
 
-  if (type === 'article' && article) {
-    metadata.openGraph = {
-      ...metadata.openGraph,
-      type: 'article',
-      article: {
-        publishedTime: article.publishedTime,
-        modifiedTime: article.modifiedTime,
-        authors: article.author ? [article.author] : undefined,
-        section: article.category,
-      },
-    };
-  }
+  // Note: Next.js OpenGraph doesn't support article-specific fields in current version
+  // if (type === 'article' && article) {
+  //   // Article-specific metadata would go here if supported
+  // }
 
   return metadata;
 }

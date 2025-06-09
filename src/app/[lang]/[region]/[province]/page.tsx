@@ -8,9 +8,9 @@ import DestinationLayout from "@/components/destinations/DestinationLayout";
 export async function generateMetadata({
   params,
 }: {
-  params: { lang: string; province: string };
+  params: Promise<{ lang: string; province: string }>;
 }) {
-  const { lang, province } = params;
+  const { lang, province } = await params;
 
   try {
     // Esempio: recupero traduzioni dal Directus
@@ -35,9 +35,9 @@ export async function generateMetadata({
 export default async function ProvincePage({
   params,
 }: {
-  params: { lang: string; region: string; province: string };
+  params: Promise<{ lang: string; region: string; province: string }>;
 }) {
-  const { lang, region, province } = params;
+  const { lang, region, province } = await params;
 
   // Eventuale fetch SSR
   // const data = await directusClient.getDestinationBySlug(province, lang);

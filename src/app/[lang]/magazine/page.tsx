@@ -9,7 +9,8 @@ import Seo from "@/components/widgets/Seo";
 import Image from "next/image";
 
 const MagazineListPage: React.FC = () => {
-  const { lang = "it" } = useParams<{ lang: string }>();
+  const params = useParams<{ lang: string }>();
+  const lang = params?.lang || "it";
   const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
@@ -128,7 +129,7 @@ const MagazineListPage: React.FC = () => {
 
                 {/* Articles Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {categoryArticles.map((article) => {
+                  {categoryArticles.map((article: any) => {
                     const articleTranslation = article.translations[0];
                     
                     // Only render link if we have a valid slug

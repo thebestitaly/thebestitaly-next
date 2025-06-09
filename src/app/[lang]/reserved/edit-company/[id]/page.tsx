@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 
-export default function EditCompanyPage({ params }: { params: { id: string } }) {
+export default function EditCompanyPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -26,9 +28,11 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
   const [currentImageId, setCurrentImageId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) return;
+    
     const fetchCompany = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/companies?filter[id][_eq]=${params.id}&fields=id,company_name,website,email,phone,active,featured_image,translations.*&deep[translations][_filter][languages_code][_eq]=it`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/companies?filter[id][_eq]=${id}&fields=id,company_name,website,email,phone,active,featured_image,translations.*&deep[translations][_filter][languages_code][_eq]=it`, {
           headers: {
             'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
             'Content-Type': 'application/json',
@@ -74,7 +78,7 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
     };
 
     fetchCompany();
-  }, [params.id]);
+  }, [id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -211,7 +215,7 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
     
     setIsDeletingTranslations(true);
     try {
-      const response = await fetch(`/api/translate-companies/${params.id}/delete-all`, {
+      const response = await fetch(`/api/translate-companies/${id}/delete-all`, {
         method: "DELETE",
       });
       

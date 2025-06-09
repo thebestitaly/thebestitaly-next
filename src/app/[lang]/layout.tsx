@@ -40,7 +40,7 @@ export default function RootLayout({
             <main className="min-h-screen">
               {children}
             </main>
-            <Footer lang={currentLang} />
+            <Footer />
           </I18nextProvider>
         </QueryClientProvider>
       </body>

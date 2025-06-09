@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation'; // Correzione dell'import
 import { useQuery } from '@tanstack/react-query';
-import directusClient from '@/lib/directus';
+import directusClient, { getTranslations } from '@/lib/directus';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import Seo from '@/components/widgets/Seo';
 const ExperienceHeroImage = '/images/experience.webp';
@@ -21,7 +21,8 @@ const CITIES = [
 ];
 
 const ExperiencePage: React.FC = () => {
-  const { lang = 'it' } = useParams<{ lang: string }>();
+  const params = useParams<{ lang: string }>();
+  const lang = params?.lang || 'it';
   const langDisplay = lang?.toUpperCase();
 
   const [currentUrl, setCurrentUrl] = useState('');
@@ -34,7 +35,7 @@ const ExperiencePage: React.FC = () => {
     queryKey: ['translations', lang, 'menu'],
     queryFn: async () => {
       try {
-        const response = await directusClient.getTranslations(lang, 'menu');
+        const response = await getTranslations(lang, 'menu');
         return response;
       } catch (error) {
         console.error('Error fetching translations:', error);

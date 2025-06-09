@@ -76,11 +76,11 @@ const FIELD_NAMES = {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('[API] *** HANDLER POST TRADUZIONE CAMPO SINGOLO ***');
-
-  const { id } = params;
+  console.log('[API] *** HANDLER TRANSLATE SINGLE FIELD ***');
+  
+  const { id } = await params;
   const body = await req.json();
   const { field, value } = body;
 

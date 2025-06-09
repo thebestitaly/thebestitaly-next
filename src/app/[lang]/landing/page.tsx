@@ -11,7 +11,8 @@ import FaqSection from "@/components/landing/FaqSection";
 import CallToAction from "@/components/landing/CallToAction";
 
 const LandingPage = () => {
-  const { lang } = useParams();
+  const params = useParams();
+  const lang = params?.lang as string;
 
   if (lang !== "it") {
     return <div className="text-center py-20">Questa pagina è disponibile solo in italiano.</div>;
