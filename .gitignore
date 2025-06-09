@@ -40,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Database and migration files
+*.sql
+*.dump
+dump-*.sh
+import-*.js
+export-*.js
+upload-*.js
+clear-*.js
+railway-*.sh

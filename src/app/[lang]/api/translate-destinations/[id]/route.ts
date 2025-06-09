@@ -320,6 +320,10 @@ Respond with ONLY the translation:`;
       max_tokens: maxTokens,
     });
 
+    if (!response || !response.choices || !response.choices[0]) {
+      throw new Error('Invalid response from OpenAI');
+    }
+
     const result = response.choices[0].message.content?.trim() || '';
     console.log(`[TRANSLATE] Traduzione ${type} completata (${result.length} caratteri):`, result.substring(0, 100) + '...');
     
