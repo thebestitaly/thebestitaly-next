@@ -65,10 +65,10 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
             <Image
               src="/images/logo-black.webp"
               alt={`The Best Italy ${lang}`}
-              width={96}
-              height={96}
-              style={{ width: "auto", height: "auto" }}
-              className="w-12 h-auto" // esempio: cambi dimensioni via Tailwind
+              width={48}
+              height={48}
+              style={{ width: "48px", height: "48px" }}
+              className="w-12 h-12"
               priority
             />
             </Link>
@@ -261,11 +261,10 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   <Image
                     src="/images/logo-black.webp"
                     alt={`The Best Italy ${lang}`}
-                    width={80}
-                    height={80}
-                    // Impedisce a Next di lamentarsi, e consenti la riduzione via Tailwind
-                    style={{ width: "auto", height: "auto", maxWidth: "100%" }}
-                    className="w-12" // Lascio SOLO w-12, rimuovo h-auto
+                    width={48}
+                    height={48}
+                    style={{ width: "48px", height: "48px" }}
+                    className="w-12 h-12"
                     priority
                   />
 

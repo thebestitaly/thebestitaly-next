@@ -256,9 +256,9 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                 <div className="flex items-center gap-6">
                   <Link
                     href={buildDestinationUrl(currentDestination.id)}
-                    className="group w-14 h-14 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300"
+                    className="group w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300"
                   >
-                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </div>
               </div>

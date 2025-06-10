@@ -85,7 +85,7 @@ const Breadcrumb: React.FC = () => {
           {/* Dynamic Crumbs */}
           {breadcrumbs.map((crumb, index) => (
             <li key={crumb.path} className="flex items-center">
-              <span className="mx-2 text-gray-500">/</span>
+              <span className="mx-2 text-gray-600">/</span>
               {index === breadcrumbs.length - 1 ? (
                 <span className="font-semibold text-gray-900">
                   {crumb.label}
