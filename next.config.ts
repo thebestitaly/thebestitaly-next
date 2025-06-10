@@ -2,7 +2,13 @@
 const nextConfig = {
   images: {
     remotePatterns: [
-      // Server locale (priorità)
+      // Railway Production Directus (priorità)
+      {
+        protocol: 'https',
+        hostname: 'directus-production-93f0.up.railway.app',
+        pathname: '/assets/**',
+      },
+      // Server locale (fallback per sviluppo)
       {
         protocol: 'http',
         hostname: '127.0.0.1',
