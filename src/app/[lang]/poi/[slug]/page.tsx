@@ -94,16 +94,16 @@ export default async function CompanyPage({ params }: PageProps) {
                 {/* Quick Actions */}
                 <div className="flex flex-wrap items-center gap-4 mb-8">
                   {company.website && (
-                    <a
+                    <Link
                       href={company.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group inline-flex items-center px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 transition-all duration-300"
+                      className="inline-flex items-center text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:opacity-90"
+                      style={{ backgroundColor: '#0066cc' }}
                     >
-                      <Globe className="w-4 h-4 mr-2" />
-                      <span>Visita Sito Web</span>
-                      <ExternalLink className="w-4 h-4 ml-2 transition-transform group-hover:scale-110" />
-                    </a>
+                      <Globe className="w-5 h-5 mr-2" />
+                      Visita Sito Web
+                    </Link>
                   )}
                   
                   {company.phone && (
@@ -130,16 +130,14 @@ export default async function CompanyPage({ params }: PageProps) {
             {/* Main Content */}
             <div className="lg:col-span-2">
               {/* Summary */}
-              {translation?.seo_summary && (
-                 <div className="prose text-2xl prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-amber-600 prose-a:hover:text-amber-700 mb-8">
-                    <ReactMarkdown>{translation.seo_summary}</ReactMarkdown>
-                  </div>
-              )}
+              <div className="prose text-2xl prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:hover:text-blue-700 mb-8">
+                <p>{translation?.seo_summary}</p>
+              </div>
 
               {/* Description */}
               {translation?.description && (
-                <article className="prose prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-amber-600 prose-a:hover:text-amber-700">
-                    <ReactMarkdown>{translation.description}</ReactMarkdown>
+                <article className="prose prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:hover:text-blue-700">
+                  <ReactMarkdown>{translation.description}</ReactMarkdown>
                 </article>
               )}
             </div>
@@ -151,14 +149,14 @@ export default async function CompanyPage({ params }: PageProps) {
                 <div className="space-y-4">
                   {company.website && (
                     <div className="flex items-start space-x-3">
-                      <Globe className="w-5 h-5 text-amber-600 mt-1 flex-shrink-0" />
+                      <Globe className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
                       <div>
                         <p className="font-medium text-gray-900">Sito Web</p>
                         <a
                           href={company.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-amber-600 hover:text-amber-700 break-all"
+                          className="text-blue-600 hover:text-blue-700 break-all"
                         >
                           {company.website.replace(/^https?:\/\//, '')}
                         </a>
@@ -168,12 +166,12 @@ export default async function CompanyPage({ params }: PageProps) {
 
                   {company.phone && (
                     <div className="flex items-start space-x-3">
-                      <Phone className="w-5 h-5 text-amber-600 mt-1 flex-shrink-0" />
+                      <Phone className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
                       <div>
                         <p className="font-medium text-gray-900">Telefono</p>
                         <a
                           href={`tel:${company.phone}`}
-                          className="text-amber-600 hover:text-amber-700"
+                          className="text-blue-600 hover:text-blue-700"
                         >
                           {company.phone}
                         </a>
@@ -218,10 +216,11 @@ export default async function CompanyPage({ params }: PageProps) {
                   Unisciti alle migliori eccellenze italiane presenti su TheBestItaly
                 </p>
                 <Link
-                  href={`/${lang}/contact`}
-                  className="inline-block w-full bg-amber-600 text-white px-6 py-3 rounded-lg hover:bg-amber-700 transition-colors duration-200 font-semibold"
+                  href="/it/contact"
+                  className="inline-block w-full text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold text-center hover:opacity-90"
+                  style={{ backgroundColor: '#0066cc' }}
                 >
-                  Contattaci
+                  Richiedi Informazioni
                 </Link>
               </div>
             </div>

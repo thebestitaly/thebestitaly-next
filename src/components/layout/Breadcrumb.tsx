@@ -23,18 +23,60 @@ const Breadcrumb: React.FC = () => {
   // Generazione dinamica del breadcrumb
   const breadcrumbs: BreadcrumbItem[] = [];
 
+  // Se siamo nella sezione magazine
+  if (pathSegments[1] === "magazine") {
+    breadcrumbs.push({
+      label: "MAGAZINE",
+      path: `/${lang}/magazine`,
+    });
+    
+    // Se siamo in una categoria del magazine (/magazine/c/category-slug)
+    if (pathSegments[2] === "c" && pathSegments[3]) {
+      breadcrumbs.push({
+        label: formatLabel(pathSegments[3]),
+        path: `/${lang}/magazine/c/${pathSegments[3]}`,
+      });
+    }
+    // Se siamo su un articolo del magazine (/magazine/article-slug)
+    else if (pathSegments[2] && pathSegments[2] !== "c") {
+      // Per ora mettiamo una categoria generica - si può migliorare prendendo la categoria dall'articolo
+      breadcrumbs.push({
+        label: "ARTICOLI",
+        path: `/${lang}/magazine`,
+      });
+      breadcrumbs.push({
+        label: formatLabel(pathSegments[2]),
+        path: `/${lang}/magazine/${pathSegments[2]}`,
+      });
+    }
+  }
   // Se siamo nella sezione companies
-  if (pathSegments[1] === "companies") {
+  else if (pathSegments[1] === "companies" || pathSegments[1] === "poi") {
     breadcrumbs.push({
       label: "ECCELLENZE",
-      path: `/${lang}/companies`,
+      path: `/${lang}/poi`,
     });
     
     // Se siamo su una singola company
     if (pathSegments[2]) {
       breadcrumbs.push({
         label: formatLabel(pathSegments[2]),
-        path: `/${lang}/companies/${pathSegments[2]}`,
+        path: `/${lang}/poi/${pathSegments[2]}`,
+      });
+    }
+  } 
+  // Se siamo nella sezione eccellenze
+  else if (pathSegments[1] === "eccellenze") {
+    breadcrumbs.push({
+      label: "ECCELLENZE",
+      path: `/${lang}/poi`,
+    });
+    
+    // Se siamo su una singola eccellenza
+    if (pathSegments[2]) {
+      breadcrumbs.push({
+        label: formatLabel(pathSegments[2]),
+        path: `/${lang}/poi/${pathSegments[2]}`,
       });
     }
   } else {

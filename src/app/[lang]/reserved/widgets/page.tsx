@@ -261,7 +261,7 @@ export default function WidgetGeneratorPage() {
                     }
                     return languages.slice(0, 3).map(lang => (
                       <div key={lang}>
-                        <strong>{lang.toUpperCase()}:</strong> https://thebestitaly.eu/{lang}/{slug}/
+                        <strong>{lang.toUpperCase()}:</strong> https://thebestitaly.eu/{lang}/poi/{slug}/
                       </div>
                     ));
                   })()
@@ -269,7 +269,7 @@ export default function WidgetGeneratorPage() {
                   // For companies, use the simple structure
                   languages.slice(0, 3).map(lang => (
                     <div key={lang}>
-                      <strong>{lang.toUpperCase()}:</strong> https://thebestitaly.eu/{lang}/eccellenze/{slug}/
+                      <strong>{lang.toUpperCase()}:</strong> https://thebestitaly.eu/{lang}/poi/{slug}/
                     </div>
                   ))
                 )}

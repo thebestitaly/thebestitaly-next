@@ -27,7 +27,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company, lang }) => {
 
   return (
     <Link 
-      href={`/${lang}/eccellenze/${company.slug_permalink}`}
+      href={`/${lang}/poi/${company.slug_permalink}`}
       className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden"
     > 
       <div className="relative h-48 rounded-t-lg overflow-hidden">

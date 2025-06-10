@@ -113,7 +113,7 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
           return (
             <div
               key={company.id}
-              className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200"
+              className="group bg-white rounded-2xl border border-gray-100 hover:border-blue-200 transition-all duration-300 overflow-hidden"
             >
               {/* Company Image */}
               <div className="relative h-48 overflow-hidden">
@@ -147,84 +147,24 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
               {/* Company Info */}
               <div className="p-6">
                 <div className="mb-4">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {company.company_name}
-                  </h3>
+                  {company.slug_permalink ? (
+                    <Link href={`/${lang}/poi/${company.slug_permalink}`}>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 cursor-pointer">
+                        {company.company_name}
+                      </h3>
+                    </Link>
+                  ) : (
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+                      {company.company_name}
+                    </h3>
+                  )}
                   
-                  {translation?.seo_summary && (
+                  {translation?.seo_title && (
                     <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
-                      {translation.seo_summary}
+                      {translation.seo_title}
                     </p>
                   )}
                 </div>
-
-                {/* Contact Actions */}
-                <div className="flex items-center justify-between">
-                  <div className="flex space-x-2">
-                    {company.website && (
-                      <a
-                        href={company.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                        title="Visita sito web"
-                      >
-                        <ExternalLink size={16} />
-                      </a>
-                    )}
-                    
-                    {company.email && (
-                      <a
-                        href={`mailto:${company.email}`}
-                        className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
-                        title="Invia email"
-                      >
-                        <Mail size={16} />
-                      </a>
-                    )}
-                    
-                    {company.phone && (
-                      <a
-                        href={`tel:${company.phone}`}
-                        className="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors"
-                        title="Chiama"
-                      >
-                        <Phone size={16} />
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Details Link */}
-                  {company.slug_permalink && (
-                    <Link
-                      href={`/${lang}/companies/${company.slug_permalink}`}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
-                    >
-                      Scopri
-                      <ExternalLink className="ml-1" size={14} />
-                    </Link>
-                  )}
-                </div>
-
-                {/* Contact Info Footer */}
-                {(company.phone || company.email) && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="space-y-1 text-xs text-gray-500">
-                      {company.phone && (
-                        <div className="flex items-center">
-                          <Phone className="mr-2" size={12} />
-                          <span>{company.phone}</span>
-                        </div>
-                      )}
-                      {company.email && (
-                        <div className="flex items-center">
-                          <Mail className="mr-2" size={12} />
-                          <span className="truncate">{company.email}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           );
@@ -234,11 +174,12 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
       {/* View All Link */}
       <div className="text-center mt-10">
         <Link
-          href={`/${lang}/companies`}
-          className="inline-flex items-center px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+          href={`/${lang}/poi`}
+          className="inline-flex items-center px-8 py-3 text-white font-semibold rounded-xl transition-colors hover:opacity-90"
+          style={{ backgroundColor: '#0066cc' }}
         >
           <Building2 className="mr-2" size={20} />
-          Esplora tutte le aziende
+          Esplora tutte le eccellenze
         </Link>
       </div>
     </div>

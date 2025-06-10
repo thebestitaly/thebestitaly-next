@@ -73,29 +73,34 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
     <div className="min-h-screen">
       <Seo title={seoTitle} description={seoDescription} image={seoImage} schema={schema} />
       {/* Hero Section */}      
-      <div className="relative h-96 lg:h-[500px]">
-      {destination.image && (
-          <div className="absolute inset-0 m-10">
+      <div className="relative h-64 sm:h-80 lg:h-[500px]">
+        {/* Mobile: Dark blue background without image */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-800 block md:hidden" />
+        
+        {/* Desktop: Image with overlay */}
+        {destination.image && (
+          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10 hidden md:block">
             <Image
               src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
               alt={translation?.destination_name || ""}
               fill
-              className="object-cover rounded-2xl"
+              className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
           </div>
         )}
-          <div className="relative z-10 h-full flex items-end">
-            <div className="container mx-auto px-4 pb-12">             
-              <div className="max-w-4xl">
-              <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
-              {translation?.destination_name}</h1>
-
-            {translation?.seo_title && <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">{translation.seo_title}</p>}
-          </div>
+        
+        <div className="relative z-10 h-full flex items-end">
+          <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
+            <div className="max-w-4xl">
+              <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
+                {translation?.destination_name}
+              </h1>
+              {translation?.seo_title && <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">{translation.seo_title}</p>}
+            </div>
           </div>        
-          </div>
+        </div>
       </div>
 
       {/* Breadcrumb */}

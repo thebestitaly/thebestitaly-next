@@ -88,26 +88,26 @@ const MagazineListPage: React.FC = () => {
       />
 
       {/* Hero Section */}
-      <div className="relative h-80 lg:h-[500px]">
-        <div className="absolute inset-0 m-10">
+      <div className="relative h-64 sm:h-80 lg:h-[500px]">
+        <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
           <Image
             src="/images/magazine.webp"
             alt={magazineTranslation?.seo_title || "Magazine"}
             fill
-            className="object-cover rounded-2xl"
+            className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
           
         </div>
         <div className="relative z-10 h-full flex items-end">
-            <div className="container mx-auto px-4 pb-12">
+            <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">
               <div className="max-w-4xl">
-                <h1 className="text-3xl lg:text-5xl font-black text-white leading-none mb-4">
+                <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
                 {magazineTranslation?.nome_categoria || "Magazine"}
               </h1>
               {magazineTranslation?.seo_summary && (
-                <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+                <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">
                   {magazineTranslation.seo_summary}
                 </p>
               )}

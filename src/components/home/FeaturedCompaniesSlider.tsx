@@ -196,8 +196,9 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ class
               <div className="flex items-center gap-4">
                 {currentTranslation?.slug_permalink && (
                   <Link
-                    href={`/${lang}/eccellenze/${currentTranslation.slug_permalink}/`}
-                    className="group inline-flex items-center px-6 py-3 bg-white text-amber-900 font-semibold rounded-xl hover:bg-amber-50 transition-all duration-300 shadow-lg"
+                    href={`/${lang}/poi/${currentTranslation.slug_permalink}/`}
+                    className="group inline-flex items-center px-6 py-3 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:opacity-90"
+                    style={{ backgroundColor: '#0066cc' }}
                   >
                     <span className="mr-2">Scopri di più</span>
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

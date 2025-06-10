@@ -343,7 +343,7 @@ export default function CreateCompanyPage() {
                 placeholder="url-della-company"
               />
               <p className="text-sm text-gray-500 mt-1">
-                URL finale: /eccellenze/{formData.slug_permalink}
+                URL finale: /poi/{formData.slug_permalink}
               </p>
             </div>
 

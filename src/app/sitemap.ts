@@ -5,18 +5,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const languages = ['it', 'en', 'fr', 'de', 'es']
   
   // Base pages
-  const pages = [
-    '',
+  const staticPaths = [
+    '/',
     '/magazine',
-    '/eccellenze',
+    '/poi',
     '/experience',
-  ]
+    '/contact',
+    '/privacy',
+    '/terms'
+  ];
 
   const staticUrls: MetadataRoute.Sitemap = []
 
   // Add base URLs for each language
   languages.forEach(lang => {
-    pages.forEach(page => {
+    staticPaths.forEach(page => {
       staticUrls.push({
         url: `${baseUrl}/${lang}${page}`,
         lastModified: new Date(),

@@ -56,7 +56,7 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
             />
           </div>
         )}
-        <h4 className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition-colors">
+        <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
           {destName}
         </h4>
       </div>

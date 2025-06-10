@@ -93,6 +93,7 @@ export interface Article {
     id: number;
     translations: {
       nome_categoria: string;
+      slug_permalink: string;
     }[];
   };
   translations: {
@@ -452,6 +453,7 @@ class DirectusClient {
             'image',
             'category_id.id',
             'category_id.translations.nome_categoria',
+            'category_id.translations.slug_permalink',
             'date_created',
             'translations.titolo_articolo',
             'translations.description',
@@ -812,8 +814,22 @@ class DirectusClient {
             'translations.seo_summary',
             'translations.slug_permalink'
           ],
-          'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'limit': limit // Aggiunta del limite
+          'deep': {
+            'translations': {
+              '_filter': {
+                'languages_code': {
+                  '_eq': languageCode
+                }
+              }
+            },
+            'category_id.translations': {
+              '_filter': {
+                'languages_code': {
+                  '_eq': languageCode
+                }
+              }
+            }
+          }
         }
       });
   

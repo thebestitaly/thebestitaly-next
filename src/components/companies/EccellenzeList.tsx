@@ -34,27 +34,27 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
     return (
       <div className="min-h-screen bg-white">
         {/* Hero Section */}
-        <div className="relative h-96 lg:h-[500px]">
-          <div className="absolute inset-0 m-10">
+        <div className="relative h-64 sm:h-80 lg:h-[500px]">
+          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
             <Image
               src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
               alt="Eccellenze Italiane"
               fill
-              className="object-cover rounded-2xl"
+              className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
           </div>
           <div className="relative z-10 h-full flex items-end">
-            <div className="container mx-auto px-4 pb-12">             
+            <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
               <div className="max-w-4xl">
-                <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
+                <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
                   🏆 Eccellenze
                 </h1>
-                <h2 className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+                <h2 className="text-base sm:text-lg lg:text-2xl font-light text-white/90 mb-3 sm:mb-4 lg:mb-6 leading-relaxed">
                   Le Migliori Esperienze Italiane
                 </h2>
-                <p className="text-lg text-white/80 max-w-3xl leading-relaxed">
+                <p className="text-sm sm:text-base lg:text-lg text-white/80 max-w-3xl leading-relaxed">
                   Scopri una selezione curata delle migliori eccellenze italiane: 
                   hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche 
                   che rendono l'Italia un paese straordinario.
@@ -99,27 +99,27 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="relative h-96 lg:h-[500px]">
-        <div className="absolute inset-0 m-10">
+      <div className="relative h-64 sm:h-80 lg:h-[500px]">
+        <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
           <Image
             src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
             alt="Eccellenze Italiane"
             fill
-            className="object-cover rounded-2xl"
+            className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
         </div>
         <div className="relative z-10 h-full flex items-end">
-          <div className="container mx-auto px-4 pb-12">             
+          <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
             <div className="max-w-4xl">
-              <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
                 🏆 Eccellenze
               </h1>
-              <h2 className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+              <h2 className="text-base sm:text-lg lg:text-2xl font-light text-white/90 mb-3 sm:mb-4 lg:mb-6 leading-relaxed">
                 Le Migliori Esperienze Italiane
               </h2>
-              <p className="text-lg text-white/80 max-w-3xl leading-relaxed">
+              <p className="text-sm sm:text-base lg:text-lg text-white/80 max-w-3xl leading-relaxed">
                 Scopri una selezione curata delle migliori eccellenze italiane: 
                 hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche 
                 che rendono l'Italia un paese straordinario.
@@ -145,7 +145,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                 {/* Category Tag */}
                 {categoryName && (
                   <div className="mb-4">
-                    <span className="inline-block bg-amber-100 text-amber-800 text-sm font-semibold px-4 py-2 rounded-full">
+                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-4 py-2 rounded-full">
                       {categoryName}
                     </span>
                   </div>
@@ -153,7 +153,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                 
                 {/* Company Image */}
                 <div className="relative aspect-[4/3] mb-8 overflow-hidden rounded-2xl">
-                  <Link href={company.slug_permalink ? `/${lang}/eccellenze/${company.slug_permalink}/` : '#'}>
+                  <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
                     {company.featured_image ? (
                       <Image
                         src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
@@ -162,7 +162,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-8xl">
+                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-8xl">
                         🏢
                       </div>
                     )}
@@ -170,15 +170,15 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                 </div>
 
                 {/* Company Name */}
-                <Link href={company.slug_permalink ? `/${lang}/eccellenze/${company.slug_permalink}/` : '#'}>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors duration-200 leading-tight">
+                <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors duration-200 leading-tight">
                     {company.company_name}
                   </h3>
                 </Link>
 
                 {/* SEO Title */}
                 {translation?.seo_title && (
-                  <p className="text-amber-600 font-medium text-lg">
+                  <p className="text-blue-600 font-medium text-lg">
                     {translation.seo_title}
                   </p>
                 )}
@@ -197,8 +197,9 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
               Unisciti alle migliori eccellenze italiane presenti su TheBestItaly
             </p>
             <Link
-              href={`/${lang}/contact`}
-              className="inline-block bg-amber-600 text-white px-8 py-3 rounded-lg hover:bg-amber-700 transition-colors duration-200 font-semibold"
+              href={`/it/landing`}
+              className="inline-block text-white px-8 py-3 rounded-lg transition-colors duration-200 font-semibold hover:opacity-90"
+              style={{ backgroundColor: '#0066cc' }}
             >
               Contattaci
             </Link>

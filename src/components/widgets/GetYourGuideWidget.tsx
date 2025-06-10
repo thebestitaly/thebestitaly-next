@@ -91,8 +91,75 @@ const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({
       containerRef.current.appendChild(widgetDiv);
     }
 
+    // Aggiungi CSS custom per controllare il layout delle esperienze
+    const customCSS = `
+      <style>
+        .gyg-widget-container iframe {
+          width: 100% !important;
+        }
+        
+        /* Mobile: 2 colonne */
+        @media (max-width: 767px) {
+          .gyg-widget-container .gyg-product-card,
+          .gyg-widget-container [class*="product"],
+          .gyg-widget-container [class*="card"] {
+            width: calc(50% - 8px) !important;
+            min-width: calc(50% - 8px) !important;
+            max-width: calc(50% - 8px) !important;
+            margin: 4px !important;
+            display: inline-block !important;
+            vertical-align: top !important;
+          }
+          
+          .gyg-widget-container .gyg-product-grid,
+          .gyg-widget-container [class*="grid"] {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: space-between !important;
+          }
+        }
+        
+        /* Tablet: 3 colonne */
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .gyg-widget-container .gyg-product-card,
+          .gyg-widget-container [class*="product"],
+          .gyg-widget-container [class*="card"] {
+            width: calc(33.333% - 8px) !important;
+            min-width: calc(33.333% - 8px) !important;
+            max-width: calc(33.333% - 8px) !important;
+          }
+        }
+        
+        /* Desktop: 4 colonne */
+        @media (min-width: 1024px) {
+          .gyg-widget-container .gyg-product-card,
+          .gyg-widget-container [class*="product"],
+          .gyg-widget-container [class*="card"] {
+            width: calc(25% - 8px) !important;
+            min-width: calc(25% - 8px) !important;
+            max-width: calc(25% - 8px) !important;
+          }
+        }
+      </style>
+    `;
+    
+    // Inserisci CSS nel head
+    const head = document.getElementsByTagName('head')[0];
+    const existingStyle = document.getElementById('gyg-custom-style');
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+    const styleElement = document.createElement('div');
+    styleElement.id = 'gyg-custom-style';
+    styleElement.innerHTML = customCSS;
+    head.appendChild(styleElement);
+
     return () => {
       document.body.querySelectorAll('script[src*="getyourguide"]').forEach(el => el.remove());
+      const customStyle = document.getElementById('gyg-custom-style');
+      if (customStyle) {
+        customStyle.remove();
+      }
     };
   }, [lang, destinationName, numberOfItems]);
 
