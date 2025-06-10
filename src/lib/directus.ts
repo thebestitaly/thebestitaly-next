@@ -963,7 +963,7 @@ class DirectusClient {
     try {
       console.log('🔍 Fetching companies for destination:', destinationId, 'type:', destinationType);
       
-      let filter: any = { active: { _eq: true } };
+      const filter: any = { active: { _eq: true } };
       
       if (destinationType === 'region') {
         // Per le regioni, dobbiamo prendere tutte le companies delle province di quella regione

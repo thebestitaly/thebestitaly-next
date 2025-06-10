@@ -67,35 +67,38 @@ const MagazineCategoryPage: React.FC = () => {
         description={categoryTranslation?.seo_summary || ""}
         image={
           categoryInfo?.image
-            ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}?width=1200&height=630&quality=90&fit=cover`
+            ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`
             : undefined
         }
         type="website"
         schema={categorySchema}
       />
 
-      <div className="relative h-[40vh] min-h-[400px] rounded-lg overflow-hidden">
+      <div className="relative h-[40vh] min-h-[400px]">
         {categoryInfo?.image && (
-          <>
+          <div className="absolute inset-0 m-10">
             <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}?width=1400&height=600&quality=90&fit=cover`}
+              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`}
               alt={categoryTranslation?.nome_categoria || "Category image"}
               fill
-              className="object-cover rounded-lg"
+              className="object-cover rounded-2xl"
               priority
             />
-            <div className="absolute inset-0 flex items-center">
-              <div className="container mx-auto px-3">
-                <h1 className="text-5xl font-bold text-white mb-4">
-                  {categoryTranslation?.nome_categoria}
-                </h1>
-                <p className="text-xl text-white/90 max-w-2xl">
-                  {categoryTranslation?.seo_summary}
-                </p>
-              </div>
-            </div>
-          </>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+          </div>
         )}
+         <div className="relative z-10 h-full flex items-end">
+            <div className="container mx-auto px-4 pb-12">             
+              <div className="max-w-4xl">
+              <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
+              {categoryTranslation?.nome_categoria}
+            </h1>
+            <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+              {categoryTranslation?.seo_summary}
+            </p>
+          </div>
+        </div>
+      </div>
       </div>
 
       <Breadcrumb />
