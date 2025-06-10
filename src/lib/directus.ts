@@ -959,6 +959,79 @@ class DirectusClient {
     }
   }
 
+  async getCompaniesByDestination(destinationId: string, lang: string, destinationType: 'region' | 'province' | 'municipality') {
+    try {
+      console.log('🔍 Fetching companies for destination:', destinationId, 'type:', destinationType);
+      
+      let filter: any = { active: { _eq: true } };
+      
+      if (destinationType === 'region') {
+        // Per le regioni, dobbiamo prendere tutte le companies delle province di quella regione
+        console.log('🏛️ Fetching companies for region, getting all provinces first...');
+        
+        // Prima otteniamo tutte le province di questa regione
+        const provincesResponse = await this.client.get('/items/destinations', {
+          params: {
+            filter: {
+              region_id: { _eq: destinationId },
+              type: { _eq: 'province' }
+            },
+            fields: ['id']
+          }
+        });
+        
+        const provinceIds = provincesResponse.data?.data?.map((p: any) => p.id) || [];
+        console.log('🏛️ Found provinces:', provinceIds.length);
+        
+        if (provinceIds.length > 0) {
+          filter.destination_id = { _in: provinceIds };
+        } else {
+          // Se non ci sono province, non ci sono companies
+          return [];
+        }
+      } else {
+        // Per province e municipality, usiamo direttamente l'ID
+        filter.destination_id = { _eq: destinationId };
+      }
+
+      const response = await this.client.get('/items/companies', {
+        params: {
+          filter,
+          fields: [
+            'id',
+            'website',
+            'company_name',
+            'slug_permalink',
+            'featured_image',
+            'email',
+            'phone',
+            'category_id',
+            'destination_id',
+            'socials',
+            'translations.*'
+          ],
+          deep: {
+            translations: {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            }
+          },
+          sort: ['company_name'],
+          limit: 100
+        }
+      });
+
+      console.log('📊 Companies by destination result:', response.data?.data?.length || 0);
+      return response.data?.data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching companies by destination:', error.response?.status, error.response?.data || error.message);
+      return [];
+    }
+  }
+
   public async getFeaturedDestinations(languageCode: string): Promise<Destination[]> {
     try {
       // For now, we'll get the first 5 regions as featured destinations

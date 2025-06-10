@@ -143,7 +143,7 @@ const MagazineListPage: React.FC = () => {
                         href={`/${lang}/magazine/${articleTranslation.slug_permalink}/`}
                         className="group"
                       >
-                        <div className="rounded-lg overflow-hidden shadow-lg">
+                        <div className="rounded-lg overflow-hidden">
                           {article.image && (
                             <div className="aspect-[16/9] overflow-hidden">
                               <Image

@@ -12,6 +12,7 @@ import ArticlesSidebar from "@/components/widgets/ArticlesSidebar";
 import Seo from "@/components/widgets/Seo";
 import TableOfContents from "@/components/widgets/TableOfContents";
 import GoogleMaps from "@/components/widgets/GoogleMaps";
+import DestinationCompanies from "@/components/destinations/DestinationCompanies";
 
 interface DestinationLayoutProps {
   slug: string;
@@ -71,28 +72,30 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
   return (
     <div className="min-h-screen">
       <Seo title={seoTitle} description={seoDescription} image={seoImage} schema={schema} />
-
-      {/* Hero Section */}
-      <div className="relative h-[60vh] min-h-[400px]" style={{ padding: '40px' }}>
-        {destination.image && (
-          <div className="relative w-full h-full rounded-2xl overflow-hidden">
+      {/* Hero Section */}      
+      <div className="relative h-96 lg:h-[500px]">
+      {destination.image && (
+          <div className="absolute inset-0 m-10">
             <Image
               src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
               alt={translation?.destination_name || ""}
               fill
               className="object-cover rounded-2xl"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
           </div>
         )}
-        <div className="absolute inset-0 flex items-center">
-          <div className="container mx-auto px-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{translation?.destination_name}</h1>
-            {translation?.seo_title && <p className="text-xl text-white/90 max-w-2xl">{translation.seo_title}</p>}
+          <div className="relative z-10 h-full flex items-end">
+            <div className="container mx-auto px-4 pb-12">             
+              <div className="max-w-4xl">
+              <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
+              {translation?.destination_name}</h1>
+
+            {translation?.seo_title && <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">{translation.seo_title}</p>}
           </div>
-        </div>
+          </div>        
+          </div>
       </div>
 
       {/* Breadcrumb */}
@@ -130,6 +133,16 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </div>
             )}
 
+            {/* Destination Companies/Points of Interest */}
+            <div className="my-8">
+              <DestinationCompanies 
+                destinationId={destination.id}
+                destinationType={type}
+                lang={lang}
+                destinationName={translation?.destination_name}
+              />
+            </div>
+
             <div className="my-8">
               <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
             </div>
@@ -138,12 +151,9 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Table of Contents - Sticky */}
-            <div className="sticky top-8 z-10 mb-10 shadow-lg">
+            <div className="sticky top-16 z-10 mb-10">
               <TableOfContents content={tocContent} />
-            </div>
-            
-            {/* Altri contenuti della sidebar - Scrollabili */}
-            <div className="sticky top-10 mb-10">
+              <ArticlesSidebar lang={lang} />
               <DestinationSidebar
                 currentDestinationId={destination.id}
                 regionSlug={slugData.regionSlug}
@@ -153,7 +163,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                 lang={lang}
                 type={destination.type}
               />
-              <ArticlesSidebar lang={lang} />
+             
             </div>
           </div>
         </div>

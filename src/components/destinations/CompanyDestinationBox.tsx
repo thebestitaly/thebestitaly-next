@@ -42,23 +42,25 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
   console.log('DEST LINK:', link);
 
   return (
-    <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-      {destImage && (
-        <img
-          src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destImage}`}
-          alt={destName}
-          className="w-full h-32 object-cover rounded mb-2"
-        />
-      )}
-      <div className="font-bold mb-1">{destName}</div>
-      <div className="text-sm text-gray-500 mb-2">{destSummary}</div>
-      <a
-        href={link}
-        className="text-blue-600 hover:underline text-sm"
-      >
-        Vai alla destinazione
-      </a>
-    </div>
+    <a
+      href={link}
+      className="block rounded-2xl p-6 hover:bg-gray-50 transition-colors duration-200 group"
+    >
+      <div className="relative">
+        {destImage && (
+          <div className="relative h-48 rounded-2xl overflow-hidden mb-4">
+            <img
+              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destImage}`}
+              alt={destName}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+        )}
+        <h4 className="text-xl font-bold text-gray-900 group-hover:text-amber-600 transition-colors">
+          {destName}
+        </h4>
+      </div>
+    </a>
   );
 };
 

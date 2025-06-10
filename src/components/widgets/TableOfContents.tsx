@@ -68,13 +68,13 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ content }) => {
 
   return (
     <div className="mb-6">
-      <div className="bg-white rounded-2xl p-6">
+      <div className="bg-gray-100 rounded-2xl p-6 shadow-lg">
         <nav className="space-y-2">
           {tocItems.map((item) => (
             <button
               key={item.id}
               onClick={() => scrollToHeading(item.id)}
-              className={`block w-full text-left text-sm transition-colors hover:text-blue-600 ${
+              className={`block w-full text-left text-md transition-colors hover:text-blue-600 ${
                 item.level === 2 ? 'font-medium' : 'ml-4 font-normal'
               } ${
                 activeId === item.id

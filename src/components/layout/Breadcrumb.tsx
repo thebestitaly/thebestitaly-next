@@ -19,35 +19,53 @@ const Breadcrumb: React.FC = () => {
 
   // Recupera la lingua dal primo segmento o usa 'it' come fallback
   const lang = pathSegments[0] || "it";
-  const regionSlug = pathSegments[1];
-  const provinceSlug = pathSegments[2];
-  const municipalitySlug = pathSegments[3];
-
+  
   // Generazione dinamica del breadcrumb
   const breadcrumbs: BreadcrumbItem[] = [];
 
-  // Aggiungi Regione
-  if (regionSlug) {
+  // Se siamo nella sezione companies
+  if (pathSegments[1] === "companies") {
     breadcrumbs.push({
-      label: formatLabel(regionSlug),
-      path: `/${lang}/${regionSlug}`,
+      label: "ECCELLENZE",
+      path: `/${lang}/companies`,
     });
-  }
+    
+    // Se siamo su una singola company
+    if (pathSegments[2]) {
+      breadcrumbs.push({
+        label: formatLabel(pathSegments[2]),
+        path: `/${lang}/companies/${pathSegments[2]}`,
+      });
+    }
+  } else {
+    // Logica originale per le destinazioni
+    const regionSlug = pathSegments[1];
+    const provinceSlug = pathSegments[2];
+    const municipalitySlug = pathSegments[3];
 
-  // Aggiungi Provincia
-  if (provinceSlug) {
-    breadcrumbs.push({
-      label: formatLabel(provinceSlug),
-      path: `/${lang}/${regionSlug}/${provinceSlug}`,
-    });
-  }
+    // Aggiungi Regione
+    if (regionSlug) {
+      breadcrumbs.push({
+        label: formatLabel(regionSlug),
+        path: `/${lang}/${regionSlug}`,
+      });
+    }
 
-  // Aggiungi Municipality
-  if (municipalitySlug) {
-    breadcrumbs.push({
-      label: formatLabel(municipalitySlug),
-      path: `/${lang}/${regionSlug}/${provinceSlug}/${municipalitySlug}`,
-    });
+    // Aggiungi Provincia
+    if (provinceSlug) {
+      breadcrumbs.push({
+        label: formatLabel(provinceSlug),
+        path: `/${lang}/${regionSlug}/${provinceSlug}`,
+      });
+    }
+
+    // Aggiungi Municipality
+    if (municipalitySlug) {
+      breadcrumbs.push({
+        label: formatLabel(municipalitySlug),
+        path: `/${lang}/${regionSlug}/${provinceSlug}/${municipalitySlug}`,
+      });
+    }
   }
 
   return (

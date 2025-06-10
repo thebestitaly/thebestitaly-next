@@ -2,11 +2,13 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { ExternalLink, Phone, Mail, Globe, ArrowLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import directusClient from '../../../../lib/directus';
 import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
+import CompanyDestinationBox from '@/components/destinations/CompanyDestinationBox';
+import Breadcrumb from '@/components/layout/Breadcrumb';
+import LatestArticles from '@/components/magazine/LatestArticles';
 
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
@@ -54,41 +56,29 @@ export default async function CompanyPage({ params }: PageProps) {
     const translation = company.translations?.[0];
 
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Hero Section */}
-        <div className="relative h-96 lg:h-[500px] bg-gradient-to-br from-amber-900 via-amber-800 to-orange-900">
+      <div className="min-h-screen">
+          {/* Hero Section */}
+          <div className="relative h-96 lg:h-[500px]">
           {/* Background Image */}
           {company.featured_image && (
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 m-10">
               <Image
                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
                 alt={company.company_name}
                 fill
-                className="object-cover"
+                className="object-cover rounded-2xl"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
             </div>
           )}
 
           {/* Content */}
           <div className="relative z-10 h-full flex items-end">
             <div className="container mx-auto px-4 pb-12">
-              {/* Back Button */}
-              <Link
-                href={`/${lang}/eccellenze`}
-                className="inline-flex items-center mb-6 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-all duration-200"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Tutte le Eccellenze
-              </Link>
-
+             
               <div className="max-w-4xl">
-                {/* Category/Type */}
-                <div className="text-amber-200 text-sm font-medium mb-4 tracking-widest uppercase">
-                  🏆 Eccellenza Italiana
-                </div>
-
+                
                 {/* Company Name */}
                 <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
                   {company.company_name}
@@ -102,13 +92,13 @@ export default async function CompanyPage({ params }: PageProps) {
                 )}
 
                 {/* Quick Actions */}
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4 mb-8">
                   {company.website && (
                     <a
                       href={company.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group inline-flex items-center px-6 py-3 bg-white text-amber-900 font-semibold rounded-xl hover:bg-amber-50 transition-all duration-300 shadow-lg"
+                      className="group inline-flex items-center px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 transition-all duration-300"
                     >
                       <Globe className="w-4 h-4 mr-2" />
                       <span>Visita Sito Web</span>
@@ -131,54 +121,33 @@ export default async function CompanyPage({ params }: PageProps) {
           </div>
         </div>
 
+        {/* Breadcrumb */}
+        <Breadcrumb />
+
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto py-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2">
               {/* Summary */}
               {translation?.seo_summary && (
-                <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">In Breve</h2>
-                  <p className="text-gray-600 text-lg leading-relaxed">
-                    {translation.seo_summary}
-                  </p>
-                </div>
+                 <div className="prose text-2xl prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-amber-600 prose-a:hover:text-amber-700 mb-8">
+                    <ReactMarkdown>{translation.seo_summary}</ReactMarkdown>
+                  </div>
               )}
 
               {/* Description */}
               {translation?.description && (
-                <div className="bg-white rounded-2xl shadow-lg p-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Descrizione Completa</h2>
-                  <div className="prose prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-amber-600 prose-strong:text-gray-900">
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        h1: ({children}) => <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-4">{children}</h1>,
-                        h2: ({children}) => <h2 className="text-2xl font-bold text-gray-900 mt-6 mb-3">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-xl font-semibold text-gray-900 mt-4 mb-2">{children}</h3>,
-                        p: ({children}) => <p className="mb-4 leading-relaxed">{children}</p>,
-                        ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
-                        ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
-                        li: ({children}) => <li className="leading-relaxed">{children}</li>,
-                        blockquote: ({children}) => <blockquote className="border-l-4 border-amber-200 pl-4 py-2 my-4 bg-amber-50 italic">{children}</blockquote>,
-                        strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                        em: ({children}) => <em className="italic">{children}</em>,
-                        a: ({href, children}) => <a href={href} className="text-amber-600 hover:text-amber-700 underline" target="_blank" rel="noopener noreferrer">{children}</a>
-                      }}
-                    >
-                      {translation.description}
-                    </ReactMarkdown>
-                  </div>
-                </div>
+                <article className="prose prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-amber-600 prose-a:hover:text-amber-700">
+                    <ReactMarkdown>{translation.description}</ReactMarkdown>
+                </article>
               )}
             </div>
 
             {/* Sidebar */}
             <div className="space-y-8">
               {/* Contact Info */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Contatti</h3>
+              <div className="rounded-2xl p-6">
                 <div className="space-y-4">
                   {company.website && (
                     <div className="flex items-start space-x-3">
@@ -192,21 +161,6 @@ export default async function CompanyPage({ params }: PageProps) {
                           className="text-amber-600 hover:text-amber-700 break-all"
                         >
                           {company.website.replace(/^https?:\/\//, '')}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-
-                  {company.email && (
-                    <div className="flex items-start space-x-3">
-                      <Mail className="w-5 h-5 text-amber-600 mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-gray-900">Email</p>
-                        <a
-                          href={`mailto:${company.email}`}
-                          className="text-amber-600 hover:text-amber-700"
-                        >
-                          {company.email}
                         </a>
                       </div>
                     </div>
@@ -231,8 +185,7 @@ export default async function CompanyPage({ params }: PageProps) {
 
               {/* Additional Images */}
               {company.images && company.images.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-6">Galleria</h3>
+                <div className="rounded-2xl p-6">
                   <div className="grid grid-cols-2 gap-4">
                     {company.images.slice(0, 4).map((image: any, index: number) => (
                       <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden">
@@ -248,8 +201,16 @@ export default async function CompanyPage({ params }: PageProps) {
                 </div>
               )}
 
+              {/* Destination Box */}
+              {company.destination_id && (
+                <CompanyDestinationBox 
+                  destinationId={company.destination_id} 
+                  lang={lang} 
+                />
+              )}
+
               {/* CTA */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 text-center">
+              <div className="rounded-2xl p-6 text-center">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
                   Vuoi promuovere la tua eccellenza?
                 </h3>
@@ -266,25 +227,19 @@ export default async function CompanyPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Related/Other Excellence */}
+          {/* Articles Section */}
           <div className="mt-16">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Altre Eccellenze</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Scopri altre eccellenze italiane selezionate per te
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <Link
-                href={`/${lang}/eccellenze`}
-                className="inline-flex items-center px-8 py-4 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 transition-all duration-300 shadow-lg"
-              >
-                <span className="mr-2">Esplora Tutte le Eccellenze</span>
-                <ArrowLeft className="w-5 h-5 rotate-180" />
-              </Link>
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">Articoli Correlati</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  Scopri gli ultimi articoli e consigli di viaggio
+                </p>
+              </div>
+              <LatestArticles lang={lang} />
             </div>
           </div>
+
         </div>
       </div>
     );

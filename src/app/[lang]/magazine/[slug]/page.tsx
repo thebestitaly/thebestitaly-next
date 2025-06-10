@@ -97,76 +97,77 @@ export default function MagazineArticlePage({ params }: PageProps) {
         schema={schema}  // Passa lo schema al componente Seo
       />
 
-      <div className="bg-white" style={{ padding: '40px' }}>
-        <div className="relative h-[60vh] min-h-[400px] rounded-2xl overflow-hidden">
+      <div>
+        <div className="relative h-80 lg:h-[500px]">
           {article.image && (
-            <div className="relative w-full h-full">
+            <div className="absolute inset-0 m-10">
               <Image
                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
                 alt={translation?.titolo_articolo || ''}
                 fill
                 className="object-cover rounded-2xl"
                 priority
-                sizes="100vw"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
             </div>
           )}
-        <div className="absolute inset-0 flex items-center">
-          <div className="container mx-auto px-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{translation?.titolo_articolo}</h1>
-            {translation?.seo_summary && <p className="text-xl text-white/90 max-w-2xl">{translation.seo_summary}</p>}
+          <div className="relative z-10 h-full flex items-end">
+            <div className="container mx-auto px-4 pb-12">
+              <div className="max-w-4xl">
+                <h1 className="text-3xl lg:text-5xl font-black text-white leading-none mb-4">{translation?.titolo_articolo}</h1>
+                {translation?.seo_summary && <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">{translation.seo_summary}</p>}
+              </div>
+            </div>
           </div>
         </div>
-        </div>
-      </div>
 
-      <Breadcrumb />
+        <Breadcrumb />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          <div className="lg:col-span-2">
-            <div className="rounded-lg p-2">
-              <GetYourGuideWidget 
-                lang={lang} 
-                destinationName="Italy"
-              />
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-2">
+              <div className="rounded-lg p-2">
+                <GetYourGuideWidget 
+                  lang={lang} 
+                  destinationName="Italy"
+                />
+              </div>
+
+              <article className="prose prose-lg max-w-none mt-8" ref={contentRef}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h2: ({ node, ...props }) => {
+                      const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
+                      return <h2 id={id} {...props} />;
+                    },
+                    h3: ({ node, ...props }) => {
+                      const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
+                      return <h3 id={id} {...props} />;
+                    },
+                    img: ({ node, ...props }) => (
+                      <div className="relative w-full h-64 md:h-96">
+                        <Image
+                          src={props.src || ''}
+                          alt={props.alt || ''}
+                          fill
+                          className="object-cover rounded-lg"
+                          sizes="(max-width: 768px) 100vw, 800px"
+                        />
+                      </div>
+                    ),
+                  }}
+                >
+                  {translation?.description || ''}
+                </ReactMarkdown>
+              </article>
             </div>
 
-            <article className="prose prose-lg max-w-none mt-8" ref={contentRef}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h2: ({ node, ...props }) => {
-                    const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
-                    return <h2 id={id} {...props} />;
-                  },
-                  h3: ({ node, ...props }) => {
-                    const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
-                    return <h3 id={id} {...props} />;
-                  },
-                  img: ({ node, ...props }) => (
-                    <div className="relative w-full h-64 md:h-96">
-                      <Image
-                        src={props.src || ''}
-                        alt={props.alt || ''}
-                        fill
-                        className="object-cover rounded-lg"
-                        sizes="(max-width: 768px) 100vw, 800px"
-                      />
-                    </div>
-                  ),
-                }}
-              >
-                {translation?.description || ''}
-              </ReactMarkdown>
-            </article>
-          </div>
-
-          <div className="lg:col-span-1">
-            <div className="sticky top-4 space-y-6">
-              <TableOfContents content={translation?.description || ''} />
-              <ArticlesSidebar lang={lang} />
+            <div className="lg:col-span-1">
+              <div className="sticky top-16 space-y-6">
+                <TableOfContents content={translation?.description || ''} />
+                <ArticlesSidebar lang={lang} />
+              </div>
             </div>
           </div>
         </div>
