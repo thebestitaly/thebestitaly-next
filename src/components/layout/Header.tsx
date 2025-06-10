@@ -65,9 +65,9 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
             <Image
               src="/images/logo-black.webp"
               alt={`The Best Italy ${lang}`}
-              width={48}
-              height={48}
-              style={{ width: "48px", height: "48px" }}
+              width={96}
+              height={64}
+              style={{ width: "96px", height: "64px" }}
               className="w-12 h-12"
               priority
             />

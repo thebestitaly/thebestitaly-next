@@ -11,13 +11,8 @@ export function middleware(request: NextRequest) {
     // Check for authentication cookie
     const sessionToken = request.cookies.get('directus_session_token')?.value;
     
-    console.log('Middleware - Checking reserved route:', request.nextUrl.pathname);
-    console.log('Middleware - Session token:', sessionToken ? 'exists' : 'missing');
-    
     // Check if token exists and is not empty
     if (!sessionToken || sessionToken.trim() === '') {
-      console.log('Middleware - No valid session token, redirecting to login');
-      
       // Get the language from the path (e.g., /it/reserved -> it)
       const pathParts = request.nextUrl.pathname.split('/');
       const lang = pathParts[1] || 'it';
@@ -26,8 +21,6 @@ export function middleware(request: NextRequest) {
       const loginUrl = new URL(`/${lang}/reserved/login`, request.url);
       return NextResponse.redirect(loginUrl);
     }
-    
-    console.log('Middleware - Valid session token found, allowing access');
   }
 
   // If user is logged in and trying to access login page, redirect to reserved area

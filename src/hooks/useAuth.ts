@@ -36,18 +36,13 @@ export function useAuth() {
 
   const checkAuth = () => {
     try {
-      console.log('Checking auth, all cookies:', document.cookie);
-      
       // Check for user info in cookie
       const userCookie = getCookie('directus_user');
-      console.log('User cookie found:', userCookie);
 
       if (userCookie) {
         const userData = JSON.parse(decodeURIComponent(userCookie));
-        console.log('Parsed user data:', userData);
         setUser(userData);
       } else {
-        console.log('No user cookie found');
         setUser(null);
       }
     } catch (error) {
@@ -60,15 +55,11 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      console.log('Starting logout process...');
-      
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
       });
       
       if (response.ok) {
-        console.log('Logout API call successful');
-        
         // Force clear client-side state
         setUser(null);
         
@@ -77,7 +68,7 @@ export function useAuth() {
           localStorage.clear();
           sessionStorage.clear();
         } catch (e) {
-          console.log('Could not clear storage:', e);
+          // Silent fail for storage clearing
         }
         
         // Force a hard redirect to bypass any cache

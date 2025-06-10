@@ -125,7 +125,6 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    console.log('Login successful, setting cookies for user:', userData.data.email);
     return response;
   } catch (error) {
     console.error('Login error:', error);

@@ -41,7 +41,6 @@ export async function POST() {
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
 
-    console.log('Logout successful, cookies cleared with expiration date:', expiredDate);
     return response;
   } catch (error) {
     console.error('Logout error:', error);

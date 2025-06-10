@@ -8,40 +8,14 @@ import AuthLoader from '@/components/auth/AuthLoader';
 export default function ReservedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
 
-  // Temporary debugging
-  console.log('ReservedLayout - isLoading:', isLoading);
-  console.log('ReservedLayout - user:', user);
-  console.log('ReservedLayout - document.cookie:', typeof document !== 'undefined' ? document.cookie : 'undefined');
-
   // Show loading screen while checking authentication
   if (isLoading) {
     return <AuthLoader />;
   }
 
-  // If not authenticated, show minimal layout with debug info
+  // If not authenticated, show minimal layout (user will be redirected by middleware)
   if (!user) {
-    return (
-      <div>
-        <div className="bg-red-100 border border-red-300 p-4 m-4 rounded">
-          <h3 className="text-red-800 font-bold">Debug Info - No User Detected</h3>
-          <p className="text-red-700">
-            User: {user ? 'Found' : 'Not found'}<br/>
-            Loading: {isLoading ? 'True' : 'False'}<br/>
-            Cookies: {typeof document !== 'undefined' ? document.cookie : 'N/A'}
-          </p>
-          <button 
-            onClick={() => {
-              console.log('Manual cookie check:', document.cookie);
-              window.location.href = '/it/reserved/login';
-            }}
-            className="bg-red-500 text-white px-4 py-2 rounded mt-2"
-          >
-            Go to Login
-          </button>
-        </div>
-        {children}
-      </div>
-    );
+    return <div>{children}</div>;
   }
 
   return (
