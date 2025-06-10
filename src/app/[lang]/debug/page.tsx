@@ -113,7 +113,7 @@ export default function DebugPage() {
 
       <div style={{ padding: '15px', backgroundColor: '#fff5f5', borderRadius: '5px' }}>
         <h2>📋 Expected Configuration:</h2>
-        <p><strong>URL:</strong> https://thebestitaly-backend.onrender.com/</p>
+        <p><strong>URL:</strong> https://directus-production-93f0.up.railway.app</p>
         <p><strong>Token:</strong> Should be present</p>
       </div>
     </div>

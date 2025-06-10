@@ -225,12 +225,14 @@ class DirectusClient {
   private client: AxiosInstance;
 
   constructor() {
+    // Create the client without hardcoded headers
+    // Use proxy API route in browser to avoid CORS issues
+    const baseURL = typeof window !== 'undefined' 
+      ? '/api/directus' 
+      : process.env.NEXT_PUBLIC_DIRECTUS_URL;
+      
     this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_DIRECTUS_URL,
-      headers: {
-        'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
+      baseURL,
     });
   
     this.setupInterceptors();
@@ -238,6 +240,17 @@ class DirectusClient {
 
   private setupInterceptors() {
     this.client.interceptors.request.use(request => {
+      // Add authorization header dynamically on each request
+      // Use server-side token if available, otherwise use public token
+      const token = process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+      if (token) {
+        request.headers['Authorization'] = `Bearer ${token}`;
+      }
+      request.headers['Content-Type'] = 'application/json';
+      
+      // Debug log per verificare che usi il token corretto
+      console.log('🔗 Directus Request:', request.url, 'Token:', token ? `${token.substring(0, 8)}...` : 'NONE');
+      
       return request;
     });
 
@@ -246,6 +259,7 @@ class DirectusClient {
         return response;
       },
       error => {
+        console.error('🚨 Directus Error:', error.response?.status, error.response?.statusText || error.message);
         return Promise.reject(error);
       }
     );

@@ -11,7 +11,11 @@ export default async function DirectusTestPage() {
 
   try {
     if (directusUrl) {
-      const response = await fetch(`${directusUrl}/items/destinations?limit=1&fields=id,type,translations.destination_name&deep[translations][_filter][languages_code][_eq]=it`, {
+      const url = `${directusUrl}/items/destinations?limit=1`;
+      console.log('🔍 Making request to:', url);
+      console.log('🔑 Using token:', directusToken ? `${directusToken.substring(0, 8)}...` : 'NONE');
+      
+      const response = await fetch(url, {
         headers: directusToken ? {
           'Authorization': `Bearer ${directusToken}`,
           'Content-Type': 'application/json',
@@ -20,13 +24,19 @@ export default async function DirectusTestPage() {
         },
       });
       
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (response.ok) {
         apiTest = await response.json();
       } else {
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        const responseText = await response.text();
+        console.log('❌ Response body:', responseText);
+        errorMessage = `HTTP ${response.status}: ${response.statusText} - ${responseText}`;
       }
     }
   } catch (error) {
+    console.log('💥 Fetch error:', error);
     errorMessage = String(error);
   }
 
