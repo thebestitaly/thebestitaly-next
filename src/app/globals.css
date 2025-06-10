@@ -61,16 +61,16 @@ article p, article ul li {
 }
 
 article img {
-  @apply w-full my-6 rounded-lg shadow-md;
+  @apply w-full my-6 rounded-lg;
 }
 
 /* Blog Post Card */
 .latest-blog-post {
-  @apply bg-white rounded-xl shadow-lg transition-all duration-300 overflow-hidden mb-5 pt-0;
+  @apply rounded-xl transition-all duration-300 overflow-hidden mb-5 pt-0;
 }
 
 .latest-blog-post:hover {
-  @apply -translate-y-1 shadow-xl;
+  @apply -translate-y-1;
 }
 
 .latest-blog-post .article-link {

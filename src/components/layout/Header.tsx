@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, X, Menu, ChevronDown } from 'lucide-react';
 import directusClient, { getTranslations } from '../../lib/directus';
 import { useTranslation } from 'react-i18next';
+import InteractiveMap from './InteractiveMap';
 
 interface HeaderProps {
   lang: string;
@@ -18,36 +19,12 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showDestinations, setShowDestinations] = useState(false);
   const [showMagazine, setShowMagazine] = useState(false);
-  const [showUseful, setShowUseful] = useState(false);
+  const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
 
   // Query per le traduzioni del menu
   const { data: menuTranslations } = useQuery({
     queryKey: ['translations', lang, 'menu'],
     queryFn: () => getTranslations(lang, 'menu'),
-  });
-
-  // Menu items per informazioni utili
-  const usefulMenuItems = [
-    { key: 'internet', id: 539 },
-    { key: 'restaurants', id: 533 },
-    { key: 'shopping', id: 532 },
-    { key: 'trains', id: 520 },
-    { key: 'airports', id: 521 },
-    { key: 'car_rental', id: 519 },
-    { key: 'public_transport', id: 518 },
-    { key: 'ferries', id: 522 },
-    { key: 'currency', id: 527 },
-    { key: 'emergency_numbers', id: 524 },
-    { key: 'scams', id: 528 }
-  ];
-
-  // Query per gli articoli utili
-  const { data: usefulArticles } = useQuery({
-    queryKey: ['useful-articles', lang],
-    queryFn: async () => {
-      const response = await directusClient.getArticles(lang, 0, 50, { category_id: 9 });
-      return response.articles || []; // Assicurati che sia un array
-    },
   });
 
   // Query per le destinazioni
@@ -78,29 +55,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
     }
   }, [lang, i18n]);
 
-  // Rendering delle voci del menu utili
-  const renderUsefulItems = () => {
-    if (!usefulArticles || usefulArticles.length === 0) {
-      return <p className="text-gray-500">No useful articles available.</p>;
-    }
-  
-    return usefulMenuItems.map(({ key, id }) => {
-      const article = usefulArticles.find(a => a.id === String(id));
-      if (!article?.translations?.[0]?.slug_permalink) return null;
-  
-      return (
-        <Link
-          key={id}
-          href={`/${lang}/magazine/${article.translations[0].slug_permalink}`}
-          className="block px-4 py-1.5 hover:bg-gray-50 text-sm"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          {menuTranslations[key] || key}
-        </Link>
-      );
-    }).filter(Boolean);
-  };
-
   return (
     <header className={`sticky top-0 bg-white z-50 transition-all duration-300 ${isScrolled ? 'h-18' : 'h-20'}`}>
       <div className="border-b border-gray-100">
@@ -109,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
             {/* Logo */}
             <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
             <Image
-              src="/images/logo-black.png"
+              src="/images/logo-black.webp"
               alt={`The Best Italy ${lang}`}
               width={96}
               height={96}
@@ -142,37 +96,51 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 </button>
 
                 {showDestinations && destinations && (
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-xl border border-gray-100 mt-[1px] min-w-[800px]">
-                  <div className="grid grid-cols-3 gap-x-8 p-6">
-                    <div className="grid grid-cols-2 col-span-2 gap-y-[2px]">
-                      {destinations.map((destination) => {
-                        const translation = destination.translations?.[0];
-                        if (!translation?.slug_permalink) return null;
-                
-                        return (
-                          <Link
-                            key={destination.id}
-                            href={`/${lang}/${translation.slug_permalink}/`}
-                            className="text-md hover:text-blue-600 transition-colors leading-tight !m-0 !p-0"
-                          >
-                            {translation.destination_name}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                    <div className="col-span-1">
-                      <div className="rounded-lg overflow-hidden">
-                        <Image
-                          src="/images/map.svg"
-                          alt="Italy Regions"
-                          width={300}
-                          height={400}
-                          className="w-full h-full object-contain"
-                        />
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 bg-white rounded-2xl border border-gray-100 min-w-[900px]">
+                    <div className="p-6">
+                      <div className="grid grid-cols-4 gap-1">
+                        {destinations.map((destination) => {
+                          const translation = destination.translations?.[0];
+                          if (!translation?.slug_permalink) return null;
+                          
+                          const regionSlug = translation.slug_permalink;
+                          const isHovered = hoveredRegion === regionSlug;
+                  
+                          return (
+                            <Link
+                              key={destination.id}
+                              href={`/${lang}/${translation.slug_permalink}/`}
+                              className={`group block rounded-xl transition-all duration-200 ${
+                                isHovered 
+                                  ? 'bg-blue-50' 
+                                  : 'hover:bg-gray-50'
+                              }`}
+                              onMouseEnter={() => setHoveredRegion(regionSlug)}
+                              onMouseLeave={() => setHoveredRegion(null)}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 flex-shrink-0">
+                                  <Image
+                                    src={destination.image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}` : '/images/map.svg'}
+                                    alt={translation.description || translation.destination_name || 'Region'}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className={`text-sm font-medium transition-colors duration-200 ${
+                                    isHovered ? 'text-blue-700' : 'text-gray-900 group-hover:text-blue-600'
+                                  }`}>
+                                    {translation.description || translation.destination_name}
+                                  </h3>
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-                </div>
                 )}
               </div>
 
@@ -191,8 +159,8 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 </Link>
 
                 {showMagazine && categories && (
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-xl border border-gray-100 mt-[1px] min-w-[1000px]">
-                    <div className="grid grid-cols-4 gap-6 p-8">
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 bg-white rounded-2xl border border-gray-100 mt-[1px] min-w-[1000px]">
+                    <div className="grid grid-cols-4 gap-2 p-6">
                       {categories.map((category) => {
                         const translation = category.translations?.[0];
                         if (!translation?.slug_permalink) return null;
@@ -201,9 +169,9 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                           <Link
                             key={category.id}
                             href={`/${lang}/magazine/c/${translation.slug_permalink}/`}
-                            className="group block text-center space-y-3"
+                            className="group block text-center space-y-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-300"
                           >
-                            <div className="relative h-24 w-24 mx-auto rounded-full overflow-hidden">
+                            <div className="relative h-28 w-full mx-auto rounded-xl overflow-hidden">
                               <Image
                                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${category.image}`}
                                 alt={translation.nome_categoria}
@@ -238,25 +206,13 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 {menuTranslations?.experience_menu || 'Experience'}
               </Link>
 
-              {/* Useful Information Dropdown */}
-              <div
-                className="relative h-full"
-                onMouseEnter={() => setShowUseful(true)}
-                onMouseLeave={() => setShowUseful(false)}
+              {/* Useful Information Link - Changed from dropdown to direct link */}
+              <Link
+                href={`/${lang}/magazine/c/useful-information/`}
+                className={`h-full flex items-center px-6 text-gray-700 hover:text-blue-600 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}
               >
-                <button className={`h-full flex items-center px-6 text-gray-700 hover:text-blue-600 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}>
-                  {menuTranslations?.useful_informations || 'Useful Information'}
-                  <ChevronDown size={18} className="ml-1" />
-                </button>
-
-                {showUseful && (
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-xl border border-gray-100 mt-[1px] min-w-[300px]">
-                    <div className="py-4">
-                      {renderUsefulItems()}
-                    </div>
-                  </div>
-                )}
-              </div>
+                {menuTranslations?.useful_informations || 'Informazioni'}
+              </Link>
 
               {/* Search Button */}
               <div className="h-full flex items-center px-6">
@@ -303,7 +259,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 <div className="h-20 border-b border-gray-100 flex items-center justify-between px-4">
                   <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
                   <Image
-                    src="/images/logo-black.png"
+                    src="/images/logo-black.webp"
                     alt={`The Best Italy ${lang}`}
                     width={80}
                     height={80}
@@ -361,7 +317,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                               className="block py-1 text-gray-600"
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
-                              {translation.destination_name}
+                              {translation.description || translation.destination_name}
                             </Link>
                           );
                         })}
@@ -421,24 +377,14 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     {menuTranslations?.experience_menu || 'Experience'}
                   </Link>
 
-                  {/* Useful Information Section */}
-                  <div>
-                    <button
-                      className="w-full text-left px-4 py-2 text-lg font-medium flex justify-between items-center"
-                      onClick={() => setShowUseful(!showUseful)}
-                    >
-                      {menuTranslations?.useful_informations || 'Useful Information'}
-                      <ChevronDown
-                        size={20}
-                        className={`transform transition-transform ${showUseful ? 'rotate-180' : ''}`}
-                      />
-                    </button>
-                    {showUseful && (
-                      <div className="pl-8 space-y-2">
-                        {renderUsefulItems()}
-                      </div>
-                    )}
-                  </div>
+                  {/* Useful Information - Changed to direct link in mobile */}
+                  <Link
+                    href={`/${lang}/magazine/c/useful-information/`}
+                    className="block px-4 py-2 text-lg font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {menuTranslations?.useful_informations || 'Informazioni'}
+                  </Link>
 
                   {/* Language Selector */}
                   <div className="px-4 py-2">

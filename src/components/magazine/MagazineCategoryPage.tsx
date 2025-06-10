@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import directusClient from "@/lib/directus";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Seo from "@/components/widgets/Seo";
+import ArticleGrid from "./ArticleGrid";
 
 const MagazineCategoryPage: React.FC = () => {
   const params = useParams<{ lang: string; category: string }>();
@@ -28,17 +28,12 @@ const MagazineCategoryPage: React.FC = () => {
   const { data: categoryInfo } = useQuery({
     queryKey: ["category", category, lang],
     queryFn: async () => {
-      // TODO: Implement proper category fetching
-      return {
-        id: 1,
-        image: null,
-        translations: [{
-          nome_categoria: category,
-          seo_title: category,
-          seo_summary: `Articles about ${category}`,
-          slug_permalink: category
-        }]
-      };
+      // TODO: Implement proper category fetching from Directus
+      // For now, we get the category from the articles data
+      const categories = await directusClient.getCategories(lang || 'it');
+      return categories.find(cat => 
+        cat.translations.some(t => t.slug_permalink === category)
+      );
     },
     enabled: !!category,
   });
@@ -53,7 +48,7 @@ const MagazineCategoryPage: React.FC = () => {
     description: categoryTranslation?.seo_summary,
     url: currentUrl,
     image: categoryInfo?.image
-      ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`
+      ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}?width=1200&height=630&quality=90&fit=cover`
       : undefined,
     isPartOf: {
       "@type": "WebSite",
@@ -72,25 +67,25 @@ const MagazineCategoryPage: React.FC = () => {
         description={categoryTranslation?.seo_summary || ""}
         image={
           categoryInfo?.image
-            ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`
+            ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}?width=1200&height=630&quality=90&fit=cover`
             : undefined
         }
         type="website"
         schema={categorySchema}
       />
 
-      <div className="relative h-[40vh] min-h-[400px]">
+      <div className="relative h-[40vh] min-h-[400px] rounded-lg overflow-hidden">
         {categoryInfo?.image && (
           <>
             <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`}
+              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}?width=1400&height=600&quality=90&fit=cover`}
               alt={categoryTranslation?.nome_categoria || "Category image"}
               fill
-              className="object-cover"
+              className="object-cover rounded-lg"
               priority
             />
-            <div className="absolute inset-0 bg-black/50 flex items-center">
-              <div className="container mx-auto px-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="container mx-auto px-3">
                 <h1 className="text-5xl font-bold text-white mb-4">
                   {categoryTranslation?.nome_categoria}
                 </h1>
@@ -106,46 +101,11 @@ const MagazineCategoryPage: React.FC = () => {
       <Breadcrumb />
 
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {articles?.map((article) => {
-            const translation = article.translations[0];
-            
-            // Only render link if we have a valid slug
-            if (!translation?.slug_permalink) {
-              return null;
-            }
-            
-            return (
-              <Link
-                key={article.id}
-                href={`/${lang}/magazine/${translation.slug_permalink}/`}
-                className="group"
-              >
-                <div className="bg-white rounded-lg overflow-hidden shadow-lg">
-                  {article.image && (
-                    <div className="relative w-[400px] h-[250px] overflow-hidden">
-                      <Image
-                        src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
-                        alt={translation?.titolo_articolo}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 100vw"
-                      />
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <h2 className="text-xl font-bold mb-2 group-hover:text-blue-600">
-                      {translation?.titolo_articolo}
-                    </h2>
-                    <p className="text-gray-600 line-clamp-2">
-                      {translation?.seo_summary}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        <ArticleGrid 
+          articles={articles || []} 
+          lang={lang || 'it'} 
+          columns="3"
+        />
       </div>
     </div>
   );

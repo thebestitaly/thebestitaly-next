@@ -120,7 +120,6 @@ const ExperiencePage: React.FC = () => {
                   {menuTranslations?.experiences_in?.replace('{city}', city.name) || city.name}
                 </h2>
                 <div
-                  className="bg-white rounded-lg shadow-lg p-6"
                   data-gyg-href="https://widget.getyourguide.com/default/activities.frame"
                   data-gyg-locale-code={`${lang}-${langDisplay}`}
                   data-gyg-widget="activities"

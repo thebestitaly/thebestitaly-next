@@ -22,6 +22,8 @@ export interface Destination {
   } | null;
   type: 'region' | 'province' | 'municipality';
   image?: string;
+  lat?: number;
+  long?: number;
   translations: Translation[];
 }
 
@@ -637,6 +639,8 @@ class DirectusClient {
             'province_id.translations.destination_name',
             'parent.translations.slug_permalink',
             'image',
+            'lat',
+            'long',
             'translations.destination_name',
             'translations.seo_title',
             'translations.seo_summary',

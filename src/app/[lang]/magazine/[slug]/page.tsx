@@ -9,6 +9,7 @@ import directusClient from '@/lib/directus';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import GetYourGuideWidget from '@/components/widgets/GetYourGuideWidget';
 import ArticlesSidebar from '@/components/widgets/ArticlesSidebar';
+import TableOfContents from '@/components/widgets/TableOfContents';
 import Seo from '@/components/widgets/Seo';
 
 interface PageProps {
@@ -96,26 +97,27 @@ export default function MagazineArticlePage({ params }: PageProps) {
         schema={schema}  // Passa lo schema al componente Seo
       />
 
-      <div className="relative h-[60vh] min-h-[400px]">
-        {article.image && (
-          <div className="relative w-full h-full">
-            <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
-              alt={translation?.titolo_articolo || ''}
-              fill
-              className="object-cover"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent"></div>
-          </div>
-        )}
+      <div className="bg-white" style={{ padding: '40px' }}>
+        <div className="relative h-[60vh] min-h-[400px] rounded-2xl overflow-hidden">
+          {article.image && (
+            <div className="relative w-full h-full">
+              <Image
+                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+                alt={translation?.titolo_articolo || ''}
+                fill
+                className="object-cover rounded-2xl"
+                priority
+                sizes="100vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent"></div>
+            </div>
+          )}
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              {translation?.titolo_articolo}
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{translation?.titolo_articolo}</h1>
+            {translation?.seo_summary && <p className="text-xl text-white/90 max-w-2xl">{translation.seo_summary}</p>}
           </div>
+        </div>
         </div>
       </div>
 
@@ -124,7 +126,7 @@ export default function MagazineArticlePage({ params }: PageProps) {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-lg p-2">
+            <div className="rounded-lg p-2">
               <GetYourGuideWidget 
                 lang={lang} 
                 destinationName="Italy"
@@ -161,8 +163,11 @@ export default function MagazineArticlePage({ params }: PageProps) {
             </article>
           </div>
 
-          <div className="lg:col-span-1 space-y-6">
-            <ArticlesSidebar lang={lang} />
+          <div className="lg:col-span-1">
+            <div className="sticky top-4 space-y-6">
+              <TableOfContents content={translation?.description || ''} />
+              <ArticlesSidebar lang={lang} />
+            </div>
           </div>
         </div>
       </div>

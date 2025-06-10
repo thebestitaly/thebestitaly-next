@@ -91,41 +91,40 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
   };
 
   return (
-    <div className="p-2">
+    <div >
       <h3 className="text-lg font-bold mb-4">
         {type === "region" ? "Province" : type === "province" ? "Comuni" : "Altri Comuni"}
       </h3>
 
-      {relatedDestinations.map((destination: any) => {
-        const translation = destination.translations?.[0];
-        
-        return (
-          <Link
-            key={destination.id}
-            href={generateLink(destination)}
-            className="block border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200 mb-4"
-          >
-            <div>
+      <div className="space-y-3">
+        {relatedDestinations.map((destination: any) => {
+          const translation = destination.translations?.[0];
+          
+          return (
+            <Link
+              key={destination.id}
+              href={generateLink(destination)}
+              className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            >
               {destination.image && (
-                <img
-                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
-                  alt={translation?.destination_name}
-                  className="w-full h-40 object-cover"
-                  loading="lazy"
-                />
+                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                  <img
+                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
+                    alt={translation?.destination_name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
               )}
-              <div className="content p-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
                   {translation?.destination_name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {translation?.seo_summary || "Explore this destination"}
-                </p>
+                </h4>
               </div>
-            </div>
-          </Link>
-        );
-      })}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 };

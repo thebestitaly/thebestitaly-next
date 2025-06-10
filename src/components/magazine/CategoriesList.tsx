@@ -54,7 +54,7 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ lang }) => {
         </div>
 
         {/* Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {categories.map(category => {
             const translation = category.translations?.[0];
             if (!translation?.slug_permalink || !translation?.nome_categoria) return null;
@@ -63,23 +63,23 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ lang }) => {
               <Link 
                 key={category.id}
                 href={`/${lang}/magazine/c/${translation.slug_permalink}/`}
-                className="group flex flex-col overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300"
+                className="group flex flex-col overflow-hidden rounded-lg transition-all duration-300"
               >
                 <div className="relative aspect-w-16 aspect-h-12 overflow-hidden">
                   {category.image && (
-                    <div className="relative w-full h-[200px]">
+                    <div className="relative w-full h-[200px] rounded-lg overflow-hidden">
                       <Image 
                         src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${category.image}`}
                         alt={translation.nome_categoria}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg"
                       />
                     </div>
                   )}
                 </div>
-                <div className="p-6 bg-white flex-grow">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <div className="pt-4 pb-2 flex-grow">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
                     {translation.nome_categoria}
                   </h3>
                   {translation.seo_summary && (

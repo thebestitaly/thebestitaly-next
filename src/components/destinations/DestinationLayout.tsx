@@ -10,6 +10,8 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import DestinationSidebar from "@/components/destinations/DestinationSidebar";
 import ArticlesSidebar from "@/components/widgets/ArticlesSidebar";
 import Seo from "@/components/widgets/Seo";
+import TableOfContents from "@/components/widgets/TableOfContents";
+import GoogleMaps from "@/components/widgets/GoogleMaps";
 
 interface DestinationLayoutProps {
   slug: string;
@@ -63,19 +65,22 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
     url: `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/${regionSlug}/${provinceSlug}/${municipalitySlug}`,
   };
 
+  // Contenuto per il Table of Contents - usa il contenuto reale della descrizione
+  const tocContent = translation?.description || "";
+
   return (
     <div className="min-h-screen">
       <Seo title={seoTitle} description={seoDescription} image={seoImage} schema={schema} />
 
       {/* Hero Section */}
-      <div className="relative h-[60vh] min-h-[400px]">
+      <div className="relative h-[60vh] min-h-[400px]" style={{ padding: '40px' }}>
         {destination.image && (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full rounded-2xl overflow-hidden">
             <Image
               src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
               alt={translation?.destination_name || ""}
               fill
-              className="object-cover"
+              className="object-cover rounded-2xl"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               priority
             />
@@ -95,7 +100,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20">
           {/* Content Column */}
           <div className="lg:col-span-2">
             {translation?.seo_summary && (
@@ -104,7 +109,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-lg p-2">
+            <div>
               <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
             </div>
 
@@ -114,28 +119,42 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </article>
             )}
 
+            {/* Google Maps Widget */}
+            {destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
+              <div className="my-8">
+                <GoogleMaps 
+                  lat={destination.lat} 
+                  lng={destination.long} 
+                  name={translation?.destination_name || "Destinazione"} 
+                />
+              </div>
+            )}
+
             <div className="my-8">
               <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
-            </div>
-
-            <div className="my-12">
-              <h2 className="text-2xl font-bold mb-6">Discover more about {translation?.destination_name}</h2>
-              <LatestArticles lang={lang} />
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-          <DestinationSidebar
-            currentDestinationId={destination.id}
-            regionSlug={slugData.regionSlug}
-            provinceSlug={slugData.provinceSlug}
-            currentSlug={translation?.slug_permalink || ""}
-            provinceId={provinceId || undefined}  // Passa solo l'ID della provincia come stringa
-            lang={lang}
-            type={destination.type}
-          />
-            <ArticlesSidebar lang={lang} />
+            {/* Table of Contents - Sticky */}
+            <div className="sticky top-8 z-10 mb-10 shadow-lg">
+              <TableOfContents content={tocContent} />
+            </div>
+            
+            {/* Altri contenuti della sidebar - Scrollabili */}
+            <div className="sticky top-10 mb-10">
+              <DestinationSidebar
+                currentDestinationId={destination.id}
+                regionSlug={slugData.regionSlug}
+                provinceSlug={slugData.provinceSlug}
+                currentSlug={translation?.slug_permalink || ""}
+                provinceId={provinceId || undefined}  // Passa solo l'ID della provincia come stringa
+                lang={lang}
+                type={destination.type}
+              />
+              <ArticlesSidebar lang={lang} />
+            </div>
           </div>
         </div>
       </div>

@@ -98,7 +98,7 @@ const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({
 
   return (
     <div className="my-8">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto">
         <h2 className="text-2xl font-bold mb-6">Experiences in {destinationName}</h2>
         <div ref={containerRef} className="gyg-widget-container"></div>
       </div>
