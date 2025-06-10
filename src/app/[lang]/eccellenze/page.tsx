@@ -22,7 +22,7 @@ export default async function EccellenzePage({ params }: PageProps) {
   const { lang } = await params;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <Suspense fallback={
         <div className="container mx-auto px-4 py-12">
           <div className="text-center">

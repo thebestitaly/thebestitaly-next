@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Play } from 'lucide-react';
-import directusClient from '../../lib/directus';
+import directusClient, { getSlugsAndBreadcrumbs } from '../../lib/directus';
 
 interface FeaturedDestinationsSliderProps {
   className?: string;
@@ -21,7 +21,13 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Handle client-side mounting
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Fetch featured destinations
   const { data: destinations, isLoading, error } = useQuery({
@@ -39,21 +45,42 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
     }
   });
 
+  // Fetch slug data for building correct URLs
+  const { data: slugsData } = useQuery({
+    queryKey: ['featured-destinations-slugs', destinations?.map(d => d.id), lang],
+    queryFn: async () => {
+      if (!destinations?.length) return [];
+      
+      const slugPromises = destinations.map(async (destination) => {
+        const slugData = await getSlugsAndBreadcrumbs(destination.id, lang);
+        return {
+          destinationId: destination.id,
+          ...slugData
+        };
+      });
+      
+      return Promise.all(slugPromises);
+    },
+    enabled: !!destinations?.length
+  });
+
   console.log('📊 Query state - isLoading:', isLoading, 'error:', error, 'destinations:', destinations?.length || 0);
 
-  // Auto-advance slider
+  // Auto-advance slider - only on client
   useEffect(() => {
-    if (!destinations?.length || destinations.length <= 1) return;
+    if (!isMounted || !destinations?.length || destinations.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % destinations.length);
     }, 6000);
 
     return () => clearInterval(interval);
-  }, [destinations?.length]);
+  }, [isMounted, destinations?.length]);
 
-  // Mouse tracking for parallax
+  // Mouse tracking for parallax - only on client
   useEffect(() => {
+    if (!isMounted) return;
+    
     const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -68,7 +95,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
       container.addEventListener('mousemove', handleMouseMove);
       return () => container.removeEventListener('mousemove', handleMouseMove);
     }
-  }, []);
+  }, [isMounted]);
 
   const nextSlide = () => {
     if (!destinations?.length) return;
@@ -88,10 +115,26 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
     }, 300);
   };
 
+  // Helper function to build destination URL
+  const buildDestinationUrl = (destinationId: string) => {
+    const destinationSlugData = slugsData?.find(s => s.destinationId === destinationId);
+    if (!destinationSlugData) return '#';
+    
+    const { regionSlug, provinceSlug, municipalitySlug } = destinationSlugData;
+    
+    // Build the full path based on available slugs
+    let path = '';
+    if (regionSlug) path += `/${regionSlug}`;
+    if (provinceSlug) path += `/${provinceSlug}`;
+    if (municipalitySlug) path += `/${municipalitySlug}`;
+    
+    return `/${lang}${path}/`;
+  };
+
   if (isLoading) {
     console.log('⏳ Showing loading state...');
     return (
-      <div className={`relative h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black ${className}`}>
+      <div className={`relative h-[90vh] bg-gradient-to-br from-gray-900 via-gray-800 to-black ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-32 h-32 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
         </div>
@@ -102,7 +145,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   if (error) {
     console.error('❌ Error in FeaturedDestinationsSlider:', error);
     return (
-      <div className={`relative h-screen bg-red-900 ${className}`}>
+      <div className={`relative h-[90vh] bg-red-900 ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center text-white">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">Error loading destinations</h2>
@@ -116,7 +159,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   if (!destinations?.length) {
     console.log('🚫 No destinations found, returning null');
     return (
-      <div className={`relative h-screen bg-yellow-900 ${className}`}>
+      <div className={`relative h-[90vh] bg-yellow-900 ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center text-white">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">No Featured Destinations</h2>
@@ -135,7 +178,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative h-screen overflow-hidden bg-black mx-[40px] rounded-xl ${className}`}
+      className={`relative h-[90vh] overflow-hidden bg-black mx-[40px] rounded-xl ${className}`}
     >
       {/* Dynamic Background with Parallax */}
       <div className="absolute inset-0">
@@ -146,7 +189,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
               index === currentIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-110'
             }`}
             style={{
-              transform: index === currentIndex 
+              transform: index === currentIndex && isMounted
                 ? `translate(${(mousePosition.x - 0.5) * 20}px, ${(mousePosition.y - 0.5) * 20}px) scale(1.05)`
                 : 'scale(1.1)'
             }}
@@ -162,89 +205,61 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                {/* Right gradient overlay to darken background behind gallery */}
+                <div className="absolute inset-0 bg-gradient-to-l from-black/70 via-transparent to-transparent" />
               </>
             )}
           </div>
         ))}
       </div>
 
-      {/* Desktop: Floating Glass Card */}
-      <div className="hidden lg:block absolute right-8 lg:right-16 top-1/2 -translate-y-1/2 z-20">
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl p-8 max-w-sm shadow-2xl">
-          <div className={`transition-all duration-700 ${isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-            <h3 className="text-2xl font-bold text-white mb-4 leading-tight">
-              {currentTranslation?.destination_name || 'Destination'}
-            </h3>
-            {currentTranslation?.seo_title && (
-              <p className="text-white/80 text-lg mb-4 font-light">
-                {currentTranslation.seo_title}
-              </p>
-            )}
-            {currentTranslation?.seo_summary && (
-              <p className="text-white/70 text-sm leading-relaxed mb-6">
-                {currentTranslation.seo_summary}
-              </p>
-            )}
-            {currentTranslation?.slug_permalink && (
-              <Link
-                href={`/${lang}/${currentTranslation.slug_permalink}/`}
-                className="group inline-flex items-center text-white font-medium hover:text-white/80 transition-all duration-300"
-              >
-                <span className="mr-2">Discover More</span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-10 h-full flex items-center">
+      {/* Main Content - Positioned Lower */}
+      <div className="relative z-10 h-full flex items-end pb-20 lg:pb-32">
         <div className="container mx-auto px-4 lg:px-16">
           <div className="max-w-4xl">
             <div className={`transition-all duration-1000 ${isTransitioning ? 'opacity-0 translate-x-8' : 'opacity-100 translate-x-0'}`}>
               {/* Mobile: Clean minimal text only */}
               <div className="lg:hidden text-center">
-                <div className="text-white/70 text-xs font-medium mb-3 tracking-widest uppercase">
-                  Explore Italy
-                </div>
-                <h1 className="text-4xl sm:text-5xl font-black text-white leading-none mb-2">
+                <h1 className="text-3xl sm:text-4xl font-black text-white leading-none mb-2">
                   {currentTranslation?.destination_name?.split(' ')[0] || 'Italy'}
                 </h1>
                 {currentTranslation?.destination_name?.split(' ')[1] && (
-                  <h2 className="text-2xl sm:text-3xl font-light text-white/90 leading-none">
+                  <h2 className="text-xl sm:text-2xl font-light text-white/90 leading-none mb-4">
                     {currentTranslation.destination_name.split(' ').slice(1).join(' ')}
                   </h2>
                 )}
-                {currentTranslation?.seo_title && (
-                  <p className="text-white/80 text-sm mt-4 font-light max-w-sm mx-auto">
-                    {currentTranslation.seo_title}
+                {currentTranslation?.seo_summary && (
+                  <p className="text-white/80 text-sm font-light max-w-sm mx-auto leading-relaxed">
+                    {currentTranslation.seo_summary}
                   </p>
                 )}
               </div>
 
-              {/* Desktop: Full layout */}
+              {/* Desktop: Full layout with summary - Smaller titles */}
               <div className="hidden lg:block">
-                <div className="text-white/60 text-sm font-medium mb-4 tracking-widest uppercase">
-                  Explore Italy
-                </div>
-                <h1 className="text-6xl lg:text-8xl xl:text-9xl font-black text-white leading-none mb-8">
+                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-none mb-3">
                   {currentTranslation?.destination_name?.split(' ')[0] || 'Italy'}
                 </h1>
                 {currentTranslation?.destination_name?.split(' ')[1] && (
-                  <h2 className="text-4xl lg:text-6xl xl:text-7xl font-light text-white/80 leading-none mb-12 -mt-4">
+                  <h2 className="text-3xl lg:text-4xl xl:text-5xl font-light text-white/80 leading-none mb-6 -mt-1">
                     {currentTranslation.destination_name.split(' ').slice(1).join(' ')}
                   </h2>
                 )}
                 
+                {/* SEO Summary under title */}
+                {currentTranslation?.seo_summary && (
+                  <p className="text-lg text-white/90 font-light max-w-2xl leading-relaxed mb-8">
+                    {currentTranslation.seo_summary}
+                  </p>
+                )}
+                
                 <div className="flex items-center gap-6">
-                  
-                  <button 
-                    onClick={nextSlide}
-                    className="w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300 group"
+                  <Link
+                    href={buildDestinationUrl(currentDestination.id)}
+                    className="group w-14 h-14 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300"
                   >
-                    <ArrowRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
-                  </button>
+                    <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
                 </div>
               </div>
             </div>
@@ -302,29 +317,35 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
           </div>
         </div>
 
-        {/* Side Navigation Thumbnails */}
-        <div className="absolute left-8 top-1/2 -translate-y-1/2 z-20 space-y-4">
-          {destinations.map((destination, index) => (
-            <button
-              key={destination.id}
-              onClick={() => goToSlide(index)}
-              className={`block w-20 h-20 rounded-xl overflow-hidden transition-all duration-500 ${
-                index === currentIndex 
-                  ? 'ring-2 ring-white scale-110' 
-                  : 'opacity-50 hover:opacity-80 scale-100'
-              }`}
-            >
-              {destination.image && (
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
-                  alt={destination.translations?.[0]?.destination_name || ''}
-                  width={80}
-                  height={80}
-                  className="object-cover w-full h-full"
-                />
-              )}
-            </button>
-          ))}
+        {/* Right Side Photo Scroll */}
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20">
+          <div className="flex flex-col gap-3">
+            
+            {destinations.map((destination, index) => (
+              <button
+                key={destination.id}
+                onClick={() => goToSlide(index)}
+                className={`block w-32 h-20 rounded-lg overflow-hidden transition-all duration-500 transform ${
+                  index === currentIndex 
+                    ? 'ring-2 ring-white scale-110 shadow-2xl' 
+                    : 'opacity-60 hover:opacity-90 scale-100 hover:scale-105'
+                }`}
+              >
+                {destination.image && (
+                  <Image
+                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
+                    alt={destination.translations?.[0]?.destination_name || ''}
+                    width={128}
+                    height={80}
+                    className="object-cover w-full h-full"
+                  />
+                )}
+                <div className={`absolute inset-0 bg-black/20 transition-opacity ${
+                  index === currentIndex ? 'opacity-0' : 'opacity-40'
+                }`} />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -36,6 +36,15 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, lang }) => {
           </div>
         )}
         <div className="pt-4 pb-2">
+          {/* Category Badge */}
+          {article.category_id && (
+            <div className="mb-2">
+              <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                {article.category_id.translations?.[0]?.nome_categoria || 'Categoria'}
+              </span>
+            </div>
+          )}
+          
           <h3 className="text-xl font-semibold mb-3 group-hover:text-blue-600">
             {translation?.titolo_articolo}
           </h3>

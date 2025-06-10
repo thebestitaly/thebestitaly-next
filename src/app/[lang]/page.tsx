@@ -34,8 +34,11 @@ export default async function Home({ params }: PageProps) {
     <div>
       <Suspense fallback={<div>Loading...</div>}>
         <FeaturedDestinationsSlider />
+        <div className="container mx-auto px-4 py-12">
+          <ProjectIntro />
+        </div>
+
         <HomepageDestinationsCarousel lang={lang} />
-        
         {/* Sezione Eccellenze/Companies */}
         <div className="py-12">
           <FeaturedCompaniesSlider />
@@ -48,9 +51,7 @@ export default async function Home({ params }: PageProps) {
           <h2 className="text-3xl font-bold mb-8 text-center">Latest Articles</h2>
           <LatestArticles lang={lang} />
         </div>
-        <div className="container mx-auto px-4 py-12">
-          <ProjectIntro />
-        </div>
+        
         <BookExperience />
         <div className="bg-gray-50 py-12">
           <div className="container mx-auto px-4">

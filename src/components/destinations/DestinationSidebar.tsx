@@ -91,8 +91,8 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
   };
 
   return (
-    <div >
-      <h3 className="text-lg font-bold mb-4">
+    <div className="mb-8">
+      <h3 className="text-lg font-bold mb-8 ">
         {type === "region" ? "Province" : type === "province" ? "Comuni" : "Altri Comuni"}
       </h3>
 

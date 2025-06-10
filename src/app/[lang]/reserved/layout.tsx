@@ -1,7 +1,49 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+import AuthLoader from '@/components/auth/AuthLoader';
 
 export default function ReservedLayout({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, logout } = useAuth();
+
+  // Temporary debugging
+  console.log('ReservedLayout - isLoading:', isLoading);
+  console.log('ReservedLayout - user:', user);
+  console.log('ReservedLayout - document.cookie:', typeof document !== 'undefined' ? document.cookie : 'undefined');
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return <AuthLoader />;
+  }
+
+  // If not authenticated, show minimal layout with debug info
+  if (!user) {
+    return (
+      <div>
+        <div className="bg-red-100 border border-red-300 p-4 m-4 rounded">
+          <h3 className="text-red-800 font-bold">Debug Info - No User Detected</h3>
+          <p className="text-red-700">
+            User: {user ? 'Found' : 'Not found'}<br/>
+            Loading: {isLoading ? 'True' : 'False'}<br/>
+            Cookies: {typeof document !== 'undefined' ? document.cookie : 'N/A'}
+          </p>
+          <button 
+            onClick={() => {
+              console.log('Manual cookie check:', document.cookie);
+              window.location.href = '/it/reserved/login';
+            }}
+            className="bg-red-500 text-white px-4 py-2 rounded mt-2"
+          >
+            Go to Login
+          </button>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header Area Riservata */}
@@ -27,26 +69,59 @@ export default function ReservedLayout({ children }: { children: React.ReactNode
               </div>
             </div>
             
-            {/* Navigation Links */}
+            {/* User Info & Navigation */}
             <div className="flex items-center space-x-6">
-              <Link 
-                href="/it/reserved" 
-                className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
-              >
-                📚 Articoli
-              </Link>
-              <Link 
-                href="/it/reserved/create" 
-                className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
-              >
-                ✏️ Nuovo
-              </Link>
-              <Link 
-                href="/it/reserved/widgets" 
-                className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
-              >
-                🔧 Widget
-              </Link>
+              {isLoading ? (
+                <div className="animate-pulse h-8 w-32 bg-gray-200 rounded"></div>
+              ) : user ? (
+                <>
+                  {/* Navigation Links */}
+                  <Link 
+                    href="/it/reserved" 
+                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
+                  >
+                    📚 Articoli
+                  </Link>
+                  <Link 
+                    href="/it/reserved/create" 
+                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
+                  >
+                    ✏️ Nuovo
+                  </Link>
+                  <Link 
+                    href="/it/reserved/widgets" 
+                    className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
+                  >
+                    🔧 Widget
+                  </Link>
+                  
+                  {/* User dropdown */}
+                  <div className="flex items-center space-x-3 border-l border-gray-300 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">
+                          {user.first_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-900">
+                          {user.first_name} {user.last_name}
+                        </div>
+                        <div className="text-gray-500">{user.email}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={logout}
+                      className="text-gray-500 hover:text-red-600 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50"
+                      title="Logout"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
         </div>

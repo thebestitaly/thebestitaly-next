@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import directusClient, { getTranslations } from '@/lib/directus';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import Seo from '@/components/widgets/Seo';
+import Image from 'next/image';
 const ExperienceHeroImage = '/images/experience.webp';
 
 const CITIES = [
@@ -71,7 +72,7 @@ const ExperiencePage: React.FC = () => {
   }, []);
 
   return (
-    <>
+    <div className="min-h-screen">
       <Seo
         title={`${menuTranslations?.experience || 'Italian Experiences'} | TheBestItaly`}
         description={menuTranslations?.experience_sub || ''}
@@ -80,28 +81,32 @@ const ExperiencePage: React.FC = () => {
         schema={experienceSchema}
       />
 
-      <div className="min-h-screen">
-        {/* Hero Section */}
-        <div className="relative h-[40vh] min-h-[400px] bg-gray-900">
-          <div className="absolute inset-0">
-            <img
-              src={ExperienceHeroImage}
-              alt={menuTranslations?.experience}
-              className="w-full h-full object-cover opacity-50"
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"></div>
-          <div className="relative h-full flex items-center">
-            <div className="container mx-auto px-4">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+      {/* Hero Section */}
+      <div className="relative h-80 lg:h-[500px]">
+        <div className="absolute inset-0 m-10">
+          <Image
+            src={ExperienceHeroImage}
+            alt={menuTranslations?.experience || 'Italian Experiences'}
+            fill
+            className="object-cover rounded-2xl"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+          
+        </div>
+        <div className="relative z-10 h-full flex items-end">
+            <div className="container mx-auto px-4 pb-12">
+              <div className="max-w-4xl">
+                <h1 className="text-3xl lg:text-5xl font-black text-white leading-none mb-4">
                 {menuTranslations?.experience || 'Discover Italian Experiences'}
               </h1>
-              <p className="text-xl text-white/90 max-w-2xl">
+              <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
                 {menuTranslations?.experience_sub || 'Find and book the best tours, activities, and experiences across Italy'}
               </p>
             </div>
-          </div>
+          </div>        
         </div>
+      </div>
 
         <Breadcrumb />
 
@@ -132,7 +137,6 @@ const ExperiencePage: React.FC = () => {
           </div>
         </div>
       </div>
-    </>
   );
 };
 

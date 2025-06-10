@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import directusClient from "@/lib/directus";
 import Seo from "@/components/widgets/Seo";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 import Image from "next/image";
 
 const MagazineListPage: React.FC = () => {
@@ -87,26 +88,36 @@ const MagazineListPage: React.FC = () => {
       />
 
       {/* Hero Section */}
-      <div className="relative h-[40vh] min-h-[400px]">
-        <Image
-          src="/images/magazine.webp"
-          alt={magazineTranslation?.seo_title || "Magazine"}
-          layout="fill"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50 flex items-center">
-          <div className="container mx-auto px-4">
-            <h1 className="text-5xl font-bold text-white">
-              {magazineTranslation?.nome_categoria || "Magazine"}
-            </h1>
-            {magazineTranslation?.seo_summary && (
-              <p className="text-xl text-white/90 mt-4 max-w-2xl">
-                {magazineTranslation.seo_summary}
-              </p>
-            )}
-          </div>
+      <div className="relative h-80 lg:h-[500px]">
+        <div className="absolute inset-0 m-10">
+          <Image
+            src="/images/magazine.webp"
+            alt={magazineTranslation?.seo_title || "Magazine"}
+            fill
+            className="object-cover rounded-2xl"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+          
+        </div>
+        <div className="relative z-10 h-full flex items-end">
+            <div className="container mx-auto px-4 pb-12">
+              <div className="max-w-4xl">
+                <h1 className="text-3xl lg:text-5xl font-black text-white leading-none mb-4">
+                {magazineTranslation?.nome_categoria || "Magazine"}
+              </h1>
+              {magazineTranslation?.seo_summary && (
+                <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+                  {magazineTranslation.seo_summary}
+                </p>
+              )}
+            </div>
+          </div>        
         </div>
       </div>
+
+      {/* Breadcrumb */}
+      <Breadcrumb />
 
       {/* Categories and Articles */}
       <div className="py-16">

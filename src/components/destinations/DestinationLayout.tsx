@@ -153,7 +153,6 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Table of Contents - Sticky */}
             <div className="sticky top-16 z-10 mb-10">
               <TableOfContents content={tocContent} />
-              <ArticlesSidebar lang={lang} />
               <DestinationSidebar
                 currentDestinationId={destination.id}
                 regionSlug={slugData.regionSlug}
@@ -163,7 +162,8 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                 lang={lang}
                 type={destination.type}
               />
-             
+             <ArticlesSidebar lang={lang} />
+              
             </div>
           </div>
         </div>

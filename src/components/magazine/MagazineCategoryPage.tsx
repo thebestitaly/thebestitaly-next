@@ -73,8 +73,7 @@ const MagazineCategoryPage: React.FC = () => {
         type="website"
         schema={categorySchema}
       />
-
-      <div className="relative h-[40vh] min-h-[400px]">
+      <div className="relative h-96 lg:h-[500px]">
         {categoryInfo?.image && (
           <div className="absolute inset-0 m-10">
             <Image
@@ -87,18 +86,18 @@ const MagazineCategoryPage: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
           </div>
         )}
-         <div className="relative z-10 h-full flex items-end">
-            <div className="container mx-auto px-4 pb-12">             
-              <div className="max-w-4xl">
+        <div className="relative z-10 h-full flex items-end">
+          <div className="container mx-auto px-4 pb-12">             
+            <div className="max-w-4xl">
               <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
-              {categoryTranslation?.nome_categoria}
-            </h1>
-            <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
-              {categoryTranslation?.seo_summary}
-            </p>
-          </div>
+                {categoryTranslation?.nome_categoria}
+              </h1>
+              <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+                {categoryTranslation?.seo_summary}
+              </p>
+            </div>
+          </div>        
         </div>
-      </div>
       </div>
 
       <Breadcrumb />

@@ -32,9 +32,9 @@ export default function EditCompanyPage() {
     
     const fetchCompany = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/companies?filter[id][_eq]=${id}&fields=id,company_name,website,email,phone,active,featured_image,translations.*&deep[translations][_filter][languages_code][_eq]=it`, {
+        // Use proxy API to avoid CORS issues
+        const response = await fetch(`/api/directus/items/companies?filter[id][_eq]=${id}&fields=id,company_name,website,email,phone,active,featured_image,translations.*&deep[translations][_filter][languages_code][_eq]=it`, {
           headers: {
-            'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
             'Content-Type': 'application/json',
           },
         });
@@ -66,12 +66,12 @@ export default function EditCompanyPage() {
 
           // Imposta preview immagine esistente
           if (companyData.featured_image) {
-            setImagePreview(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${companyData.featured_image}`);
+            setImagePreview(`/api/directus/assets/${companyData.featured_image}`);
           }
         }
       } catch (error) {
         console.error('Errore nel caricamento company:', error);
-        alert('❌ Errore nel caricamento della company');
+        alert(`❌ Errore nel caricamento della company: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
       } finally {
         setIsLoading(false);
       }
@@ -127,11 +127,8 @@ export default function EditCompanyPage() {
         const formDataImage = new FormData();
         formDataImage.append('file', selectedImage);
         
-        const uploadResult = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/files`, {
+        const uploadResult = await fetch(`/api/directus/files`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-          },
           body: formDataImage,
         });
 
@@ -157,10 +154,9 @@ export default function EditCompanyPage() {
         companyData.featured_image = imageId;
       }
 
-      const updateResult = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/companies/${company.id}`, {
+      const updateResult = await fetch(`/api/directus/items/companies/${company.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(companyData),
@@ -175,10 +171,9 @@ export default function EditCompanyPage() {
       // Aggiorna la traduzione italiana
       const italianTranslation = company.translations?.[0];
       if (italianTranslation) {
-        const updateTranslationResult = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/companies_translations/${italianTranslation.id}`, {
+        const updateTranslationResult = await fetch(`/api/directus/items/companies_translations/${italianTranslation.id}`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({

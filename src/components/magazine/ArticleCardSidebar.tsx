@@ -39,6 +39,15 @@ const ArticleCardSidebar: React.FC<ArticleCardSidebarProps> = ({ article, lang }
             </div>
           )}
           <div className="content pt-4 pb-2">
+            {/* Category Badge */}
+            {article.category_id && (
+              <div className="mb-2">
+                <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  {article.category_id.translations?.[0]?.nome_categoria}
+                </span>
+              </div>
+            )}
+            
             <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-3">
               {translation.titolo_articolo}
             </h3>

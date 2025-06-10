@@ -89,7 +89,7 @@ export interface Article {
   image?: string;
   date_created: string;
   featured_status: 'none' | 'homepage' | 'top' | 'editor' | 'trending';
-  category?: {
+  category_id?: {
     id: number;
     translations: {
       nome_categoria: string;
@@ -450,9 +450,9 @@ class DirectusClient {
           'fields': [
             'id',
             'image',
+            'category_id.id',
+            'category_id.translations.nome_categoria',
             'date_created',
-            'category.id',
-            'category.translations.nome_categoria',
             'translations.titolo_articolo',
             'translations.description',
             'translations.seo_summary'
@@ -577,7 +577,8 @@ class DirectusClient {
         fields: [
           "id",
           "image",
-          "category_id",
+          "category_id.id",
+          "category_id.translations.nome_categoria",
           "date_created",
           "featured_status",
           "translations.titolo_articolo",
@@ -589,6 +590,13 @@ class DirectusClient {
             _filter: {
               languages_code: {
                 _eq: languageCode, // Fallback dinamico
+              },
+            },
+          },
+          'category_id.translations': {
+            _filter: {
+              languages_code: {
+                _eq: languageCode,
               },
             },
           },
@@ -796,6 +804,8 @@ class DirectusClient {
           'fields[]': [
             'id',
             'image',
+            'category_id.id',
+            'category_id.translations.nome_categoria',
             'date_created',
             'translations.titolo_articolo',
             'translations.description',
@@ -1203,9 +1213,9 @@ export const fetchArticleBySlug = async (slug: string, languageCode: string) => 
         'fields[]': [
           'id',
           'image',
+          'category_id.id',
+          'category_id.translations.nome_categoria',
           'date_created',
-          'category.id',
-          'category.translations.nome_categoria',
           'translations.titolo_articolo',
           'translations.description',
           'translations.seo_summary',

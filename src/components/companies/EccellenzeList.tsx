@@ -3,7 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Phone, Mail, Globe } from 'lucide-react';
+import Breadcrumb from '../layout/Breadcrumb';
 import directusClient from '../../lib/directus';
 
 interface EccellenzeListProps {
@@ -24,12 +24,51 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
     }
   });
 
+  // Fetch categories
+  const { data: categories } = useQuery({
+    queryKey: ['company-categories', lang],
+    queryFn: () => directusClient.getCompanyCategories(lang)
+  });
+
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Caricamento eccellenze italiane...</p>
+      <div className="min-h-screen bg-white">
+        {/* Hero Section */}
+        <div className="relative h-96 lg:h-[500px]">
+          <div className="absolute inset-0 m-10">
+            <Image
+              src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
+              alt="Eccellenze Italiane"
+              fill
+              className="object-cover rounded-2xl"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+          </div>
+          <div className="relative z-10 h-full flex items-end">
+            <div className="container mx-auto px-4 pb-12">             
+              <div className="max-w-4xl">
+                <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
+                  🏆 Eccellenze
+                </h1>
+                <h2 className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+                  Le Migliori Esperienze Italiane
+                </h2>
+                <p className="text-lg text-white/80 max-w-3xl leading-relaxed">
+                  Scopri una selezione curata delle migliori eccellenze italiane: 
+                  hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche 
+                  che rendono l'Italia un paese straordinario.
+                </p>
+              </div>
+            </div>        
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Caricamento eccellenze italiane...</p>
+          </div>
         </div>
       </div>
     );
@@ -58,112 +97,91 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-amber-900 via-amber-800 to-orange-900 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl lg:text-7xl font-black mb-6">
-            🏆 Eccellenze
-          </h1>
-          <h2 className="text-2xl lg:text-3xl font-light mb-8 opacity-90">
-            Le Migliori Esperienze Italiane
-          </h2>
-          <p className="text-xl max-w-3xl mx-auto opacity-80 leading-relaxed">
-            Scopri una selezione curata delle migliori eccellenze italiane: 
-            hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche 
-            che rendono l'Italia un paese straordinario.
-          </p>
+      <div className="relative h-96 lg:h-[500px]">
+        <div className="absolute inset-0 m-10">
+          <Image
+            src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
+            alt="Eccellenze Italiane"
+            fill
+            className="object-cover rounded-2xl"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
+        </div>
+        <div className="relative z-10 h-full flex items-end">
+          <div className="container mx-auto px-4 pb-12">             
+            <div className="max-w-4xl">
+              <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
+                🏆 Eccellenze
+              </h1>
+              <h2 className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
+                Le Migliori Esperienze Italiane
+              </h2>
+              <p className="text-lg text-white/80 max-w-3xl leading-relaxed">
+                Scopri una selezione curata delle migliori eccellenze italiane: 
+                hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche 
+                che rendono l'Italia un paese straordinario.
+              </p>
+            </div>
+          </div>        
         </div>
       </div>
 
+      {/* Breadcrumb */}
+      <Breadcrumb />
+
       {/* Companies Grid */}
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {companies.map((company: any) => {
             const translation = company.translations?.[0];
+            const category = categories?.find((cat: any) => cat.id === company.category_id);
+            const categoryName = category?.translations?.[0]?.nome_categoria;
+            
             return (
-              <div
-                key={company.id}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
-              >
+              <div key={company.id} className="group">
+                {/* Category Tag */}
+                {categoryName && (
+                  <div className="mb-4">
+                    <span className="inline-block bg-amber-100 text-amber-800 text-sm font-semibold px-4 py-2 rounded-full">
+                      {categoryName}
+                    </span>
+                  </div>
+                )}
+                
                 {/* Company Image */}
-                <div className="relative h-64 bg-gradient-to-br from-amber-100 to-amber-200">
-                  {company.featured_image ? (
-                    <Image
-                      src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
-                      alt={company.company_name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-6xl">
-                      🏢
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  
-                  {/* Company Name Overlay */}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-white text-xl font-bold leading-tight">
-                      {company.company_name}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Company Details */}
-                <div className="p-6">
-                  {/* SEO Title */}
-                  {translation?.seo_title && (
-                    <p className="text-amber-600 font-medium mb-3">
-                      {translation.seo_title}
-                    </p>
-                  )}
-
-                  {/* Description */}
-                  {translation?.seo_summary && (
-                    <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
-                      {translation.seo_summary}
-                    </p>
-                  )}
-
-                  {/* Contact Info */}
-                  <div className="space-y-2 mb-6">
-                    {company.website && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Globe className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">{company.website.replace(/^https?:\/\//, '')}</span>
-                      </div>
-                    )}
-                    {company.email && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">{company.email}</span>
-                      </div>
-                    )}
-                    {company.phone && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span>{company.phone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-3">
-                    {company.slug_permalink ? (
-                      <Link
-                        href={`/${lang}/eccellenze/${company.slug_permalink}/`}
-                        className="flex-1 bg-amber-600 text-white text-center py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors duration-200 font-medium"
-                      >
-                        Scopri di più
-                      </Link>
+                <div className="relative aspect-[4/3] mb-8 overflow-hidden rounded-2xl">
+                  <Link href={company.slug_permalink ? `/${lang}/eccellenze/${company.slug_permalink}/` : '#'}>
+                    {company.featured_image ? (
+                      <Image
+                        src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
+                        alt={company.company_name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     ) : (
-                      <div className="flex-1 bg-gray-400 text-white text-center py-2 px-4 rounded-lg font-medium cursor-not-allowed">
-                        Link non disponibile
+                      <div className="w-full h-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-8xl">
+                        🏢
                       </div>
                     )}
-                  </div>
+                  </Link>
                 </div>
+
+                {/* Company Name */}
+                <Link href={company.slug_permalink ? `/${lang}/eccellenze/${company.slug_permalink}/` : '#'}>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-amber-600 transition-colors duration-200 leading-tight">
+                    {company.company_name}
+                  </h3>
+                </Link>
+
+                {/* SEO Title */}
+                {translation?.seo_title && (
+                  <p className="text-amber-600 font-medium text-lg">
+                    {translation.seo_title}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -171,7 +189,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
 
         {/* CTA Section */}
         <div className="mt-16 text-center">
-          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               Vuoi promuovere la tua eccellenza?
             </h3>
