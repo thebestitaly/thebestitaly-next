@@ -35,7 +35,6 @@ export const metadata: Metadata = {
     description: 'Discover the best destinations, experiences, accommodations and hidden gems in Italy.',
   },
   alternates: {
-    canonical: 'https://thebestitaly.it',
     languages: {
       'it': 'https://thebestitaly.it/it',
       'en': 'https://thebestitaly.it/en',

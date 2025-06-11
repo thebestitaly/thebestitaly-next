@@ -1,32 +1,49 @@
 // app/[lang]/[region]/[province]/page.tsx
 
-import { generateMetadata as generateSEO } from "@/components/widgets/seo-utils";
+import { generateMetadata as generateSEO, generateCanonicalUrl } from "@/components/widgets/seo-utils";
 import { getTranslations } from "@/lib/directus";
 import DestinationLayout from "@/components/destinations/DestinationLayout";
+import directusClient from '@/lib/directus';
 
 // Genera i metadati lato server (opzionale)
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ lang: string; province: string }>;
+  params: Promise<{ lang: string; region: string; province: string }>;
 }) {
-  const { lang, province } = await params;
+  const { lang, region, province } = await params;
 
   try {
-    // Esempio: recupero traduzioni dal Directus
-    const provinceTranslations = await getTranslations(lang, province);
+    // Try to get province data from Directus
+    let destination;
+    try {
+      destination = await directusClient.getDestinationBySlug(province, lang);
+    } catch (error) {
+      console.log('Could not fetch destination, using fallback metadata');
+    }
+    
+    const translation = destination?.translations?.[0];
+    
+    // Generate proper canonical URL for this province page using helper
+    const canonicalUrl = generateCanonicalUrl(lang, [region, province]);
 
     return generateSEO({
-      title: `${provinceTranslations?.seo_title || province} | TheBestItaly`,
-      description: provinceTranslations?.seo_summary || "",
+      title: `${translation?.seo_title || translation?.destination_name || province} | TheBestItaly`,
+      description: translation?.seo_summary || `Discover ${translation?.destination_name || province} - the best destinations and experiences in Italy.`,
       type: "website",
+      canonicalUrl,
     });
   } catch (error) {
     console.error("Error generating metadata:", error);
+    
+    // Generate proper canonical URL even for fallback using helper
+    const canonicalUrl = generateCanonicalUrl(lang, [region, province]);
+    
     return generateSEO({
-      title: `TheBestItaly`,
-      description: "",
+      title: `${province} | TheBestItaly`,
+      description: `Discover the best destinations and experiences in ${province}, Italy.`,
       type: "website",
+      canonicalUrl,
     });
   }
 }

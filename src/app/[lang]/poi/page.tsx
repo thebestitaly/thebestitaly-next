@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getTranslations } from '@/lib/directus';
 import EccellenzeList from '../../../components/companies/EccellenzeList';
-import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
+import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 
 interface PageProps {
   params: Promise<{ lang: string }>;
@@ -10,11 +10,15 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
+  
+  // Generate proper canonical URL for this page using helper
+  const canonicalUrl = generateCanonicalUrl(lang, ['poi']);
 
   return generateSEO({
     title: `Eccellenze Italiane | TheBestItaly`,
     description: 'Scopri le migliori eccellenze italiane: hotel di lusso, ristoranti stellati, esperienze uniche e attività imperdibili in Italia.',
     type: 'website',
+    canonicalUrl,
   });
 }
 

@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { ExternalLink, Phone, Mail, Globe, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import directusClient from '../../../../lib/directus';
-import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
+import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 import CompanyDestinationBox from '@/components/destinations/CompanyDestinationBox';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import LatestArticles from '@/components/magazine/LatestArticles';
+import GoogleMaps from '@/components/widgets/GoogleMaps';
 
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
@@ -29,10 +30,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const translation = company.translations?.[0];
     
+    // Generate proper canonical URL for this POI page
+    const canonicalUrl = generateCanonicalUrl(lang, ['poi', slug]);
+    
     return generateSEO({
       title: `${translation?.seo_title || company.company_name} | TheBestItaly`,
       description: translation?.seo_summary || `Scopri ${company.company_name}, una delle eccellenze italiane selezionate da TheBestItaly.`,
       type: 'article',
+      canonicalUrl,
     });
   } catch (error) {
     console.error('Error generating metadata:', error);
@@ -54,6 +59,16 @@ export default async function CompanyPage({ params }: PageProps) {
     }
 
     const translation = company.translations?.[0];
+    
+    // Get destination coordinates for the map
+    let destination = null;
+    if (company.destination_id) {
+      try {
+        destination = await directusClient.getDestinationById(company.destination_id.toString(), lang);
+      } catch (error) {
+        console.error('Error fetching destination for map:', error);
+      }
+    }
 
     return (
       <div className="min-h-screen">
@@ -223,6 +238,18 @@ export default async function CompanyPage({ params }: PageProps) {
                   Richiedi Informazioni
                 </Link>
               </div>
+
+              {/* Google Maps */}
+              {destination && destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
+                <div className="rounded-2xl p-6">
+                  <GoogleMaps 
+                    lat={destination.lat} 
+                    lng={destination.long} 
+                    name={company.company_name}
+                    height="300px"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

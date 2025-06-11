@@ -56,8 +56,8 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
     }
   }, [lang, i18n]);
 
-  // Language options
-  const languages = [
+  // Language options for desktop (only main ones)
+  const mainLanguages = [
     { code: 'it', name: 'Italiano', flag: 'it' },
     { code: 'en', name: 'English', flag: 'gb' },
     { code: 'fr', name: 'Français', flag: 'fr' },
@@ -65,6 +65,59 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
     { code: 'pt', name: 'Português', flag: 'pt' },
     { code: 'de', name: 'Deutsch', flag: 'de' },
     { code: 'tr', name: 'Türkçe', flag: 'tr' }
+  ];
+
+  // All 50+ languages for mobile modal
+  const allLanguages = [
+    { code: 'it', name: 'Italiano', flag: 'it' },
+    { code: 'en', name: 'English', flag: 'gb' },
+    { code: 'fr', name: 'Français', flag: 'fr' },
+    { code: 'es', name: 'Español', flag: 'es' },
+    { code: 'pt', name: 'Português', flag: 'pt' },
+    { code: 'de', name: 'Deutsch', flag: 'de' },
+    { code: 'tr', name: 'Türkçe', flag: 'tr' },
+    { code: 'nl', name: 'Nederlands', flag: 'nl' },
+    { code: 'ro', name: 'Română', flag: 'ro' },
+    { code: 'sv', name: 'Svenska', flag: 'se' },
+    { code: 'pl', name: 'Polski', flag: 'pl' },
+    { code: 'vi', name: 'Tiếng Việt', flag: 'vn' },
+    { code: 'id', name: 'Bahasa Indonesia', flag: 'id' },
+    { code: 'el', name: 'Ελληνικά', flag: 'gr' },
+    { code: 'uk', name: 'Українська', flag: 'ua' },
+    { code: 'ru', name: 'Русский', flag: 'ru' },
+    { code: 'bn', name: 'বাংলা', flag: 'bd' },
+    { code: 'zh', name: '中文 (简体)', flag: 'cn' },
+    { code: 'hi', name: 'हिन्दी', flag: 'in' },
+    { code: 'ar', name: 'العربية', flag: 'sa' },
+    { code: 'fa', name: 'فارسی', flag: 'ir' },
+    { code: 'ur', name: 'اردو', flag: 'pk' },
+    { code: 'ja', name: '日本語', flag: 'jp' },
+    { code: 'ko', name: '한국어', flag: 'kr' },
+    { code: 'am', name: 'አማርኛ', flag: 'et' },
+    { code: 'cs', name: 'Čeština', flag: 'cz' },
+    { code: 'da', name: 'Dansk', flag: 'dk' },
+    { code: 'fi', name: 'Suomi', flag: 'fi' },
+    { code: 'af', name: 'Afrikaans', flag: 'za' },
+    { code: 'hr', name: 'Hrvatski', flag: 'hr' },
+    { code: 'bg', name: 'Български', flag: 'bg' },
+    { code: 'sk', name: 'Slovenčina', flag: 'sk' },
+    { code: 'sl', name: 'Slovenščina', flag: 'si' },
+    { code: 'sr', name: 'Српски', flag: 'rs' },
+    { code: 'th', name: 'ไทย', flag: 'th' },
+    { code: 'ms', name: 'Bahasa Melayu', flag: 'my' },
+    { code: 'tl', name: 'Filipino', flag: 'ph' },
+    { code: 'he', name: 'עברית', flag: 'il' },
+    { code: 'ca', name: 'Català', flag: 'ad' },
+    { code: 'et', name: 'Eesti', flag: 'ee' },
+    { code: 'lv', name: 'Latviešu', flag: 'lv' },
+    { code: 'lt', name: 'Lietuvių', flag: 'lt' },
+    { code: 'mk', name: 'Македонски', flag: 'mk' },
+    { code: 'az', name: 'Azərbaycan', flag: 'az' },
+    { code: 'ka', name: 'ქართული', flag: 'ge' },
+    { code: 'hy', name: 'Հայերեն', flag: 'am' },
+    { code: 'is', name: 'Íslenska', flag: 'is' },
+    { code: 'sw', name: 'Kiswahili', flag: 'ke' },
+    { code: 'zh-tw', name: '中文 (繁體)', flag: 'tw' }
   ];
 
   const handleLanguageChange = (newLang: string) => {
@@ -87,10 +140,10 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
             <Image
               src="/images/logo-black.webp"
               alt={`The Best Italy ${lang}`}
-              width={96}
-              height={64}
-              style={{ width: "96px", height: "64px" }}
-              className="w-12 h-12"
+              width={105}
+              height={60}
+              style={{ width: "105px", height: "60px" }}
+              className="h-10 w-auto"
               priority
             />
             </Link>
@@ -248,11 +301,11 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
               </div>
 
               
-              {/* Language Selector */}
+              {/* Language Selector - Desktop: Link to footer */}
               <div className="h-full flex items-center px-6">
-                <button
-                  className="flex items-center space-x-2"
-                  onClick={() => setIsLanguageModalOpen(true)}
+                <a
+                  href="#languages"
+                  className="flex items-center space-x-2 hover:text-blue-600 transition-colors"
                 >
                   <Image
                     src={`/images/flags/${lang === 'en' ? 'gb' : lang}.svg`}
@@ -264,7 +317,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   <span className={`ml-2 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}>
                     {lang.toUpperCase()}
                   </span>
-                </button>
+                </a>
               </div>
             </nav>
 
@@ -281,13 +334,12 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   <Image
                     src="/images/logo-black.webp"
                     alt={`The Best Italy ${lang}`}
-                    width={48}
-                    height={48}
-                    style={{ width: "48px", height: "48px" }}
-                    className="w-12 h-12"
+                    width={70}
+                    height={40}
+                    style={{ width: "70px", height: "40px" }}
+                    className="h-10 w-auto"
                     priority
                   />
-
                   </Link>
                   <div className="flex items-center space-x-4">
                     <button
@@ -440,7 +492,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
           >
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">Scegli la lingua</h3>
+                <h3 className="text-xl font-bold">Scegli la lingua ({allLanguages.length} disponibili)</h3>
                 <button
                   onClick={() => setIsLanguageModalOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -450,7 +502,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
               </div>
               
               <div className="space-y-2">
-                {languages.map((language) => (
+                {allLanguages.map((language: { code: string; name: string; flag: string }) => (
                   <button
                     key={language.code}
                     onClick={() => handleLanguageChange(language.code)}

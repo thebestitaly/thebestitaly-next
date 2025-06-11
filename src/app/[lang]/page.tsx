@@ -10,7 +10,7 @@ import LatestArticles from '../../components/magazine/LatestArticles';
 import CategoriesList from '../../components/magazine/CategoriesList';
 import ProjectIntro from '../../components/home/ProjectIntro';
 import BookExperience from '../../components/home/BookExperience';
-import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
+import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 
 interface PageProps {
   params: Promise<{ lang: string }>;
@@ -19,11 +19,15 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
   const homeTranslations = await getTranslations(lang, 'homepage');
+  
+  // Generate proper canonical URL for this page using helper
+  const canonicalUrl = generateCanonicalUrl(lang);
 
   return generateSEO({
     title: `${homeTranslations?.seo_title || 'TheBestItaly'} | TheBestItaly`,
     description: homeTranslations?.seo_summary || '',
     type: 'website',
+    canonicalUrl,
   });
 }
 

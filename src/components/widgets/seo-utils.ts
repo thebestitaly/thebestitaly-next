@@ -6,6 +6,7 @@ interface SEOProps {
   description: string;
   image?: string;
   type?: 'website' | 'article';
+  canonicalUrl?: string;
   article?: {
     publishedTime: string;
     modifiedTime?: string;
@@ -15,12 +16,25 @@ interface SEOProps {
   schema?: object;
 }
 
+// Helper function to generate canonical URLs consistently
+export function generateCanonicalUrl(lang: string, path?: string[]): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.it';
+  
+  if (!path || path.length === 0) {
+    return `${baseUrl}/${lang}`;
+  }
+  
+  const cleanPath = path.filter(segment => segment && segment.trim() !== '').join('/');
+  return `${baseUrl}/${lang}/${cleanPath}`;
+}
+
 // Funzione per generare i metadati lato server
 export function generateMetadata({
   title,
   description,
   image,
   type = 'website',
+  canonicalUrl,
   article,
   schema,
 }: SEOProps): Metadata {
@@ -43,7 +57,7 @@ export function generateMetadata({
           alt: title,
         },
       ],
-      url: siteUrl,
+      url: canonicalUrl || siteUrl,
     },
     twitter: {
       card: 'summary_large_image',
@@ -52,7 +66,7 @@ export function generateMetadata({
       images: [finalImage],
     },
     alternates: {
-      canonical: siteUrl,
+      canonical: canonicalUrl,
     },
   };
 
