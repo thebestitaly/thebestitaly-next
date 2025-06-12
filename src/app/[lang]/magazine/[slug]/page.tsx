@@ -232,7 +232,7 @@ export default function MagazineArticlePage({ params }: PageProps) {
                     img: ({ node, ...props }) => (
                       <div className="relative w-full h-64 md:h-96">
                         <Image
-                          src={props.src || ''}
+                          src={typeof props.src === 'string' ? props.src : ''}
                           alt={props.alt || ''}
                           fill
                           className="object-cover rounded-lg"
