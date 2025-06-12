@@ -32,7 +32,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
             Mappa di {name}
           </h3>
         </div>
-        <div className="p-8 text-center text-gray-500">
+        <div className="p-8 text-center text-gray-900">
           <MapPin className="mx-auto mb-2 text-gray-300" size={40} />
           <p>Coordinate non disponibili per questa destinazione</p>
         </div>
@@ -69,7 +69,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
         />
       </div>
       
-      <div className="p-2 bg-gray-50 text-xs text-gray-500 text-center">
+      <div className="p-2 bg-gray-50 text-xs text-gray-900 text-center">
         <div className="flex items-center justify-center gap-4">
           <span>Coordinate: {numLat.toFixed(6)}, {numLng.toFixed(6)}</span>
           <a 

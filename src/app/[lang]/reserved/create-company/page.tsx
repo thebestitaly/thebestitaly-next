@@ -270,7 +270,7 @@ export default function CreateCompanyPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                  className="block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                 />
                 {imagePreview && (
                   <img 
@@ -342,7 +342,7 @@ export default function CreateCompanyPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="url-della-company"
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-900 mt-1">
                 URL finale: /poi/{formData.slug_permalink}
               </p>
             </div>

@@ -476,7 +476,7 @@ const EditArticlePage = () => {
                   <div className="text-xs text-gray-600">
                     {progress.language.toUpperCase()}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-900">
                     {LANG_NAMES[progress.language]?.slice(0, 6) || progress.language}
                   </div>
                 </div>

@@ -34,7 +34,7 @@ const SearchBar = () => {
         />
         <button 
           type="submit" 
-          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 transition-colors duration-200"
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-900 hover:text-blue-600 transition-colors duration-200"
           aria-label="Submit search"
         >
           <Search className="w-4 h-4" />

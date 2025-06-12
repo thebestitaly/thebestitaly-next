@@ -231,7 +231,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               {
                 key: 'text',
                 className: `text-sm whitespace-nowrap ${
-                  isCurrentLang ? "text-gray-500" : "text-white"
+                  isCurrentLang ? "text-gray-900" : "text-white"
                 }`,
                 style: {
                   direction: language.direction === "RTL" ? "rtl" : "ltr"

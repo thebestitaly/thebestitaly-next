@@ -40,7 +40,7 @@ const ArticleGrid: React.FC<ArticleGridProps> = ({
   if (!articles || articles.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No articles available at the moment.</p>
+        <p className="text-gray-900">No articles available at the moment.</p>
       </div>
     );
   }

@@ -402,7 +402,7 @@ function ArticlesList() {
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               activeTab === 'articles'
                 ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-900'
+                : 'text-gray-900 hover:text-gray-900'
             }`}
           >
             📚 Articoli ({articles.length})
@@ -412,7 +412,7 @@ function ArticlesList() {
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               activeTab === 'destinations'
                 ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-900'
+                : 'text-gray-900 hover:text-gray-900'
             }`}
           >
             🏛️ Destinazioni ({destinations.length})
@@ -422,7 +422,7 @@ function ArticlesList() {
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               activeTab === 'companies'
                 ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-900'
+                : 'text-gray-900 hover:text-gray-900'
             }`}
           >
             🏢 Aziende ({companies.length})
@@ -485,7 +485,7 @@ function ArticlesList() {
             <div className="text-xl font-semibold text-gray-700">
               Caricamento {activeTab === 'articles' ? 'articoli' : activeTab === 'destinations' ? 'destinazioni' : 'aziende'}...
             </div>
-            <div className="text-gray-500 mt-2">Recupero dati da Directus</div>
+            <div className="text-gray-900 mt-2">Recupero dati da Directus</div>
           </div>
         </div>
       )}
@@ -539,7 +539,7 @@ function ArticlesList() {
                                 />
                               </div>
                             ) : (
-                              <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl flex items-center justify-center text-gray-500 text-2xl flex-shrink-0">
+                              <div className="w-20 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl flex items-center justify-center text-gray-900 text-2xl flex-shrink-0">
                                 📄
                               </div>
                             )}
@@ -557,7 +557,7 @@ function ArticlesList() {
                                 }`}>
                                   📊 {article.status}
                                 </span>
-                                <span className="text-gray-500">
+                                <span className="text-gray-900">
                                   📅 {new Date(article.date_created).toLocaleDateString('it-IT')}
                                 </span>
                               </div>
@@ -646,7 +646,7 @@ function ArticlesList() {
                     📄
                   </div>
                   <h3 className="text-xl font-semibold text-gray-700 mb-2">Nessun articolo trovato</h3>
-                  <p className="text-gray-500 mb-6">Non ci sono articoli pubblicati al momento</p>
+                  <p className="text-gray-900 mb-6">Non ci sono articoli pubblicati al momento</p>
                   <Link
                     href="/it/reserved/create"
                     className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
@@ -687,7 +687,7 @@ function ArticlesList() {
                                 />
                               </div>
                             ) : (
-                              <div className="w-20 h-20 bg-gradient-to-br from-green-200 to-green-300 rounded-xl flex items-center justify-center text-gray-500 text-2xl flex-shrink-0">
+                              <div className="w-20 h-20 bg-gradient-to-br from-green-200 to-green-300 rounded-xl flex items-center justify-center text-gray-900 text-2xl flex-shrink-0">
                                 🏛️
                               </div>
                             )}
@@ -760,7 +760,7 @@ function ArticlesList() {
                     🏛️
                   </div>
                   <h3 className="text-xl font-semibold text-gray-700 mb-2">Nessuna destinazione trovata</h3>
-                  <p className="text-gray-500 mb-6">Non ci sono destinazioni al momento</p>
+                  <p className="text-gray-900 mb-6">Non ci sono destinazioni al momento</p>
                 </div>
               )}
             </>
@@ -795,7 +795,7 @@ function ArticlesList() {
                                 />
                               </div>
                             ) : (
-                              <div className="w-20 h-20 bg-gradient-to-br from-purple-200 to-purple-300 rounded-xl flex items-center justify-center text-gray-500 text-2xl flex-shrink-0">
+                              <div className="w-20 h-20 bg-gradient-to-br from-purple-200 to-purple-300 rounded-xl flex items-center justify-center text-gray-900 text-2xl flex-shrink-0">
                                 🏢
                               </div>
                             )}
@@ -905,7 +905,7 @@ function ArticlesList() {
                     🏢
                   </div>
                   <h3 className="text-xl font-semibold text-gray-700 mb-2">Nessuna azienda trovata</h3>
-                  <p className="text-gray-500 mb-6">Non ci sono aziende al momento</p>
+                  <p className="text-gray-900 mb-6">Non ci sono aziende al momento</p>
                 </div>
               )}
             </>

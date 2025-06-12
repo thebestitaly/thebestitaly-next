@@ -308,7 +308,7 @@ export default function CreateArticlePage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="scopri-le-meraviglie-della-toscana"
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-900 mt-1">
                 Si genera automaticamente dal titolo, ma puoi modificarlo
               </p>
             </div>
@@ -395,7 +395,7 @@ export default function CreateArticlePage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Scrivi qui il contenuto dell'articolo in Markdown..."
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-900 mt-1">
                 Puoi usare sintassi Markdown per formattare il testo
               </p>
             </div>

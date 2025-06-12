@@ -81,12 +81,12 @@ export default function ReservedLayout({ children }: { children: React.ReactNode
                         <div className="font-medium text-gray-900">
                           {user.first_name} {user.last_name}
                         </div>
-                        <div className="text-gray-500">{user.email}</div>
+                        <div className="text-gray-900">{user.email}</div>
                       </div>
                     </div>
                     <button
                       onClick={logout}
-                      className="text-gray-500 hover:text-red-600 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50"
+                      className="text-gray-900 hover:text-red-600 transition-colors duration-200 p-2 rounded-lg hover:bg-red-50"
                       title="Logout"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -191,7 +191,7 @@ export default function WidgetGeneratorPage() {
               />
               
               {loading && (
-                <div className="absolute right-3 top-11 text-gray-500">
+                <div className="absolute right-3 top-11 text-gray-900">
                   <div className="animate-spin w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full"></div>
                 </div>
               )}
@@ -210,20 +210,20 @@ export default function WidgetGeneratorPage() {
                       }}
                     >
                       <div className="font-medium">{dest.name}</div>
-                      <div className="text-sm text-gray-500">{dest.slug}</div>
+                      <div className="text-sm text-gray-900">{dest.slug}</div>
                     </button>
                   ))}
                 </div>
               )}
               
               {searchQuery.length >= 2 && !loading && destinations.length === 0 && (
-                <div className="text-sm text-gray-500 mt-1">
+                <div className="text-sm text-gray-900 mt-1">
                   Nessuna destinazione trovata per "{searchQuery}"
                 </div>
               )}
               
               {searchQuery.length > 0 && searchQuery.length < 2 && (
-                <div className="text-sm text-gray-500 mt-1">
+                <div className="text-sm text-gray-900 mt-1">
                   Digita almeno 2 caratteri per cercare
                 </div>
               )}
@@ -274,7 +274,7 @@ export default function WidgetGeneratorPage() {
                   ))
                 )}
                 {languages.length > 5 && (
-                  <div className="text-xs text-gray-500">+ altre {languages.length - 5} lingue</div>
+                  <div className="text-xs text-gray-900">+ altre {languages.length - 5} lingue</div>
                 )}
               </div>
             </div>

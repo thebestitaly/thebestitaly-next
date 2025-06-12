@@ -419,7 +419,8 @@ class DirectusClient {
       const response = await this.client.get('/items/articles', {
         params: {
           filter: {
-            featured_status: { _eq: 'homepage' }
+            featured_status: { _eq: 'homepage' },
+            status: { _eq: 'published' }
           },
           fields: [
             'id',
@@ -468,6 +469,7 @@ class DirectusClient {
         params: {
           filter: {
             featured_status: { _neq: 'homepage' },
+            status: { _eq: 'published' },
             category_id: { _neq: 9 }
           },
           fields: [

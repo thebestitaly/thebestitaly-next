@@ -174,7 +174,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Google Maps Widget */}
             {destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
               <div className="my-6 md:my-8">
-                <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center"><span className="text-gray-500">Caricamento mappa...</span></div>}>
+                <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center"><span className="text-gray-900">Caricamento mappa...</span></div>}>
                   <GoogleMaps 
                     lat={destination.lat} 
                     lng={destination.long} 
