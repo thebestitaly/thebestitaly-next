@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import directusClient from "../../lib/directus";
 import Link from "next/link";
 import Image from "next/image";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface FeaturedHomepageArticlesProps {
   lang: string;
@@ -12,28 +13,28 @@ interface FeaturedHomepageArticlesProps {
 
 const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lang }) => {
   const [isClient, setIsClient] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Query per gli articoli featured in homepage
-  const { data: featuredData, isLoading: featuredLoading, error: featuredError } = useQuery({
+  // Query per gli articoli featured in homepage (SOLO featured)
+  const { data: articlesData, isLoading, error } = useQuery({
     queryKey: ['featured-homepage-articles', lang],
-    queryFn: () => directusClient.getArticles(lang, 0, 4, {}, 'homepage'), // Usa lo stesso metodo di LatestArticles
+    queryFn: () => directusClient.getArticles(lang, 0, 4, {}, 'homepage'), // Solo articoli featured
     enabled: !!lang,
   });
 
-  // Fallback: se non ci sono articoli featured, usa gli ultimi articoli
-  const { data: latestData, isLoading: latestLoading, error: latestError } = useQuery({
-    queryKey: ['latest-articles-fallback', lang],
-    queryFn: () => directusClient.getArticles(lang, 0, 4), // Ultimi 4 articoli
-    enabled: !!lang && (!featuredData?.articles || featuredData?.articles?.length === 0),
-  });
+  const articles = articlesData?.articles || [];
 
-  const articles = (featuredData?.articles?.length || 0) > 0 ? featuredData?.articles : (latestData?.articles || []);
-  const isLoading = featuredLoading || latestLoading;
-  const error = featuredError || latestError;
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % articles.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + articles.length) % articles.length);
+  };
 
   if (error) {
     return (
@@ -47,14 +48,17 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
 
   if (!isClient || isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="bg-gray-300 h-48 rounded-lg mb-4"></div>
-            <div className="h-4 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 bg-gray-300 rounded w-3/4"></div>
+      <div className="relative">
+        <div className="animate-pulse bg-gray-100 rounded-2xl p-8 h-80">
+          <div className="flex items-center justify-between h-full">
+            <div className="flex-1 pr-8">
+              <div className="h-8 bg-gray-300 rounded mb-4 w-3/4"></div>
+              <div className="h-4 bg-gray-300 rounded mb-2 w-full"></div>
+              <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+            </div>
+            <div className="w-80 h-60 bg-gray-300 rounded-2xl"></div>
           </div>
-        ))}
+        </div>
       </div>
     );
   }
@@ -68,71 +72,99 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {articles?.map((article: any) => {
-        const translation = article.translations?.find(
-          (t: any) => t.languages_code === lang
-        );
+    <div className="relative w-full bg-white">
+      {/* Slider Container */}
+      <div className="relative overflow-hidden rounded-2xl bg-gray-50">
+        <div 
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {articles?.map((article: any) => {
+            const translation = article.translations?.find(
+              (t: any) => t.languages_code === lang
+            );
 
-        if (!translation) return null;
+            if (!translation) {
+              return null;
+            }
 
-        const categoryTranslation = article.category_id?.translations?.find(
-          (t: any) => t.languages_code === lang
-        );
+            const categoryTranslation = article.category_id?.translations?.find(
+              (t: any) => t.languages_code === lang
+            );
 
-        return (
-          <article key={article.id} className="group">
-            <Link href={`/${lang}/magazine/${translation.slug_permalink}`}>
-              <div className="relative overflow-hidden rounded-lg mb-4 aspect-[4/3]">
-                {article.image ? (
-                  <Image
-                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}?width=400&height=300&fit=cover`}
-                    alt={translation.titolo_articolo}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                    <span className="text-blue-600 text-sm">No Image</span>
+            return (
+              <div key={article.id} className="w-full flex-shrink-0">
+                <Link href={`/${lang}/magazine/${translation.slug_permalink}`}>
+                  <div className="p-8 lg:p-12">
+                    <div className="flex items-center max-w-7xl mx-auto h-96">
+                      {/* Left Content - 50% */}
+                      <div className="w-1/2 pr-8 lg:pr-12">
+                        {/* Category Badge */}
+                        {categoryTranslation && (
+                          <div className="mb-6">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M2 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H4a2 2 0 01-2-2V5zm3 1h6v4H5V6zm6 6H5v2h6v-2z" clipRule="evenodd" />
+                              </svg>
+                              {categoryTranslation.nome_categoria}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Title */}
+                        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                          {translation.titolo_articolo}
+                        </h2>
+                        
+                        {/* Description */}
+                        {translation.seo_summary && (
+                          <p className="text-lg text-gray-600 leading-relaxed">
+                            {translation.seo_summary}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Right Image - Exactly 50% and taller */}
+                      <div className="w-1/2 h-full relative rounded-2xl overflow-hidden">
+                        {article.image ? (
+                          <Image
+                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}?width=600&height=400&fit=cover`}
+                            alt={translation.titolo_articolo}
+                            fill
+                            className="object-cover"
+                            sizes="50vw"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                            <span className="text-blue-600 text-lg">No Image</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
-                
-                {/* Overlay con categoria */}
-                {categoryTranslation && (
-                  <div className="absolute top-3 left-3">
-                    <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                      {categoryTranslation.nome_categoria}
-                    </span>
-                  </div>
-                )}
+                </Link>
               </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
-                  {translation.titolo_articolo}
-                </h3>
-                
-                {translation.seo_summary && (
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {translation.seo_summary}
-                  </p>
-                )}
-                
-                <div className="flex items-center text-xs text-gray-500">
-                  <time dateTime={article.date_created}>
-                    {new Date(article.date_created).toLocaleDateString(lang === 'it' ? 'it-IT' : 'en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </time>
-                </div>
-              </div>
-            </Link>
-          </article>
-        );
-      })}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Lines Indicator */}
+      {articles.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {articles.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`h-1 rounded-full transition-all duration-200 ${
+                index === currentSlide 
+                  ? 'bg-gray-800 w-12' 
+                  : 'bg-gray-300 w-6 hover:bg-gray-400'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

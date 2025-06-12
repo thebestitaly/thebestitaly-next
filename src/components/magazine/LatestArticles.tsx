@@ -17,10 +17,13 @@ const LatestArticles: React.FC<LatestArticlesProps> = ({ lang }) => {
     setIsClient(true);
   }, []);
 
-  // Query per gli articoli
+  // Query per gli articoli (escludi featured e category_id = 9)
   const { data: articlesData, isLoading, error } = useQuery({
-    queryKey: ['articles', lang, 18],
-    queryFn: () => directusClient.getArticles(lang, 0, 18), // Passa offset=0, limit=18
+    queryKey: ['latest-articles-filtered', lang, 18],
+    queryFn: () => directusClient.getArticles(lang, 0, 18, {
+      featured_status: { _neq: 'homepage' }, // Escludi featured
+      category_id: { _neq: 9 } // Escludi category_id = 9
+    }),
     enabled: !!lang,
   });
 

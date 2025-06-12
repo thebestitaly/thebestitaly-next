@@ -328,8 +328,6 @@ class DirectusClient {
 
   async getHomepageCompanies(lang: string) {
     try {
-      console.log('🔍 Attempting to fetch homepage companies...');
-      
       const response = await this.client.get('/items/companies', {
         params: {
           filter: {
@@ -360,18 +358,15 @@ class DirectusClient {
         }
       });
 
-      console.log('📊 Homepage companies result:', response.data?.data?.length || 0);
       return response.data?.data || [];
     } catch (error) {
-      console.error('❌ Error fetching homepage companies:', error);
+      console.error('Error fetching homepage companies:', error);
       return [];
     }
   }
 
   async getHomepageArticles(lang: string) {
     try {
-      console.log('🔍 Attempting to fetch homepage articles...');
-      
       const response = await this.client.get('/items/articles', {
         params: {
           filter: {
@@ -410,12 +405,9 @@ class DirectusClient {
         }
       });
 
-      const articles = response.data?.data || [];
-      console.log('📊 Homepage articles result:', articles.length);
-      console.log('🔍 Articles data:', articles);
-      return articles;
+      return response.data?.data || [];
     } catch (error) {
-      console.error('❌ Error fetching homepage articles:', error);
+      console.error('Error fetching homepage articles:', error);
       return [];
     }
   }
@@ -605,7 +597,7 @@ class DirectusClient {
     }
   }
   
-  public async getArticles(
+    public async getArticles(
     languageCode: string,
     offset: number = 0,
     limit: number = 10,
@@ -620,9 +612,6 @@ class DirectusClient {
         return { articles: [], total: 0 };
       }
   
-      // Lingua predefinita
-      const defaultLanguage = "it";
-  
       // Parametri base per la richiesta
       const params: Record<string, any> = {
         sort: "-date_created",
@@ -631,33 +620,21 @@ class DirectusClient {
           "image",
           "category_id.id",
           "category_id.translations.nome_categoria",
+          "category_id.translations.slug_permalink",
           "date_created",
           "featured_status",
+          "translations.languages_code",
           "translations.titolo_articolo",
           "translations.seo_summary",
           "translations.slug_permalink",
         ],
-        deep: {
-          translations: {
-            _filter: {
-              languages_code: {
-                _eq: languageCode, // Fallback dinamico
-              },
-            },
-          },
-          'category_id.translations': {
-            _filter: {
-              languages_code: {
-                _eq: languageCode,
-              },
-            },
-          },
-        },
-        offset: Math.max(offset, 0), // Garantisce che l'offset sia >= 0
-        limit: Math.max(limit, 1),  // Garantisce che il limite sia >= 1
-        meta: 'total_count', // Restituisce il conteggio totale
+        'deep[translations][_filter][languages_code][_eq]': languageCode,
+        'deep[category_id.translations][_filter][languages_code][_eq]': languageCode,
+        offset: Math.max(offset, 0),
+        limit: Math.max(limit, 1),
+        meta: 'total_count',
       };
-  
+
       // Inizializza il filtro
       params.filter = {};
 
@@ -666,21 +643,20 @@ class DirectusClient {
         params.filter = { ...params.filter, ...filters };
       }
 
-      // Aggiungi filtro per featured_status (è un campo dell'articolo, non della traduzione)
+      // Aggiungi filtro per featured_status
       if (featuredStatus) {
         params.filter = { ...params.filter, featured_status: { _eq: featuredStatus } };
       }
-  
+
       // Effettua la chiamata API
       const response = await this.client.get('/items/articles', { params });
-  
+
       // Estrai articoli e totale dal meta
       const articles = response.data.data || [];
       const total = response.data.meta?.total_count || 0;
-  
+
       return { articles, total };
     } catch (error: any) {
-      // Gestione errori con messaggio dettagliato
       console.error("Error fetching articles:", error.message || error);
       return { articles: [], total: 0 };
     }
@@ -1040,13 +1016,10 @@ class DirectusClient {
 
   async getCompaniesByDestination(destinationId: string, lang: string, destinationType: 'region' | 'province' | 'municipality') {
     try {
-      console.log('🔍 Fetching companies for destination:', destinationId, 'type:', destinationType);
-      
       const filter: any = { active: { _eq: true } };
       
       if (destinationType === 'region') {
         // Per le regioni, dobbiamo prendere tutte le companies delle province di quella regione
-        console.log('🏛️ Fetching companies for region, getting all provinces first...');
         
         // Prima otteniamo tutte le province di questa regione
         const provincesResponse = await this.client.get('/items/destinations', {
@@ -1060,7 +1033,6 @@ class DirectusClient {
         });
         
         const provinceIds = provincesResponse.data?.data?.map((p: any) => p.id) || [];
-        console.log('🏛️ Found provinces:', provinceIds.length);
         
         if (provinceIds.length > 0) {
           filter.destination_id = { _in: provinceIds };
@@ -1103,7 +1075,6 @@ class DirectusClient {
         }
       });
 
-      console.log('📊 Companies by destination result:', response.data?.data?.length || 0);
       return response.data?.data || [];
     } catch (error: any) {
       console.error('❌ Error fetching companies by destination:', error.response?.status, error.response?.data || error.message);
@@ -1156,10 +1127,6 @@ class DirectusClient {
 
   public async getHomepageDestinations(languageCode: string): Promise<Destination[]> {
     try {
-      console.log('🔍 Attempting to fetch homepage destinations...');
-      
-      // First try with lowercase 'homepage'
-      console.log('📡 Trying query with featured_status = "homepage"');
       let response = await this.client.get('/items/destinations', {
         params: {
           'filter': {
@@ -1193,11 +1160,8 @@ class DirectusClient {
         }
       });
 
-      console.log('📊 Response for "homepage":', response.data.data?.length || 0, 'results');
-
       // If no results with lowercase, try uppercase
       if (!response.data.data?.length) {
-        console.log('📡 Trying query with featured_status = "Homepage"');
         response = await this.client.get('/items/destinations', {
           params: {
             'filter': {
@@ -1229,32 +1193,6 @@ class DirectusClient {
             'limit': 10,
             'sort': ['id']
           }
-        });
-        console.log('📊 Response for "Homepage":', response.data.data?.length || 0, 'results');
-      }
-
-      // If still no results, let's get ALL destinations to see what featured_status values exist
-      if (!response.data.data?.length) {
-        console.log('📡 No results found, checking all destinations to see featured_status values...');
-        const allResponse = await this.client.get('/items/destinations', {
-          params: {
-            'fields': ['id', 'featured_status', 'translations.destination_name'],
-            'deep': {
-              'translations': {
-                '_filter': {
-                  'languages_code': {
-                    '_eq': languageCode
-                  }
-                }
-              }
-            },
-            'limit': 20
-          }
-        });
-        
-        console.log('📋 All destinations with featured_status:');
-        allResponse.data.data?.forEach((dest: any, index: number) => {
-          console.log(`   ${index + 1}. ID: ${dest.id}, featured_status: "${dest.featured_status}", name: ${dest.translations?.[0]?.destination_name || 'No name'}`);
         });
       }
 

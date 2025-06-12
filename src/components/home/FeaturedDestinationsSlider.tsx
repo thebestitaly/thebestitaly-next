@@ -12,11 +12,9 @@ interface FeaturedDestinationsSliderProps {
 }
 
 const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({ className = '' }) => {
-  console.log('🚀 FeaturedDestinationsSlider component is mounting...');
   
   const params = useParams();
   const lang = (params?.lang as string) || 'it';
-  console.log('🌍 Language detected:', lang);
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -33,13 +31,8 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   const { data: destinations, isLoading, error } = useQuery({
     queryKey: ['featured-destinations-homepage', lang],
     queryFn: async () => {
-      console.log('🔍 Fetching homepage destinations for lang:', lang);
       const result = await directusClient.getHomepageDestinations(lang);
-      console.log('📊 Homepage destinations result:', result);
-      console.log('📊 Number of destinations:', result?.length || 0);
       if (result?.length > 0) {
-        console.log('📊 First destination:', result[0]);
-        console.log('📊 First destination translations:', result[0]?.translations);
       }
       return result;
     }
@@ -64,7 +57,6 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
     enabled: !!destinations?.length
   });
 
-  console.log('📊 Query state - isLoading:', isLoading, 'error:', error, 'destinations:', destinations?.length || 0);
 
   // Auto-advance slider - only on client
   useEffect(() => {
@@ -132,7 +124,6 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   };
 
   if (isLoading) {
-    console.log('⏳ Showing loading state...');
     return (
       <div className={`relative h-[90vh] bg-gradient-to-br from-gray-900 via-gray-800 to-black ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -143,7 +134,6 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   }
 
   if (error) {
-    console.error('❌ Error in FeaturedDestinationsSlider:', error);
     return (
       <div className={`relative h-[90vh] bg-red-900 ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center text-white">
@@ -157,7 +147,6 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   }
 
   if (!destinations?.length) {
-    console.log('🚫 No destinations found, returning null');
     return (
       <div className={`relative h-[90vh] bg-yellow-900 ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center text-white">
@@ -170,8 +159,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
     );
   }
 
-  console.log('✅ Rendering slider with', destinations.length, 'destinations');
-
+  
   const currentDestination = destinations[currentIndex];
   const currentTranslation = currentDestination?.translations?.[0];
 

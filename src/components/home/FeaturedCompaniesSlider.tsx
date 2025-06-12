@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
 import directusClient from '../../lib/directus';
 
 interface Company {
@@ -24,248 +23,155 @@ interface FeaturedCompaniesSliderProps {
 }
 
 const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ className = '' }) => {
-  console.log('🚀 FeaturedCompaniesSlider component is mounting...');
-  
   const params = useParams();
   const lang = (params?.lang as string) || 'it';
-  console.log('🌍 Language detected:', lang);
   
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Fetch featured companies
   const { data: companies, isLoading, error } = useQuery({
     queryKey: ['featured-companies-homepage', lang],
     queryFn: async () => {
-      console.log('🔍 Fetching homepage companies for lang:', lang);
       const result = await directusClient.getHomepageCompanies(lang);
-      console.log('📊 Homepage companies result:', result);
-      console.log('📊 Number of companies:', result?.length || 0);
-      if (result?.length > 0) {
-        console.log('📊 First company:', result[0]);
-        console.log('📊 First company translations:', result[0]?.translations);
-      }
       return result;
     }
   });
 
-  console.log('📊 Query state - isLoading:', isLoading, 'error:', error, 'companies:', companies?.length || 0);
-
-  // Auto-advance slider
-  useEffect(() => {
-    if (!companies?.length || companies.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % companies.length);
-    }, 7000);
-
-    return () => clearInterval(interval);
-  }, [companies?.length]);
-
-  // Mouse tracking for parallax
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        setMousePosition({ x, y });
-      }
-    };
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-      return () => container.removeEventListener('mousemove', handleMouseMove);
-    }
-  }, []);
-
   const nextSlide = () => {
     if (!companies?.length) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % companies.length);
-      setIsTransitioning(false);
-    }, 300);
+    setCurrentSlide((prev) => (prev + 1) % companies.length);
   };
 
-  const goToSlide = (index: number) => {
-    if (index === currentIndex) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentIndex(index);
-      setIsTransitioning(false);
-    }, 300);
+  const prevSlide = () => {
+    if (!companies?.length) return;
+    setCurrentSlide((prev) => (prev - 1 + companies.length) % companies.length);
   };
 
-  if (isLoading) {
-    console.log('⏳ Showing loading state...');
+  if (error) {
     return (
-      <div className={`relative h-96 bg-gradient-to-br from-amber-900 via-amber-800 to-orange-900 mx-[40px] rounded-xl ${className}`}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-32 h-32 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+      <div className="bg-yellow-50 p-4 rounded-lg">
+        <p className="text-yellow-700">
+          Featured companies not available at the moment.
+        </p>
+      </div>
+    );
+  }
+
+  if (!isClient || isLoading) {
+    return (
+      <div className="relative">
+        <div className="animate-pulse bg-blue-50 rounded-2xl p-8 h-80">
+          <div className="flex items-center justify-between h-full">
+            <div className="w-80 h-60 bg-blue-200 rounded-2xl"></div>
+            <div className="flex-1 pl-8">
+              <div className="h-8 bg-blue-200 rounded mb-4 w-3/4"></div>
+              <div className="h-4 bg-blue-200 rounded mb-2 w-full"></div>
+              <div className="h-4 bg-blue-200 rounded w-2/3"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error) {
-    console.error('❌ Error in FeaturedCompaniesSlider:', error);
-    return null; // Nascondi il componente se c'è un errore
-  }
-
   if (!companies?.length) {
-    console.log('🚫 No companies found, returning null');
-    return null; // Nascondi il componente se non ci sono companies
+    return null;
   }
-
-  console.log('✅ Rendering slider with', companies.length, 'companies');
-
-  const currentCompany = companies[currentIndex];
-  const currentTranslation = currentCompany?.translations?.[0];
 
   return (
-    <div 
-      ref={containerRef}
-      className={`relative h-96 overflow-hidden bg-gradient-to-br from-amber-900 via-amber-800 to-orange-900 mx-[40px] rounded-xl ${className}`}
-    >
-      {/* Dynamic Background with Parallax */}
-      <div className="absolute inset-0">
-        {companies.map((company: Company, index: number) => (
-          <div
-            key={company.id}
-            className={`absolute inset-0 transition-all duration-1000 ease-out ${
-              index === currentIndex ? 'opacity-30 scale-100' : 'opacity-0 scale-110'
-            }`}
-            style={{
-              transform: index === currentIndex 
-                ? `translate(${(mousePosition.x - 0.5) * 10}px, ${(mousePosition.y - 0.5) * 10}px) scale(1.02)`
-                : 'scale(1.1)'
-            }}
-          >
-            {company.featured_image && (
-              <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
-                alt={currentTranslation?.seo_title || company.company_name || ''}
-                fill
-                className="object-cover"
-                priority={index === 0}
-              />
-            )}
-          </div>
-        ))}
-        
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-900/80 via-amber-800/50 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-      </div>
+    <div className="relative w-full bg-white">
+      {/* Slider Container */}
+      <div className="relative overflow-hidden rounded-2xl bg-blue-50">
+        <div 
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {companies?.map((company: Company) => {
+            const translation = company.translations?.[0];
 
-      {/* Content */}
-      <div className="relative z-10 h-full flex items-center">
-        <div className="container mx-auto px-6 lg:px-8">
-          <div className="max-w-4xl">
-            <div className={`transition-all duration-1000 ${isTransitioning ? 'opacity-0 translate-x-8' : 'opacity-100 translate-x-0'}`}>
-              
-              {/* Section Title */}
-              <div className="text-amber-200 text-sm font-medium mb-4 tracking-widest uppercase">
-                🏆 Le Nostre Eccellenze
+            return (
+              <div key={company.id} className="w-full flex-shrink-0">
+                <Link href={translation?.slug_permalink ? `/${lang}/poi/${translation.slug_permalink}/` : '#'}>
+                  <div className="p-8 lg:p-12">
+                    <div className="flex items-center max-w-7xl mx-auto h-96">
+                      {/* Left Image - 50% */}
+                      <div className="w-1/2 h-full relative rounded-2xl overflow-hidden mr-8 lg:mr-12">
+                        {company.featured_image ? (
+                          <Image
+                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=600&height=400&fit=cover`}
+                            alt={translation?.seo_title || company.company_name}
+                            fill
+                            className="object-cover"
+                            sizes="50vw"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                            <span className="text-blue-600 text-lg">No Image</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Right Content - 50% */}
+                      <div className="w-1/2">
+                        {/* Category Badge */}
+                        <div className="mb-6">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M19 14l-7 7m0 0l-7-7m7 7V3" clipRule="evenodd" />
+                            </svg>
+                            Eccellenza
+                          </span>
+                        </div>
+                        
+                        {/* Company Name */}
+                        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                          {company.company_name}
+                        </h2>
+                        
+                        {/* SEO Title */}
+                        {translation?.seo_title && (
+                          <h3 className="text-xl text-gray-700 mb-4 font-medium">
+                            {translation.seo_title}
+                          </h3>
+                        )}
+                        
+                        {/* Description */}
+                        {translation?.seo_summary && (
+                          <p className="text-lg text-gray-600 leading-relaxed">
+                            {translation.seo_summary}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               </div>
-              
-              {/* Company Name */}
-              <h2 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
-                {currentCompany?.company_name || 'Eccellenza'}
-              </h2>
-              
-              {/* SEO Title/Description */}
-              {currentTranslation?.seo_title && (
-                <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
-                  {currentTranslation.seo_title}
-                </p>
-              )}
-              
-              {/* Summary */}
-              {currentTranslation?.seo_summary && (
-                <p className="text-white/80 text-lg mb-8 leading-relaxed max-w-2xl">
-                  {currentTranslation.seo_summary}
-                </p>
-              )}
-              
-              {/* Actions */}
-              <div className="flex items-center gap-4">
-                {currentTranslation?.slug_permalink && (
-                  <Link
-                    href={`/${lang}/poi/${currentTranslation.slug_permalink}/`}
-                    className="group inline-flex items-center px-6 py-3 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:opacity-90"
-                    style={{ backgroundColor: '#0066cc' }}
-                  >
-                    <span className="mr-2">Scopri di più</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                )}
-                
-                <button 
-                  onClick={nextSlide}
-                  className="w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300 group"
-                >
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                </button>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Navigation Dots */}
+      {/* Lines Indicator */}
       {companies.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
-          <div className="flex gap-2">
-            {companies.map((_: Company, index: number) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`transition-all duration-500 ${
-                  index === currentIndex 
-                    ? 'w-12 h-2 bg-white' 
-                    : 'w-2 h-2 bg-white/40 hover:bg-white/60'
-                } rounded-full`}
-              />
-            ))}
-          </div>
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {companies.map((_: Company, index: number) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`h-1 rounded-full transition-all duration-200 ${
+                index === currentSlide 
+                  ? 'bg-gray-800 w-12' 
+                  : 'bg-gray-300 w-6 hover:bg-gray-400'
+              }`}
+            />
+          ))}
         </div>
       )}
-
-      {/* Progress Ring */}
-      <div className="absolute top-6 right-6 z-20">
-        <div className="relative w-12 h-12">
-          <svg className="w-12 h-12 -rotate-90" viewBox="0 0 40 40">
-            <circle
-              cx="20"
-              cy="20"
-              r="16"
-              stroke="white"
-              strokeOpacity="0.2"
-              strokeWidth="2"
-              fill="none"
-            />
-            <circle
-              cx="20"
-              cy="20"
-              r="16"
-              stroke="white"
-              strokeWidth="2"
-              fill="none"
-              strokeDasharray={`${2 * Math.PI * 16}`}
-              strokeDashoffset={`${2 * Math.PI * 16 * (1 - (currentIndex + 1) / companies.length)}`}
-              className="transition-all duration-1000 ease-out"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
-            {String(currentIndex + 1).padStart(2, '0')}
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

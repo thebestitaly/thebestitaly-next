@@ -54,15 +54,12 @@ export default async function Home({ params }: PageProps) {
           <GetYourGuideWidget lang={lang} destinationName="Italy" />
         </div>
                 {/* Featured Articles Section */}
-        <div className="bg-gray-50 py-16">
+        <div className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">
                 {homeTranslations?.featured_articles_title || 'Featured Articles'}
               </h2>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                {homeTranslations?.featured_articles_description || 'Discover our featured articles and insights'}
-              </p>
             </div>
             <FeaturedHomepageArticles lang={lang} />
           </div>
