@@ -125,7 +125,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
 
   if (isLoading) {
     return (
-      <div className={`relative h-[90vh] bg-gradient-to-br from-gray-900 via-gray-800 to-black ${className}`}>
+      <div className={`relative h-[85vh] bg-gradient-to-br from-gray-900 via-gray-800 to-black ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-32 h-32 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
         </div>
@@ -135,7 +135,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
 
   if (error) {
     return (
-      <div className={`relative h-[90vh] bg-red-900 ${className}`}>
+      <div className={`relative h-[85vh] bg-red-900 ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center text-white">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">Error loading destinations</h2>
@@ -148,7 +148,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
 
   if (!destinations?.length) {
     return (
-      <div className={`relative h-[90vh] bg-yellow-900 ${className}`}>
+      <div className={`relative h-[85vh] bg-yellow-900 ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center text-white">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">No Featured Destinations</h2>
@@ -166,7 +166,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative h-[90vh] overflow-hidden bg-black mx-[40px] rounded-xl ${className}`}
+      className={`relative h-[83vh] overflow-hidden bg-black mx-6 mt-6 mb-6 rounded-xl ${className}`}
     >
       {/* Dynamic Background with Parallax */}
       <div className="absolute inset-0">
@@ -186,7 +186,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
               <>
                 <Image
                   src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
-                  alt={destination.translations?.[0]?.destination_name || ''}
+                  alt={`${destination.translations?.[0]?.destination_name || 'Beautiful destination'} - scenic landscape view`}
                   fill
                   className="object-cover"
                   priority={index === 0}
@@ -202,54 +202,43 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
       </div>
 
       {/* Main Content - Positioned Lower */}
-      <div className="relative z-10 h-full flex items-end pb-20 lg:pb-32">
-        <div className="container mx-auto px-4 lg:px-16">
+      <div className="relative z-10 h-full flex items-end pb-8 lg:pb-32 text-left mt-8">
+        <div className="container mx-auto px-8 lg:px-16">
           <div className="max-w-4xl">
             <div className={`transition-all duration-1000 ${isTransitioning ? 'opacity-0 translate-x-8' : 'opacity-100 translate-x-0'}`}>
               {/* Mobile: Clean minimal text only */}
-              <div className="lg:hidden text-center">
-                <h1 className="text-3xl sm:text-4xl font-black text-white leading-none mb-2">
-                  {currentTranslation?.destination_name?.split(' ')[0] || 'Italy'}
+              <Link 
+                href={buildDestinationUrl(currentDestination.id)} 
+                className="lg:hidden text-left block"
+                aria-label={`Explore ${currentTranslation?.destination_name || 'this destination'} - ${currentTranslation?.seo_summary || 'Discover more'}`}
+              >
+                <h1 className="text-4xl sm:text-5xl font-black text-white leading-none mb-2">
+                  {currentTranslation?.destination_name || 'Italy'}
                 </h1>
-                {currentTranslation?.destination_name?.split(' ')[1] && (
-                  <h2 className="text-xl sm:text-2xl font-light text-white/90 leading-none mb-4">
-                    {currentTranslation.destination_name.split(' ').slice(1).join(' ')}
-                  </h2>
-                )}
                 {currentTranslation?.seo_summary && (
-                  <p className="text-white/80 text-sm font-light max-w-sm mx-auto leading-relaxed">
+                  <p className="text-white/80 text-base font-light max-w-sm leading-relaxed mb-16">
                     {currentTranslation.seo_summary}
                   </p>
                 )}
-              </div>
+              </Link>
 
               {/* Desktop: Full layout with summary - Smaller titles */}
-              <div className="hidden lg:block">
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-none mb-3">
-                  {currentTranslation?.destination_name?.split(' ')[0] || 'Italy'}
+              <Link 
+                href={buildDestinationUrl(currentDestination.id)} 
+                className="hidden lg:block text-left"
+                aria-label={`Explore ${currentTranslation?.destination_name || 'this destination'} - ${currentTranslation?.seo_summary || 'Discover more'}`}
+              >
+                <h1 className="text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-none mb-8">
+                  {currentTranslation?.destination_name || 'Italy'}
                 </h1>
-                {currentTranslation?.destination_name?.split(' ')[1] && (
-                  <h2 className="text-3xl lg:text-4xl xl:text-5xl font-light text-white/80 leading-none mb-6 -mt-1">
-                    {currentTranslation.destination_name.split(' ').slice(1).join(' ')}
-                  </h2>
-                )}
                 
                 {/* SEO Summary under title */}
                 {currentTranslation?.seo_summary && (
-                  <p className="text-lg text-white/90 font-light max-w-2xl leading-relaxed mb-8">
+                  <p className="text-xl text-white/90 font-light max-w-2xl leading-relaxed">
                     {currentTranslation.seo_summary}
                   </p>
                 )}
-                
-                <div className="flex items-center gap-6">
-                  <Link
-                    href={buildDestinationUrl(currentDestination.id)}
-                    className="group w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300"
-                  >
-                    <ArrowRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </div>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -260,10 +249,11 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
         {/* Minimal Navigation Dots */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
           <div className="flex gap-3">
-            {destinations.map((_, index) => (
+            {destinations.map((destination, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
+                aria-label={`Go to ${destination.translations?.[0]?.destination_name || `destination ${index + 1}`}`}
                 className={`transition-all duration-500 ${
                   index === currentIndex 
                     ? 'w-16 h-1 bg-white' 
@@ -276,8 +266,8 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
 
         {/* Animated Progress Ring */}
         <div className="absolute top-8 right-8 z-20">
-          <div className="relative w-16 h-16">
-            <svg className="w-16 h-16 -rotate-90" viewBox="0 0 60 60">
+          <div className="relative w-16 h-16" role="progressbar" aria-label={`Slide ${currentIndex + 1} of ${destinations.length}`}>
+            <svg className="w-16 h-16 -rotate-90" viewBox="0 0 60 60" aria-hidden="true">
               <circle
                 cx="30"
                 cy="30"
@@ -313,6 +303,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
               <button
                 key={destination.id}
                 onClick={() => goToSlide(index)}
+                aria-label={`View ${destination.translations?.[0]?.destination_name || `destination ${index + 1}`}`}
                 className={`block w-32 h-20 rounded-lg overflow-hidden transition-all duration-500 transform ${
                   index === currentIndex 
                     ? 'ring-2 ring-white scale-110 shadow-2xl' 
@@ -322,7 +313,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                 {destination.image && (
                   <Image
                     src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
-                    alt={destination.translations?.[0]?.destination_name || ''}
+                    alt={`${destination.translations?.[0]?.destination_name || 'Destination'} - thumbnail image`}
                     width={128}
                     height={80}
                     className="object-cover w-full h-full"
@@ -337,8 +328,8 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
         </div>
       </div>
 
-      {/* Mobile: Simple touch navigation */}
-      <div className="lg:hidden absolute inset-0 z-10 flex">
+      {/* Mobile: Touch navigation - only on top area to avoid blocking content */}
+      <div className="lg:hidden absolute top-0 left-0 right-0 h-20 z-10 flex">
         {/* Left half - previous */}
         <button 
           onClick={() => goToSlide(currentIndex > 0 ? currentIndex - 1 : destinations.length - 1)}

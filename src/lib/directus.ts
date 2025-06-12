@@ -283,6 +283,50 @@ class DirectusClient {
       return false;
     }
   }
+  async getCompaniesForListing(lang: string, filters: Record<string, any> = {}) {
+    try {
+      const response = await this.client.get('/items/companies', {
+        params: {
+          filter: {
+            ...filters
+          },
+          fields: [
+            'id',
+            'website',
+            'company_name',
+            'slug_permalink',
+            'featured_image',
+            'email',
+            'phone',
+            'category_id',
+            'destination_id',
+            'featured',
+            'active',
+            'featured_status',
+            'socials',
+            'translations.seo_title',
+            'translations.seo_summary',
+            'translations.slug_permalink'
+          ],
+          deep: {
+            translations: {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching companies for listing:', error);
+      return [];
+    }
+  }
+
   async getCompanies(lang: string, filters: Record<string, any> = {}) {
     try {
       const response = await this.client.get('/items/companies', {
@@ -305,7 +349,9 @@ class DirectusClient {
             'active',
             'featured_status',
             'socials',
-            'translations.*'
+            'translations.seo_title',
+            'translations.seo_summary',
+            'translations.slug_permalink'
           ],
           deep: {
             translations: {
@@ -342,10 +388,21 @@ class DirectusClient {
             'featured_image',
             'active',
             'featured_status',
-            'translations.*'
+            'category_id.id',
+            'category_id.translations.name',
+            'translations.seo_title',
+            'translations.seo_summary',
+            'translations.slug_permalink'
           ],
           deep: {
             translations: {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            },
+            'category_id.translations': {
               _filter: {
                 languages_code: {
                   _eq: lang

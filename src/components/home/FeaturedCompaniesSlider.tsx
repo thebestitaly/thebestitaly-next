@@ -11,10 +11,16 @@ interface Company {
   company_name: string;
   website?: string;
   featured_image?: string;
+  slug_permalink?: string;
+  category_id?: {
+    id: number;
+    translations?: {
+      name?: string;
+    }[];
+  };
   translations?: {
     seo_title?: string;
     seo_summary?: string;
-    slug_permalink?: string;
   }[];
 }
 
@@ -22,12 +28,30 @@ interface FeaturedCompaniesSliderProps {
   className?: string;
 }
 
-const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ className = '' }) => {
+  const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ className = '' }) => {
   const params = useParams();
   const lang = (params?.lang as string) || 'it';
   
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isClient, setIsClient] = useState(false);
+
+  // Helper function to build company URL
+  const buildCompanyUrl = (company: Company) => {
+    // Try company.slug_permalink first
+    if (company.slug_permalink) {
+      return `/${lang}/poi/${company.slug_permalink}/`;
+    }
+    
+    // Fallback: generate slug from company name
+    const generatedSlug = company.company_name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+    
+    return generatedSlug ? `/${lang}/poi/${generatedSlug}/` : '#';
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -84,7 +108,7 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ class
   }
 
   return (
-    <div className="relative w-full bg-white">
+    <div className="relative w-full bg-white pb-16">
       {/* Slider Container */}
       <div className="relative overflow-hidden rounded-2xl bg-blue-50">
         <div 
@@ -93,18 +117,67 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ class
         >
           {companies?.map((company: Company) => {
             const translation = company.translations?.[0];
+            const categoryTranslation = company.category_id?.translations?.[0];
 
             return (
               <div key={company.id} className="w-full flex-shrink-0">
-                <Link href={translation?.slug_permalink ? `/${lang}/poi/${translation.slug_permalink}/` : '#'}>
-                  <div className="p-8 lg:p-12">
-                    <div className="flex items-center max-w-7xl mx-auto h-96">
+                <Link 
+                  href={buildCompanyUrl(company)} 
+                  className="block"
+                  aria-label={`Visit ${company.company_name} - ${translation?.seo_title || translation?.seo_summary || 'Learn more about this company'}`}
+                >
+                  <div className="p-4 md:p-8 lg:p-12">
+                    {/* Mobile Layout - Image on top, content below */}
+                    <div className="block md:hidden">
+                      {/* Mobile Image */}
+                      <div className="w-full h-64 relative rounded-2xl overflow-hidden mb-6">
+                        {company.featured_image ? (
+                          <Image
+                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=600&height=400&fit=cover`}
+                            alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
+                            fill
+                            className="object-cover"
+                            sizes="100vw"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                            <span className="text-blue-600 text-lg">No Image</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Mobile Content */}
+                      <div className="text-left">
+                        {/* Category Badge */}
+                        {categoryTranslation?.name && (
+                          <div className="mb-2">
+                            <span className="inline-flex items-center text-lg bold text-bold font-small text-blue-800">
+                              {categoryTranslation.name}
+                            </span>
+                          </div>
+                        )}
+                        {/* Company Name */}
+                        <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
+                          {company.company_name}
+                        </h2>
+                        
+                        {/* Description */}
+                        {translation?.seo_summary && (
+                          <p className="text-base text-gray-600 leading-relaxed">
+                            {translation.seo_summary}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Desktop Layout - Side by side */}
+                    <div className="hidden md:flex items-center max-w-7xl mx-auto h-96">
                       {/* Left Image - 50% */}
                       <div className="w-1/2 h-full relative rounded-2xl overflow-hidden mr-8 lg:mr-12">
                         {company.featured_image ? (
                           <Image
                             src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=600&height=400&fit=cover`}
-                            alt={translation?.seo_title || company.company_name}
+                            alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
                             fill
                             className="object-cover"
                             sizes="50vw"
@@ -119,14 +192,13 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ class
                       {/* Right Content - 50% */}
                       <div className="w-1/2">
                         {/* Category Badge */}
-                        <div className="mb-6">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M19 14l-7 7m0 0l-7-7m7 7V3" clipRule="evenodd" />
-                            </svg>
-                            Eccellenza
-                          </span>
-                        </div>
+                        {categoryTranslation?.name && (
+                          <div className="mb-6">
+                            <span className="inline-flex items-center text-lg font-medium text-blue-800">
+                              {categoryTranslation.name}
+                            </span>
+                          </div>
+                        )}
                         
                         {/* Company Name */}
                         <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
@@ -158,11 +230,12 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ class
 
       {/* Lines Indicator */}
       {companies.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
-          {companies.map((_: Company, index: number) => (
+        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {companies.map((company: Company, index: number) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
+              aria-label={`View ${company.company_name}`}
               className={`h-1 rounded-full transition-all duration-200 ${
                 index === currentSlide 
                   ? 'bg-gray-800 w-12' 

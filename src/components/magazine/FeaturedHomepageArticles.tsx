@@ -22,11 +22,11 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
   // Query per gli articoli featured in homepage (SOLO featured)
   const { data: articlesData, isLoading, error } = useQuery({
     queryKey: ['featured-homepage-articles', lang],
-    queryFn: () => directusClient.getArticles(lang, 0, 4, {}, 'homepage'), // Solo articoli featured
+    queryFn: () => directusClient.getHomepageArticles(lang), // Usa la funzione ottimizzata
     enabled: !!lang,
   });
 
-  const articles = articlesData?.articles || [];
+  const articles = articlesData || [];
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % articles.length);
@@ -72,7 +72,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
   }
 
   return (
-    <div className="relative w-full bg-white">
+    <div className="relative w-full bg-white pb-16">
       {/* Slider Container */}
       <div className="relative overflow-hidden rounded-2xl bg-gray-50">
         <div 
@@ -94,9 +94,61 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
 
             return (
               <div key={article.id} className="w-full flex-shrink-0">
-                <Link href={`/${lang}/magazine/${translation.slug_permalink}`}>
-                  <div className="p-8 lg:p-12">
-                    <div className="flex items-center max-w-7xl mx-auto h-96">
+                <Link 
+                  href={`/${lang}/magazine/${translation.slug_permalink}`} 
+                  className="block"
+                  aria-label={`Read article: ${translation.titolo_articolo} - ${translation.seo_summary || 'Learn more'}`}
+                >
+                  <div className="p-4 md:p-8 lg:p-12">
+                    {/* Mobile Layout - Stack vertically */}
+                    <div className="block md:hidden">
+                      {/* Mobile Image */}
+                      <div className="w-full h-48 relative rounded-2xl overflow-hidden mb-4">
+                        {article.image ? (
+                          <Image
+                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}?width=600&height=400&fit=cover`}
+                            alt={`${translation.titolo_articolo} - article featured image`}
+                            fill
+                            className="object-cover"
+                            sizes="100vw"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                            <span className="text-blue-600 text-lg">No Image</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Mobile Content */}
+                      <div className="text-left">
+                        {/* Category Badge */}
+                        {categoryTranslation && (
+                          <div className="mb-3">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M2 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H4a2 2 0 01-2-2V5zm3 1h6v4H5V6zm6 6H5v2h6v-2z" clipRule="evenodd" />
+                              </svg>
+                              {categoryTranslation.nome_categoria}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Title */}
+                        <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
+                          {translation.titolo_articolo}
+                        </h2>
+                        
+                        {/* Description */}
+                        {translation.seo_summary && (
+                          <p className="text-base text-gray-600 leading-relaxed">
+                            {translation.seo_summary}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Desktop Layout - Side by side */}
+                    <div className="hidden md:flex items-center max-w-7xl mx-auto h-96">
                       {/* Left Content - 50% */}
                       <div className="w-1/2 pr-8 lg:pr-12">
                         {/* Category Badge */}
@@ -129,7 +181,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
                         {article.image ? (
                           <Image
                             src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}?width=600&height=400&fit=cover`}
-                            alt={translation.titolo_articolo}
+                            alt={`${translation.titolo_articolo} - article featured image`}
                             fill
                             className="object-cover"
                             sizes="50vw"
@@ -151,18 +203,22 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
 
       {/* Lines Indicator */}
       {articles.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
-          {articles.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-1 rounded-full transition-all duration-200 ${
-                index === currentSlide 
-                  ? 'bg-gray-800 w-12' 
-                  : 'bg-gray-300 w-6 hover:bg-gray-400'
-              }`}
-            />
-          ))}
+        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {articles.map((article: any, index: number) => {
+            const translation = article.translations?.find((t: any) => t.languages_code === lang);
+            return (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                aria-label={`View article: ${translation?.titolo_articolo || `article ${index + 1}`}`}
+                className={`h-1 rounded-full transition-all duration-200 ${
+                  index === currentSlide 
+                    ? 'bg-gray-800 w-12' 
+                    : 'bg-gray-300 w-6 hover:bg-gray-400'
+                }`}
+              />
+            );
+          })}
         </div>
       )}
     </div>

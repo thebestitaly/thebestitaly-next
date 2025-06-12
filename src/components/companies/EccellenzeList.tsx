@@ -16,7 +16,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
     queryKey: ['companies-eccellenze', lang],
     queryFn: async () => {
       console.log('🔍 Fetching companies for eccellenze page...');
-      const result = await directusClient.getCompanies(lang, {
+      const result = await directusClient.getCompaniesForListing(lang, {
         active: { _eq: true }
       });
       console.log('📊 Companies result:', result);

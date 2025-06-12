@@ -1,9 +1,15 @@
+import { NextRequest } from 'next/server';
+
 interface SitemapEntry {
   url: string;
   lastModified: string;
   changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
   priority: number;
 }
+
+// Cache per le sitemap - durata 24 ore
+const sitemapCache = new Map<string, { data: string; timestamp: number }>();
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 ore in millisecondi
 
 // Fetch data directly from Directus API using fetch
 async function fetchFromDirectus(endpoint: string, params: Record<string, any> = {}) {
@@ -37,12 +43,12 @@ async function fetchFromDirectus(endpoint: string, params: Record<string, any> =
       }
     });
 
-    console.log(`Fetching: ${url.toString()}`);
-    
     const response = await fetch(url.toString(), {
       headers: {
         'Content-Type': 'application/json',
       },
+      // Cache per 1 ora a livello di fetch
+      next: { revalidate: 3600 }
     });
 
     if (!response.ok) {
@@ -57,12 +63,8 @@ async function fetchFromDirectus(endpoint: string, params: Record<string, any> =
   }
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ lang: string }> }
-) {
-  const { lang } = await params;
-  
+// Funzione per generare la sitemap (cacheable)
+async function generateSitemap(lang: string): Promise<string> {
   const baseUrl = 'https://thebestitaly.eu';
   const currentDate = new Date().toISOString();
   
@@ -88,7 +90,7 @@ export async function GET(
     });
   });
 
-  // Fetch ALL destinations (7907)
+  // Fetch ALL destinations (7907) - con cache
   try {
     console.log(`Fetching destinations for ${lang} sitemap...`);
     const destinations = await fetchFromDirectus('/items/destinations', {
@@ -96,6 +98,7 @@ export async function GET(
       fields: [
         'id',
         'type',
+        'date_updated',
         'translations.slug_permalink',
         'translations.languages_code',
         'region_id.translations.slug_permalink',
@@ -107,13 +110,8 @@ export async function GET(
     console.log(`Found ${destinations.length} destinations`);
 
     let addedDestinations = 0;
-    destinations.forEach((destination: any, index: number) => {
+    destinations.forEach((destination: any) => {
       const translation = destination.translations?.find((t: any) => t.languages_code === lang);
-      
-      // Debug per i primi 5 elementi
-      if (index < 5) {
-        console.log(`Destination ${destination.id}: type=${destination.type}, translations=${destination.translations?.length}, translation found=${!!translation}, slug=${translation?.slug_permalink}`);
-      }
       
       // Solo se ha una traduzione e uno slug valido
       if (translation?.slug_permalink) {
@@ -133,9 +131,7 @@ export async function GET(
           if (regionTranslation?.slug_permalink && provinceTranslation?.slug_permalink) {
             url = `${baseUrl}/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${translation.slug_permalink}`;
           }
-        }
-        // Aggiungi anche altri tipi come 'state' se esistono
-        else if (destination.type === 'state') {
+        } else if (destination.type === 'state') {
           url = `${baseUrl}/${lang}/${translation.slug_permalink}`;
         }
         
@@ -156,7 +152,7 @@ export async function GET(
     console.error('Error fetching destinations for sitemap:', error);
   }
 
-  // Fetch ALL articles
+  // Fetch ALL articles - con cache
   try {
     console.log(`Fetching articles for ${lang} sitemap...`);
     const articles = await fetchFromDirectus('/items/articles', {
@@ -166,6 +162,7 @@ export async function GET(
       },
       fields: [
         'id',
+        'date_updated',
         'translations.slug_permalink',
         'translations.languages_code'
       ]
@@ -177,7 +174,7 @@ export async function GET(
       if (translation?.slug_permalink) {
         entries.push({
           url: `${baseUrl}/${lang}/magazine/${translation.slug_permalink}`,
-          lastModified: currentDate,
+          lastModified: article.date_updated || currentDate,
           changeFrequency: 'monthly',
           priority: 0.7
         });
@@ -187,7 +184,7 @@ export async function GET(
     console.error('Error fetching articles for sitemap:', error);
   }
 
-  // Fetch ALL categories
+  // Fetch ALL categories - con cache
   try {
     console.log(`Fetching categories for ${lang} sitemap...`);
     const categories = await fetchFromDirectus('/items/categories', {
@@ -197,6 +194,7 @@ export async function GET(
       },
       fields: [
         'id',
+        'date_updated',
         'translations.slug_permalink',
         'translations.languages_code'
       ]
@@ -208,7 +206,7 @@ export async function GET(
       if (translation?.slug_permalink) {
         entries.push({
           url: `${baseUrl}/${lang}/magazine/c/${translation.slug_permalink}`,
-          lastModified: currentDate,
+          lastModified: category.date_updated || currentDate,
           changeFrequency: 'weekly',
           priority: 0.8
         });
@@ -218,7 +216,7 @@ export async function GET(
     console.error('Error fetching categories for sitemap:', error);
   }
 
-  // Fetch ALL companies/POI
+  // Fetch ALL companies/POI - con cache
   try {
     console.log(`Fetching companies for ${lang} sitemap...`);
     const companies = await fetchFromDirectus('/items/companies', {
@@ -228,7 +226,8 @@ export async function GET(
       },
       fields: [
         'id',
-        'slug_permalink'
+        'slug_permalink',
+        'date_updated'
       ]
     });
     console.log(`Found ${companies.length} companies`);
@@ -237,7 +236,7 @@ export async function GET(
       if (company.slug_permalink) {
         entries.push({
           url: `${baseUrl}/${lang}/poi/${company.slug_permalink}`,
-          lastModified: currentDate,
+          lastModified: company.date_updated || currentDate,
           changeFrequency: 'monthly',
           priority: 0.7
         });
@@ -258,9 +257,93 @@ ${entries.map(entry => `  <url>
   </url>`).join('\n')}
 </urlset>`;
 
-  return new Response(sitemap, {
-    headers: {
-      'Content-Type': 'application/xml',
-    },
-  });
+  return sitemap;
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ lang: string }> }
+) {
+  const { lang } = await params;
+  const cacheKey = `sitemap-${lang}`;
+  const now = Date.now();
+  
+  // Controlla se abbiamo una versione cached valida
+  const cached = sitemapCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    console.log(`Serving cached sitemap for ${lang}`);
+    return new Response(cached.data, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400', // Cache per 24 ore
+        'X-Cache-Status': 'HIT'
+      },
+    });
+  }
+  
+  console.log(`Generating fresh sitemap for ${lang}...`);
+  
+  try {
+    // Genera nuova sitemap
+    const sitemap = await generateSitemap(lang);
+    
+    // Salva in cache
+    sitemapCache.set(cacheKey, {
+      data: sitemap,
+      timestamp: now
+    });
+    
+    // Pulisci cache vecchie (mantieni solo le ultime 10)
+    if (sitemapCache.size > 10) {
+      const entries = Array.from(sitemapCache.entries());
+      entries.sort((a, b) => b[1].timestamp - a[1].timestamp);
+      sitemapCache.clear();
+      entries.slice(0, 10).forEach(([key, value]) => {
+        sitemapCache.set(key, value);
+      });
+    }
+    
+    console.log(`Fresh sitemap generated for ${lang} with ${sitemap.split('<url>').length - 1} URLs`);
+    
+    return new Response(sitemap, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400', // Cache per 24 ore
+        'X-Cache-Status': 'MISS'
+      },
+    });
+  } catch (error) {
+    console.error(`Error generating sitemap for ${lang}:`, error);
+    
+    // Se c'è un errore, prova a servire una versione cached anche se scaduta
+    if (cached) {
+      console.log(`Serving stale cached sitemap for ${lang} due to error`);
+      return new Response(cached.data, {
+        headers: {
+          'Content-Type': 'application/xml',
+          'Cache-Control': 'public, max-age=3600, s-maxage=3600', // Cache per 1 ora in caso di errore
+          'X-Cache-Status': 'STALE'
+        },
+      });
+    }
+    
+    // Fallback: sitemap minimale
+    const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://thebestitaly.eu/${lang}</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
+    
+    return new Response(fallbackSitemap, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=300, s-maxage=300', // Cache per 5 minuti in caso di errore
+        'X-Cache-Status': 'ERROR'
+      },
+    });
+  }
 } 

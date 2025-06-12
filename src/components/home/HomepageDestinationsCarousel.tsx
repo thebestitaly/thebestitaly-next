@@ -23,7 +23,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
 
   if (isLoading || !regions) {
     return (
-      <div className="py-12 bg-gray-50">
+      <div className="py-12">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center">Explore Italian Regions</h2>
           {/* Mobile loading */}
@@ -75,7 +75,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
   const visibleMobileRegions = regions.slice(currentIndex, currentIndex + mobileItemsToShow);
 
   return (
-    <div className="py-8 md:py-12 bg-gray-50">
+    <div className="py-8 md:py-12">
       <div className="container mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center text-gray-800">
           Explore Italian Regions
@@ -88,7 +88,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
             {currentIndex > 0 && (
               <button
                 onClick={prevMobileSlide}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm rounded-full w-10 h-10 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-200"
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm rounded-full w-10 h-10 hover:bg-white flex items-center justify-center transition-all duration-200"
                 aria-label="Previous regions"
               >
                 <ChevronLeft className="w-5 h-5 text-gray-700" />
@@ -98,7 +98,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
             {currentIndex < regions.length - mobileItemsToShow && (
               <button
                 onClick={nextMobileSlide}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm rounded-full w-10 h-10 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-200"
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm rounded-full w-10 h-10 hover:bg-white flex items-center justify-center transition-all duration-200"
                 aria-label="Next regions"
               >
                 <ChevronRight className="w-5 h-5 text-gray-700" />
@@ -115,13 +115,14 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                   <Link
                     key={region.id}
                     href={`/${lang}/${translation.slug_permalink}/`}
-                    className="group relative h-full overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
+                    className="group relative h-full overflow-hidden rounded-lg transition-all duration-300 active:scale-95"
+                    aria-label={`Explore ${translation.destination_name} - ${translation.seo_summary || 'Discover this beautiful region'}`}
                   >
                     {region.image && (
                       <div className="absolute inset-0">
                         <Image
                           src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}`}
-                          alt={translation.destination_name}
+                          alt={`${translation.destination_name} - scenic regional landscape`}
                           fill
                           sizes="(max-width: 768px) 50vw, 33vw"
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -141,16 +142,16 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
               })}
             </div>
 
-            {/* Mobile dots indicator */}
+            {/* Mobile lines indicator */}
             <div className="flex justify-center mt-4 gap-2">
               {Array.from({ length: Math.ceil(regions.length / mobileItemsToShow) }).map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index * mobileItemsToShow)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  className={`h-1 rounded-full transition-all duration-300 ${
                     Math.floor(currentIndex / mobileItemsToShow) === index
-                      ? 'bg-blue-600 scale-125' 
-                      : 'bg-gray-300'
+                      ? 'bg-gray-800 w-12' 
+                      : 'bg-gray-300 w-6'
                   }`}
                   aria-label={`Go to page ${index + 1}`}
                 />
@@ -166,7 +167,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
             {currentIndex > 0 && (
               <button
                 onClick={prevSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 bg-white rounded-full w-12 h-12 shadow-lg hover:bg-gray-100 flex items-center justify-center transition-colors duration-200"
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 bg-white rounded-full w-12 h-12 hover:bg-gray-100 flex items-center justify-center transition-colors duration-200"
                 aria-label="Previous regions"
               >
                 <ChevronLeft className="w-6 h-6" />
@@ -176,7 +177,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
             {regions && currentIndex < regions.length - itemsToShow && (
               <button
                 onClick={nextSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 bg-white rounded-full w-12 h-12 shadow-lg hover:bg-gray-100 flex items-center justify-center transition-colors duration-200"
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 bg-white rounded-full w-12 h-12 hover:bg-gray-100 flex items-center justify-center transition-colors duration-200"
                 aria-label="Next regions"
               >
                 <ChevronRight className="w-6 h-6" />
@@ -193,14 +194,15 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                   <Link
                     key={region.id}
                     href={`/${lang}/${translation.slug_permalink}/`}
-                    className="group relative h-full overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
+                    className="group relative h-full overflow-hidden rounded-lg transition-all duration-500 transform hover:-translate-y-2"
+                    aria-label={`Explore ${translation.destination_name} - ${translation.seo_summary || 'Discover this beautiful region'}`}
                   >
                     {region.image && (
                       <div className="absolute inset-0">
                         <div className="relative w-full h-full">
                           <Image
                             src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}`}
-                            alt={translation.destination_name}
+                            alt={`${translation.destination_name} - scenic regional landscape`}
                             fill
                             sizes="(max-width: 1200px) 33vw, 20vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -234,10 +236,10 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index * itemsToShow)}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  className={`h-1 rounded-full transition-all duration-300 ${
                     Math.floor(currentIndex / itemsToShow) === index
-                      ? 'bg-blue-600 scale-125' 
-                      : 'bg-gray-300 hover:bg-gray-400'
+                      ? 'bg-gray-800 w-12' 
+                      : 'bg-gray-300 w-6 hover:bg-gray-400'
                   }`}
                   aria-label={`Go to page ${index + 1}`}
                 />

@@ -68,15 +68,33 @@ const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://widget.getyourguide.com/dist/pa.umd.production.min.js';
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
+    // Lazy load script only when component is visible
+    const loadScript = () => {
+      if (document.querySelector('script[src*="getyourguide"]')) return;
+      
+      const script = document.createElement('script');
+      script.src = 'https://widget.getyourguide.com/dist/pa.umd.production.min.js';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    };
 
-    // Ricrea il widget quando cambiano le props
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
+    // Use Intersection Observer to load only when visible
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          loadScript();
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.1 });
+
+    const currentContainer = containerRef.current;
+    if (currentContainer) {
+      observer.observe(currentContainer);
+      
+      // Ricrea il widget quando cambiano le props
+      currentContainer.innerHTML = '';
       const widgetDiv = document.createElement('div');
       
       // Usa il mapping delle lingue invece della conversione diretta
@@ -88,7 +106,7 @@ const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({
       widgetDiv.setAttribute('data-gyg-number-of-items', numberOfItems.toString());
       widgetDiv.setAttribute('data-gyg-partner-id', '6JFNZ19');
       widgetDiv.setAttribute('data-gyg-q', destinationName);
-      containerRef.current.appendChild(widgetDiv);
+      currentContainer.appendChild(widgetDiv);
     }
 
     // Aggiungi CSS custom per controllare il layout delle esperienze
@@ -155,6 +173,7 @@ const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({
     head.appendChild(styleElement);
 
     return () => {
+      observer.disconnect();
       document.body.querySelectorAll('script[src*="getyourguide"]').forEach(el => el.remove());
       const customStyle = document.getElementById('gyg-custom-style');
       if (customStyle) {

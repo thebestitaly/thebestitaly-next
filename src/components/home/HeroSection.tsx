@@ -56,8 +56,8 @@ const HeroSection: React.FC = () => {
         <div className="absolute top-8 right-0 w-20 h-20 border-dashed border-t-2 border-r-2 border-white/50 rounded-tr-full" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 h-full">
+             {/* Content */}
+       <div className="relative z-10 container mx-auto px-4 md:px-8 lg:px-12 h-full text-left">
         <div className="flex flex-col items-start justify-center min-h-[600px] max-w-2xl">
           <h1 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight leading-tight">
             {homeTranslations?.title || 'EXPERIENCE DESTINATIONS'}

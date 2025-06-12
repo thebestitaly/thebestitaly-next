@@ -61,13 +61,33 @@ const ExperiencePage: React.FC = () => {
   };
 
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://widget.getyourguide.com/dist/pa.umd.production.min.js';
-    script.async = true;
-    document.body.appendChild(script);
+    // Lazy load GetYourGuide script on user interaction
+    const loadScript = () => {
+      if (document.querySelector('script[src*="getyourguide"]')) return;
+      
+      const script = document.createElement('script');
+      script.src = 'https://widget.getyourguide.com/dist/pa.umd.production.min.js';
+      script.async = true;
+      document.body.appendChild(script);
+    };
+
+    // Load on first user interaction
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    const handleInteraction = () => {
+      loadScript();
+      events.forEach(event => document.removeEventListener(event, handleInteraction));
+    };
+
+    events.forEach(event => {
+      document.addEventListener(event, handleInteraction, { once: true, passive: true });
+    });
+
+    // Fallback: load after 2 seconds
+    const timeout = setTimeout(loadScript, 2000);
 
     return () => {
-      document.body.removeChild(script);
+      clearTimeout(timeout);
+      events.forEach(event => document.removeEventListener(event, handleInteraction));
     };
   }, []);
 

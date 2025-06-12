@@ -19,8 +19,8 @@ const LatestArticles: React.FC<LatestArticlesProps> = ({ lang }) => {
 
   // Query per gli articoli (escludi featured e category_id = 9)
   const { data: articlesData, isLoading, error } = useQuery({
-    queryKey: ['latest-articles-filtered', lang, 18],
-    queryFn: () => directusClient.getArticles(lang, 0, 18, {
+    queryKey: ['latest-articles-filtered', lang, 12],
+    queryFn: () => directusClient.getArticles(lang, 0, 12, {
       featured_status: { _neq: 'homepage' }, // Escludi featured
       category_id: { _neq: 9 } // Escludi category_id = 9
     }),

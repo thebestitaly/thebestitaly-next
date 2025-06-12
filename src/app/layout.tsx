@@ -60,26 +60,46 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1e40af" />
         
-        {/* Google Tag Manager */}
+        {/* Google Tag Manager - Lazy Load */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-M4HZ8MZ3');`,
+            __html: `
+              // Initialize dataLayer
+              window.dataLayer = window.dataLayer || [];
+              
+              // Lazy load GTM after user interaction or page load
+              function loadGTM() {
+                if (window.gtmLoaded) return;
+                window.gtmLoaded = true;
+                
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','GTM-M4HZ8MZ3');
+              }
+              
+              // Load GTM on first user interaction
+              ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(function(event) {
+                document.addEventListener(event, loadGTM, {once: true, passive: true});
+              });
+              
+              // Fallback: load after 3 seconds if no interaction
+              setTimeout(loadGTM, 3000);
+            `,
           }}
         />
         {/* End Google Tag Manager */}
       </head>
       <body>
-        {/* Google Tag Manager (noscript) */}
+        {/* Google Tag Manager (noscript) - Lazy Load */}
         <noscript>
           <iframe 
             src="https://www.googletagmanager.com/ns.html?id=GTM-M4HZ8MZ3"
             height="0" 
             width="0" 
             style={{display: 'none', visibility: 'hidden'}}
+            loading="lazy"
           />
         </noscript>
         {/* End Google Tag Manager (noscript) */}
