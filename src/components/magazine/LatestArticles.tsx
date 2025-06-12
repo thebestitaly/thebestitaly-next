@@ -19,16 +19,18 @@ const LatestArticles: React.FC<LatestArticlesProps> = ({ lang }) => {
 
   // Query per gli articoli (escludi featured e category_id = 9)
   const { data: articlesData, isLoading, error } = useQuery({
-    queryKey: ['latest-articles-filtered', lang, 12],
-    queryFn: () => directusClient.getArticles(lang, 0, 12, {
-      featured_status: { _neq: 'homepage' }, // Escludi featured
-      category_id: { _neq: 9 } // Escludi category_id = 9
-    }),
+    queryKey: ['latest-articles-homepage', lang],
+    queryFn: async () => {
+      const response = await fetch(`/api/articles/latest?lang=${lang}`);
+      if (!response.ok) throw new Error('Failed to fetch articles');
+      const result = await response.json();
+      return result.data;
+    },
     enabled: !!lang,
   });
 
   // Estrarre articoli dalla risposta
-  const articles = articlesData?.articles || [];
+  const articles = articlesData || [];
 
   // Error State
   if (error) {

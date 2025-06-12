@@ -388,21 +388,13 @@ class DirectusClient {
             'featured_image',
             'active',
             'featured_status',
-            'category_id.id',
+            'category_id',
             'category_id.translations.name',
             'translations.seo_title',
-            'translations.seo_summary',
-            'translations.slug_permalink'
+            'translations.seo_summary'
           ],
           deep: {
             translations: {
-              _filter: {
-                languages_code: {
-                  _eq: lang
-                }
-              }
-            },
-            'category_id.translations': {
               _filter: {
                 languages_code: {
                   _eq: lang
@@ -437,6 +429,7 @@ class DirectusClient {
             'category_id.id',
             'category_id.translations.nome_categoria',
             'category_id.translations.slug_permalink',
+            'translations.languages_code',
             'translations.titolo_articolo',
             'translations.seo_summary',
             'translations.slug_permalink'
@@ -465,6 +458,55 @@ class DirectusClient {
       return response.data?.data || [];
     } catch (error) {
       console.error('Error fetching homepage articles:', error);
+      return [];
+    }
+  }
+
+  async getLatestArticlesForHomepage(lang: string) {
+    try {
+      const response = await this.client.get('/items/articles', {
+        params: {
+          filter: {
+            featured_status: { _neq: 'homepage' },
+            category_id: { _neq: 9 }
+          },
+          fields: [
+            'id',
+            'image',
+            'date_created',
+            'featured_status',
+            'category_id.id',
+            'category_id.translations.nome_categoria',
+            'category_id.translations.slug_permalink',
+            'translations.languages_code',
+            'translations.titolo_articolo',
+            'translations.seo_summary',
+            'translations.slug_permalink'
+          ],
+          deep: {
+            translations: {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            },
+            'category_id.translations': {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            }
+          },
+          limit: 12,
+          sort: ['-date_created']
+        }
+      });
+
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching latest articles for homepage:', error);
       return [];
     }
   }
