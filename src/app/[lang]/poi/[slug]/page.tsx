@@ -72,8 +72,71 @@ export default async function CompanyPage({ params }: PageProps) {
 
     return (
       <div className="min-h-screen">
-          {/* Hero Section */}
-          <div className="relative h-96 lg:h-[500px]">
+        {/* Mobile Header - Studenti.it style */}
+        <div className="md:hidden">
+          {/* Breadcrumb Mobile */}
+          <div className="px-4 pt-4">
+            <Breadcrumb variant="mobile" />
+          </div>
+          
+          <div className="px-4 pt-4 pb-0">
+            {/* Company Name - Bigger */}
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">
+              {company.company_name}
+            </h1>
+            
+            {/* SEO Summary instead of SEO Title */}
+            {translation?.seo_summary && (
+              <p className="text-base text-gray-600 mb-4">
+                {translation.seo_summary}
+              </p>
+            )}
+            
+            {/* Quick Actions - Mobile */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              {company.website && (
+                <Link
+                  href={company.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:opacity-90 text-sm"
+                  style={{ backgroundColor: '#0066cc' }}
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  Visita Sito Web
+                </Link>
+              )}
+              
+              {company.phone && (
+                <a
+                  href={`tel:${company.phone}`}
+                  className="inline-flex items-center px-4 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Chiama
+                </a>
+              )}
+            </div>
+          </div>
+          
+          {/* Hero Image - Mobile - Attached to bottom with same side margins */}
+          {company.featured_image && (
+            <div className="px-4">
+              <div className="relative aspect-[16/9] overflow-hidden rounded-xl">
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
+                  alt={company.company_name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Hero Section */}
+        <div className="hidden md:block relative h-96 lg:h-[500px]">
           {/* Background Image */}
           {company.featured_image && (
             <div className="absolute inset-0 m-10">
@@ -136,31 +199,28 @@ export default async function CompanyPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Breadcrumb */}
-        <Breadcrumb />
+        {/* Breadcrumb - Desktop only */}
+        <div className="hidden md:block">
+          <Breadcrumb />
+        </div>
 
         {/* Main Content */}
-        <div className="container mx-auto py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="container mx-auto py-6 md:py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
             {/* Main Content */}
-            <div className="lg:col-span-2">
-              {/* Summary */}
-              <div className="prose text-2xl prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:hover:text-blue-700 mb-8">
-                <p>{translation?.seo_summary}</p>
-              </div>
-
+            <div className="lg:col-span-2 px-4 md:px-0">
               {/* Description */}
               {translation?.description && (
-                <article className="prose prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:hover:text-blue-700">
+                <article className="prose prose-base md:prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:hover:text-blue-700">
                   <ReactMarkdown>{translation.description}</ReactMarkdown>
                 </article>
               )}
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-8">
-              {/* Contact Info */}
-              <div className="rounded-2xl p-6">
+            <div className="space-y-6 md:space-y-8 px-4 md:px-0">
+              {/* Contact Info - Hidden on mobile since buttons are in header */}
+              <div className="hidden md:block rounded-2xl p-6">
                 <div className="space-y-4">
                   {company.website && (
                     <div className="flex items-start space-x-3">
@@ -198,8 +258,8 @@ export default async function CompanyPage({ params }: PageProps) {
 
               {/* Additional Images */}
               {company.images && company.images.length > 0 && (
-                <div className="rounded-2xl p-6">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl md:rounded-2xl p-4 md:p-6">
+                  <div className="grid grid-cols-2 gap-3 md:gap-4">
                     {company.images.slice(0, 4).map((image: any, index: number) => (
                       <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden">
                         <Image
@@ -223,16 +283,16 @@ export default async function CompanyPage({ params }: PageProps) {
               )}
 
               {/* CTA */}
-              <div className="rounded-2xl p-6 text-center">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
+              <div className="rounded-xl md:rounded-2xl p-4 md:p-6 text-center">
+                <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
                   Vuoi promuovere la tua eccellenza?
                 </h3>
-                <p className="text-gray-600 mb-6 text-sm">
+                <p className="text-gray-600 mb-4 md:mb-6 text-sm">
                   Unisciti alle migliori eccellenze italiane presenti su TheBestItaly
                 </p>
                 <Link
                   href="/it/contact"
-                  className="inline-block w-full text-white px-6 py-3 rounded-lg transition-colors duration-200 font-semibold text-center hover:opacity-90"
+                  className="inline-block w-full text-white px-4 md:px-6 py-2 md:py-3 rounded-lg transition-colors duration-200 font-semibold text-center hover:opacity-90 text-sm md:text-base"
                   style={{ backgroundColor: '#0066cc' }}
                 >
                   Richiedi Informazioni
@@ -241,7 +301,7 @@ export default async function CompanyPage({ params }: PageProps) {
 
               {/* Google Maps */}
               {destination && destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
-                <div className="rounded-2xl p-6">
+                <div className="rounded-xl md:rounded-2xl p-4 md:p-6">
                   <GoogleMaps 
                     lat={destination.lat} 
                     lng={destination.long} 
@@ -254,11 +314,11 @@ export default async function CompanyPage({ params }: PageProps) {
           </div>
 
           {/* Articles Section */}
-          <div className="mt-16">
+          <div className="mt-8 md:mt-16">
             <div className="container mx-auto px-4">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Articoli Correlati</h2>
-                <p className="text-gray-600 max-w-2xl mx-auto">
+              <div className="text-center mb-8 md:mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4">Articoli Correlati</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto text-sm md:text-base">
                   Scopri gli ultimi articoli e consigli di viaggio
                 </p>
               </div>

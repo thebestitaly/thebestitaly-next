@@ -98,8 +98,53 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div className="relative h-64 sm:h-80 lg:h-[500px]">
+      {/* Mobile Header - Studenti.it style */}
+      <div className="md:hidden">
+        <div className="px-4 pt-6 pb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            🏆 Eccellenze
+          </h1>
+          <p className="text-base text-gray-600 mb-4">
+            Le Migliori Esperienze Italiane
+          </p>
+          
+          {/* Hero Image - Mobile */}
+          <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
+            <Image
+              src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
+              alt="Eccellenze Italiane"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          
+          {/* TOC - Table of Contents */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-3 text-sm">In questa pagina:</h3>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a href="#eccellenze-list" className="text-blue-600 hover:text-blue-800">
+                  • Tutte le eccellenze
+                </a>
+              </li>
+              <li>
+                <a href="#categories" className="text-blue-600 hover:text-blue-800">
+                  • Categorie disponibili
+                </a>
+              </li>
+              <li>
+                <a href="#join-us" className="text-blue-600 hover:text-blue-800">
+                  • Unisciti a noi
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Hero Section */}
+      <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
         <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
           <Image
             src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
@@ -129,12 +174,14 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <Breadcrumb />
+      {/* Breadcrumb - Desktop only */}
+      <div className="hidden md:block">
+        <Breadcrumb />
+      </div>
 
       {/* Companies Grid */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+      <div id="eccellenze-list" className="container mx-auto px-4 py-8 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
           {companies.map((company: any) => {
             const translation = company.translations?.[0];
             const category = categories?.find((cat: any) => cat.id === company.category_id);
@@ -144,15 +191,15 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
               <div key={company.id} className="group">
                 {/* Category Tag */}
                 {categoryName && (
-                  <div className="mb-4">
-                    <span className="inline-block bg-blue-100 text-blue-800 text-sm font-semibold px-4 py-2 rounded-full">
+                  <div className="mb-2 md:mb-4">
+                    <span className="inline-block bg-blue-100 text-blue-800 text-xs md:text-sm font-semibold px-3 md:px-4 py-1 md:py-2 rounded-full">
                       {categoryName}
                     </span>
                   </div>
                 )}
                 
                 {/* Company Image */}
-                <div className="relative aspect-[4/3] mb-8 overflow-hidden rounded-2xl">
+                <div className="relative aspect-[4/3] mb-3 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
                   <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
                     {company.featured_image ? (
                       <Image
@@ -162,7 +209,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-8xl">
+                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-4xl md:text-8xl">
                         🏢
                       </div>
                     )}
@@ -171,14 +218,14 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
 
                 {/* Company Name */}
                 <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors duration-200 leading-tight">
+                  <h3 className="text-lg md:text-2xl font-bold text-gray-900 mb-2 md:mb-3 group-hover:text-blue-600 transition-colors duration-200 leading-tight">
                     {company.company_name}
                   </h3>
                 </Link>
 
                 {/* SEO Title */}
                 {translation?.seo_title && (
-                  <p className="text-blue-600 font-medium text-lg">
+                  <p className="text-blue-600 font-medium text-sm md:text-lg">
                     {translation.seo_title}
                   </p>
                 )}
@@ -188,12 +235,12 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-16 text-center">
+        <div id="join-us" className="mt-8 md:mt-16 text-center">
           <div className="max-w-2xl mx-auto">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
+            <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
               Vuoi promuovere la tua eccellenza?
             </h3>
-            <p className="text-gray-600 mb-6 text-sm">
+            <p className="text-gray-600 mb-4 md:mb-6 text-sm">
               Unisciti alle migliori eccellenze italiane presenti su TheBestItaly
             </p>
             <Link

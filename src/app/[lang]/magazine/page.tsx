@@ -87,8 +87,50 @@ const MagazineListPage: React.FC = () => {
         schema={magazineSchema}
       />
 
-      {/* Hero Section */}
-      <div className="relative h-64 sm:h-80 lg:h-[500px]">
+      {/* Mobile Header - Studenti.it style */}
+      <div className="md:hidden">
+        <div className="px-4 pt-6 pb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {magazineTranslation?.nome_categoria || "Magazine"}
+          </h1>
+          {magazineTranslation?.seo_summary && (
+            <p className="text-base text-gray-600 mb-4">
+              {magazineTranslation.seo_summary}
+            </p>
+          )}
+          
+          {/* Hero Image - Mobile */}
+          <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
+            <Image
+              src="/images/magazine.webp"
+              alt={magazineTranslation?.seo_title || "Magazine"}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          
+          {/* TOC - Table of Contents */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-3 text-sm">Categorie disponibili:</h3>
+            <ul className="space-y-2 text-sm">
+              {categories?.map((category) => {
+                const translation = category.translations[0];
+                return (
+                  <li key={category.id}>
+                    <a href={`#category-${category.id}`} className="text-blue-600 hover:text-blue-800">
+                      • {translation?.nome_categoria}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Hero Section */}
+      <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
         <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
           <Image
             src="/images/magazine.webp"
@@ -116,30 +158,32 @@ const MagazineListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <Breadcrumb />
+      {/* Breadcrumb - Desktop only */}
+      <div className="hidden md:block">
+        <Breadcrumb />
+      </div>
 
       {/* Categories and Articles */}
-      <div className="py-16">
+      <div className="py-8 md:py-16">
         <div className="container mx-auto px-4">
           {categories?.map((category) => {
             const translation = category.translations[0];
             const categoryArticles = articlesByCategory?.[category.id] || [];
 
             return (
-              <section key={category.id} className="mb-20">
+              <section key={category.id} id={`category-${category.id}`} className="mb-12 md:mb-20">
                 {/* Category Header */}
-                <div className="mb-8">
-                  <h2 className="text-4xl font-bold mb-2">
+                <div className="mb-6 md:mb-8">
+                  <h2 className="text-2xl md:text-4xl font-bold mb-2">
                     {translation?.nome_categoria}
                   </h2>
-                  <p className="text-gray-600 text-lg max-w-3xl">
+                  <p className="text-gray-600 text-sm md:text-lg max-w-3xl">
                     {translation?.seo_summary}
                   </p>
                 </div>
 
                 {/* Articles Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                   {categoryArticles.map((article: any) => {
                     const articleTranslation = article.translations[0];
                     
@@ -156,21 +200,21 @@ const MagazineListPage: React.FC = () => {
                       >
                         <div className="rounded-lg overflow-hidden">
                           {article.image && (
-                            <div className="aspect-[16/9] overflow-hidden">
+                            <div className="aspect-[16/9] overflow-hidden rounded-lg">
                               <Image
                                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
                                 alt={articleTranslation?.titolo_articolo}
                                 width={400}
                                 height={225}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
                               />
                             </div>
                           )}
-                          <div className="p-6">
-                            <h3 className="text-xl font-bold mb-2 group-hover:text-blue-600">
+                          <div className="p-3 md:p-6">
+                            <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-blue-600">
                               {articleTranslation?.titolo_articolo}
                             </h3>
-                            <p className="text-gray-600 line-clamp-2">
+                            <p className="text-gray-600 line-clamp-2 text-sm md:text-base">
                               {articleTranslation?.seo_summary}
                             </p>
                           </div>

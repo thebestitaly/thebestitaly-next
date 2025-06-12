@@ -480,33 +480,39 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
         </div>
       </div>
 
-      {/* Language Modal */}
+      {/* Language Modal - Mobile Fullscreen Bottom Sheet */}
       {isLanguageModalOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-end"
           onClick={() => setIsLanguageModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-y-auto"
+            className="bg-white rounded-t-3xl shadow-2xl w-full h-[60vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">Scegli la lingua ({allLanguages.length} disponibili)</h3>
-                <button
-                  onClick={() => setIsLanguageModalOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <div className="space-y-2">
+            {/* Handle bar */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
+            </div>
+            
+            {/* Close button - top right */}
+            <div className="absolute top-4 right-4">
+              <button
+                onClick={() => setIsLanguageModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Languages list */}
+            <div className="px-4 pb-4 h-full overflow-y-auto">
+              <div className="space-y-1">
                 {allLanguages.map((language: { code: string; name: string; flag: string }) => (
                   <button
                     key={language.code}
                     onClick={() => handleLanguageChange(language.code)}
-                    className={`w-full flex items-center space-x-4 p-4 rounded-lg transition-colors ${
+                    className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${
                       lang === language.code 
                         ? 'bg-blue-50 border border-blue-200' 
                         : 'hover:bg-gray-50 border border-transparent'
@@ -515,13 +521,18 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     <Image
                       src={`/images/flags/${language.flag}.svg`}
                       alt={language.name}
-                      width={32}
-                      height={24}
-                      className="rounded"
+                      width={24}
+                      height={18}
+                      className="rounded flex-shrink-0"
+                      onError={(e) => {
+                        // Fallback per bandiere mancanti
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
                     />
-                    <span className="text-lg font-medium">{language.name}</span>
+                    <span className="text-base font-medium text-left flex-1">{language.name}</span>
                     {lang === language.code && (
-                      <div className="ml-auto w-4 h-4 bg-blue-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
                     )}
                   </button>
                 ))}

@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Escludi favicon.ico (anche con query string) e le altre directory
-    '/((?!api|_next/static|_next/image|images|favicon.ico).*)',
+    // Escludi favicon.ico, robots.txt, sitemap.xml e le altre directory
+    '/((?!api|_next/static|_next/image|images|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 };

@@ -144,13 +144,43 @@ export default function MagazineArticlePage({ params }: PageProps) {
       />
 
       <div>
-        <div className="relative h-64 sm:h-80 lg:h-[500px]">
-          {/* Mobile: Dark blue background without image */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-800 block md:hidden" />
-          
+        {/* Mobile Header - Studenti.it style */}
+        <div className="md:hidden">
+          <div className="px-4 pt-6 pb-4">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {translation?.titolo_articolo}
+            </h1>
+            {translation?.seo_summary && (
+              <p className="text-base text-gray-600 mb-4">
+                {translation.seo_summary}
+              </p>
+            )}
+            
+            {/* Hero Image - Mobile */}
+            {article.image && (
+              <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+                  alt={translation?.titolo_articolo || ''}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
+            
+            {/* TOC - Table of Contents */}
+            <div className="rounded-lg mb-6">
+              <TableOfContents content={translation?.description || ''} />
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Hero Section */}
+        <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
           {/* Desktop: Image with overlay */}
           {article.image && (
-            <div className="absolute inset-0 m-4 sm:m-6 lg:m-10 hidden md:block">
+            <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
               <Image
                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
                 alt={translation?.titolo_articolo || ''}
@@ -172,19 +202,22 @@ export default function MagazineArticlePage({ params }: PageProps) {
           </div>
         </div>
 
-        <ArticleBreadcrumb />
+        {/* Breadcrumb - Desktop only */}
+        <div className="hidden md:block">
+          <ArticleBreadcrumb />
+        </div>
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="container mx-auto px-4 py-4 md:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
             <div className="lg:col-span-2">
-              <div className="rounded-lg p-2">
+              <div className="rounded-lg p-2 mb-4 md:mb-0">
                 <GetYourGuideWidget 
                   lang={lang} 
                   destinationName="Italy"
                 />
               </div>
 
-              <article className="prose prose-lg max-w-none mt-8" ref={contentRef}>
+              <article className="prose prose-base md:prose-lg max-w-none mt-4 md:mt-8" ref={contentRef}>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
@@ -215,8 +248,11 @@ export default function MagazineArticlePage({ params }: PageProps) {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="sticky top-16 space-y-6">
-                <TableOfContents content={translation?.description || ''} />
+              <div className="sticky top-16 space-y-4 md:space-y-6">
+                {/* Desktop TOC */}
+                <div className="hidden md:block">
+                  <TableOfContents content={translation?.description || ''} />
+                </div>
                 <ArticlesSidebar lang={lang} />
               </div>
             </div>

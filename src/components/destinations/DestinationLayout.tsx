@@ -72,14 +72,56 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
   return (
     <div className="min-h-screen">
       <Seo title={seoTitle} description={seoDescription} image={seoImage} schema={schema} />
-      {/* Hero Section */}      
-      <div className="relative h-64 sm:h-80 lg:h-[500px]">
-        {/* Mobile: Dark blue background without image */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-800 block md:hidden" />
+      
+      {/* Mobile Header - Studenti.it style */}
+      <div className="md:hidden">
+        {/* Breadcrumb Mobile */}
+        <div className="px-4 pt-4">
+          <Breadcrumb variant="mobile" />
+        </div>
         
+        <div className="px-4 pt-4 pb-0">
+          {/* Titolo più grande */}
+          <h1 className="text-5xl font-bold text-gray-900 mb-3 mt-3">
+            {translation?.destination_name}
+          </h1>
+          
+          {/* SEO Summary invece di SEO Title */}
+          {translation?.seo_summary && (
+            <p className="text-xl text-gray-600 mb-4">
+              {translation.seo_summary}
+            </p>
+          )}
+        </div>
+        
+        {/* Hero Image - Mobile - Attaccata al bottom con stesso margine laterale */}
+        {destination.image && (
+          <div className="px-4 mt-12">
+            <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
+              <Image
+                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
+                alt={translation?.destination_name || ""}
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* TOC - Table of Contents */}
+        <div className="px-4">
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <TableOfContents content={tocContent} />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Hero Section */}
+      <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
         {/* Desktop: Image with overlay */}
         {destination.image && (
-          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10 hidden md:block">
+          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
             <Image
               src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
               alt={translation?.destination_name || ""}
@@ -94,7 +136,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
         <div className="relative z-10 h-full flex items-end">
           <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
             <div className="max-w-4xl">
-              <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
                 {translation?.destination_name}
               </h1>
               {translation?.seo_title && <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">{translation.seo_title}</p>}
@@ -103,33 +145,29 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
         </div>
       </div>
 
-      {/* Breadcrumb */}
-      <Breadcrumb />
+      {/* Breadcrumb - Desktop only */}
+      <div className="hidden md:block">
+        <Breadcrumb />
+      </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20">
+      <div className="container mx-auto px-4 py-6 md:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-20">
           {/* Content Column */}
           <div className="lg:col-span-2">
-            {translation?.seo_summary && (
-              <div className="prose max-w-none mb-8">
-                <p className="text-xl text-gray-600 leading-relaxed">{translation.seo_summary}</p>
-              </div>
-            )}
-
-            <div>
+            <div className="mb-6 md:mb-8">
               <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
             </div>
 
             {translation?.description && (
-              <article className="prose max-w-none mb-8">
+              <article className="prose prose-base md:prose-lg max-w-none mb-6 md:mb-8">
                 <ReactMarkdown>{translation.description}</ReactMarkdown>
               </article>
             )}
 
             {/* Google Maps Widget */}
             {destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
-              <div className="my-8">
+              <div className="my-6 md:my-8">
                 <GoogleMaps 
                   lat={destination.lat} 
                   lng={destination.long} 
@@ -139,7 +177,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             )}
 
             {/* Destination Companies/Points of Interest */}
-            <div className="my-8">
+            <div className="my-6 md:my-8">
               <DestinationCompanies 
                 destinationId={destination.id}
                 destinationType={type}
@@ -148,15 +186,15 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               />
             </div>
 
-            <div className="my-8">
+            <div className="my-6 md:my-8">
               <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            {/* Table of Contents - Sticky */}
-            <div className="sticky top-16 z-10 mb-10">
+            {/* Table of Contents - Sticky - Desktop only */}
+            <div className="hidden md:block sticky top-16 z-10 mb-10">
               <TableOfContents content={tocContent} />
               <DestinationSidebar
                 currentDestinationId={destination.id}
@@ -168,7 +206,20 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                 type={destination.type}
               />
              <ArticlesSidebar lang={lang} />
-              
+            </div>
+            
+            {/* Mobile sidebar content */}
+            <div className="md:hidden space-y-6">
+              <DestinationSidebar
+                currentDestinationId={destination.id}
+                regionSlug={slugData.regionSlug}
+                provinceSlug={slugData.provinceSlug}
+                currentSlug={translation?.slug_permalink || ""}
+                provinceId={provinceId || undefined}
+                lang={lang}
+                type={destination.type}
+              />
+             <ArticlesSidebar lang={lang} />
             </div>
           </div>
         </div>

@@ -251,8 +251,6 @@ class DirectusClient {
       }
       request.headers['Content-Type'] = 'application/json';
       
-      // Debug log per verificare che usi il token corretto
-      console.log('🔗 Directus Request:', request.url, 'Token:', token ? `${token.substring(0, 8)}...` : 'NONE');
       
       return request;
     });
@@ -366,6 +364,58 @@ class DirectusClient {
       return response.data?.data || [];
     } catch (error) {
       console.error('❌ Error fetching homepage companies:', error);
+      return [];
+    }
+  }
+
+  async getHomepageArticles(lang: string) {
+    try {
+      console.log('🔍 Attempting to fetch homepage articles...');
+      
+      const response = await this.client.get('/items/articles', {
+        params: {
+          filter: {
+            featured_status: { _eq: 'homepage' }
+          },
+          fields: [
+            'id',
+            'image',
+            'date_created',
+            'featured_status',
+            'category_id.id',
+            'category_id.translations.nome_categoria',
+            'category_id.translations.slug_permalink',
+            'translations.titolo_articolo',
+            'translations.seo_summary',
+            'translations.slug_permalink'
+          ],
+          deep: {
+            translations: {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            },
+            'category_id.translations': {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            }
+          },
+          limit: 4,
+          sort: ['-date_created']
+        }
+      });
+
+      const articles = response.data?.data || [];
+      console.log('📊 Homepage articles result:', articles.length);
+      console.log('🔍 Articles data:', articles);
+      return articles;
+    } catch (error) {
+      console.error('❌ Error fetching homepage articles:', error);
       return [];
     }
   }
@@ -608,14 +658,17 @@ class DirectusClient {
         meta: 'total_count', // Restituisce il conteggio totale
       };
   
+      // Inizializza il filtro
+      params.filter = {};
+
       // Aggiungi filtri opzionali se presenti
       if (Object.keys(filters).length > 0) {
-        params.filter = filters;
+        params.filter = { ...params.filter, ...filters };
       }
-  
-      // Aggiungi filtro per featured_status
+
+      // Aggiungi filtro per featured_status (è un campo dell'articolo, non della traduzione)
       if (featuredStatus) {
-        params.deep.translations._filter.featured_status = { _eq: featuredStatus };
+        params.filter = { ...params.filter, featured_status: { _eq: featuredStatus } };
       }
   
       // Effettua la chiamata API

@@ -7,6 +7,7 @@ import FeaturedCompaniesSlider from '../../components/home/FeaturedCompaniesSlid
 import HomepageDestinationsCarousel from '../../components/home/HomepageDestinationsCarousel';
 import GetYourGuideWidget from '../../components/widgets/GetYourGuideWidget';
 import LatestArticles from '../../components/magazine/LatestArticles';
+import FeaturedHomepageArticles from '../../components/magazine/FeaturedHomepageArticles';
 import CategoriesList from '../../components/magazine/CategoriesList';
 import ProjectIntro from '../../components/home/ProjectIntro';
 import BookExperience from '../../components/home/BookExperience';
@@ -33,6 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function Home({ params }: PageProps) {
   const { lang } = await params;
+  const homeTranslations = await getTranslations(lang, 'homepage');
 
   return (
     <div>
@@ -51,6 +53,22 @@ export default async function Home({ params }: PageProps) {
         <div className="container mx-auto px-4 py-12">
           <GetYourGuideWidget lang={lang} destinationName="Italy" />
         </div>
+                {/* Featured Articles Section */}
+        <div className="bg-gray-50 py-16">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                {homeTranslations?.featured_articles_title || 'Featured Articles'}
+              </h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                {homeTranslations?.featured_articles_description || 'Discover our featured articles and insights'}
+              </p>
+            </div>
+            <FeaturedHomepageArticles lang={lang} />
+          </div>
+        </div>
+
+        {/* Latest Articles Section */}
         <div className="container mx-auto px-4 py-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Latest Articles</h2>
           <LatestArticles lang={lang} />

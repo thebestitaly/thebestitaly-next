@@ -2,6 +2,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { getTranslations } from "@/lib/directus";
 
 interface BreadcrumbItem {
   label: string;
@@ -11,7 +13,11 @@ interface BreadcrumbItem {
 const formatLabel = (slug: string): string =>
   slug.replace(/-/g, " ").toUpperCase();
 
-const Breadcrumb: React.FC = () => {
+interface BreadcrumbProps {
+  variant?: 'default' | 'mobile';
+}
+
+const Breadcrumb: React.FC<BreadcrumbProps> = ({ variant = 'default' }) => {
   const pathname = usePathname();
 
   // Estrai i segmenti dal pathname
@@ -20,13 +26,19 @@ const Breadcrumb: React.FC = () => {
   // Recupera la lingua dal primo segmento o usa 'it' come fallback
   const lang = pathSegments[0] || "it";
   
+  // Fetch traduzioni per il breadcrumb
+  const { data: menuTranslations } = useQuery({
+    queryKey: ["menu-translations", lang],
+    queryFn: () => getTranslations(lang, "menu"),
+  });
+  
   // Generazione dinamica del breadcrumb
   const breadcrumbs: BreadcrumbItem[] = [];
 
   // Se siamo nella sezione magazine
   if (pathSegments[1] === "magazine") {
     breadcrumbs.push({
-      label: "MAGAZINE",
+      label: (menuTranslations?.magazine || "MAGAZINE").toUpperCase(),
       path: `/${lang}/magazine`,
     });
     
@@ -110,35 +122,40 @@ const Breadcrumb: React.FC = () => {
     }
   }
 
+  const isMobile = variant === 'mobile';
+  
   return (
-    <nav aria-label="breadcrumb" className="py-4 bg-gray-100">
-      <div className="container mx-auto px-4">
-        <ol className="list-reset flex text-sm text-gray-700">
+    <nav aria-label="breadcrumb" className={isMobile ? "py-2" : "py-4 bg-gray-100"}>
+      <div className={isMobile ? "" : "container mx-auto px-4"}>
+        <ol className={`list-reset flex flex-wrap items-start gap-1 sm:gap-2 ${isMobile ? 'text-xs' : 'text-sm'} text-gray-700`}>
           {/* Home */}
-          <li>
+          <li className="flex items-center shrink-0">
             <Link
               href={`/${lang}`}
               className="hover:underline transition duration-150 ease-in-out"
             >
-              HOME
+              {(menuTranslations?.home || "HOME").toUpperCase()}
             </Link>
+            <span className="mx-1 sm:mx-2 text-gray-600">/</span>
           </li>
 
           {/* Dynamic Crumbs */}
           {breadcrumbs.map((crumb, index) => (
-            <li key={crumb.path} className="flex items-center">
-              <span className="mx-2 text-gray-600">/</span>
+            <li key={crumb.path} className="flex items-center shrink-0">
               {index === breadcrumbs.length - 1 ? (
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-gray-900 leading-tight break-words">
                   {crumb.label}
                 </span>
               ) : (
-                <Link
-                  href={crumb.path}
-                  className="hover:underline transition duration-150 ease-in-out"
-                >
-                  {crumb.label}
-                </Link>
+                <>
+                  <Link
+                    href={crumb.path}
+                    className="hover:underline transition duration-150 ease-in-out"
+                  >
+                    {crumb.label}
+                  </Link>
+                  <span className="mx-1 sm:mx-2 text-gray-600">/</span>
+                </>
               )}
             </li>
           ))}
