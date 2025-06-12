@@ -8,6 +8,7 @@ import directusClient from '@/lib/directus';
 import GetYourGuideWidget from '@/components/widgets/GetYourGuideWidget';
 import ArticlesSidebar from '@/components/widgets/ArticlesSidebar';
 import TableOfContents from '@/components/widgets/TableOfContents';
+import VideoEmbed from '@/components/widgets/VideoEmbed';
 
 interface PageProps {
   params: Promise<{
@@ -251,6 +252,17 @@ export default async function MagazineArticlePage({ params }: PageProps) {
               />
             </div>
 
+            {/* Video Section - Uncomment when video_url field is added to database */}
+            {/* {article.video_url && (
+              <div className="mb-8">
+                <VideoEmbed 
+                  src={article.video_url} 
+                  title={translation?.titolo_articolo || 'Video'} 
+                  className="w-full"
+                />
+              </div>
+            )} */}
+
             <article className="prose prose-base md:prose-lg max-w-none mt-4 md:mt-8">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -274,6 +286,28 @@ export default async function MagazineArticlePage({ params }: PageProps) {
                       />
                     </div>
                   ),
+                  // Custom video component for YouTube/Vimeo links
+                  a: ({ node, ...props }) => {
+                    const href = props.href as string;
+                    const isVideo = href && (
+                      href.includes('youtube.com') || 
+                      href.includes('youtu.be') || 
+                      href.includes('vimeo.com') ||
+                      href.match(/\.(mp4|webm|ogg)$/i)
+                    );
+                    
+                    if (isVideo) {
+                      return (
+                        <VideoEmbed 
+                          src={href} 
+                          title={props.children?.toString() || 'Video'} 
+                          className="my-6"
+                        />
+                      );
+                    }
+                    
+                    return <a {...props} className="text-blue-600 hover:text-blue-800 underline" />;
+                  },
                 }}
               >
                 {translation?.description || ''}

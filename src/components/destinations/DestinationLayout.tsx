@@ -7,6 +7,7 @@ import directusClient, { getSlugsAndBreadcrumbs } from "@/lib/directus";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Seo from "@/components/widgets/Seo";
 import TableOfContents from "@/components/widgets/TableOfContents";
+import VideoEmbed from "@/components/widgets/VideoEmbed";
 import { lazy, Suspense } from "react";
 
 // Lazy load dei componenti non critici
@@ -15,6 +16,42 @@ const DestinationSidebar = lazy(() => import("@/components/destinations/Destinat
 const ArticlesSidebar = lazy(() => import("@/components/widgets/ArticlesSidebar"));
 const GoogleMaps = lazy(() => import("@/components/widgets/GoogleMaps"));
 const DestinationCompanies = lazy(() => import("@/components/destinations/DestinationCompanies"));
+
+// Custom components for ReactMarkdown
+const markdownComponents = {
+  a: ({ href, children, ...props }: any) => {
+    // Check if the link is a video URL
+    if (href && (
+      href.includes('youtube.com/watch') ||
+      href.includes('youtu.be/') ||
+      href.includes('vimeo.com/') ||
+      href.match(/\.(mp4|webm|ogg)$/i)
+    )) {
+      return (
+        <div className="my-6">
+          <VideoEmbed 
+            src={href} 
+            title={typeof children === 'string' ? children : 'Video'} 
+            className="w-full"
+          />
+        </div>
+      );
+    }
+    
+    // Regular link
+    return (
+      <a 
+        href={href} 
+        target={href?.startsWith('http') ? '_blank' : undefined}
+        rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+        className="text-blue-600 hover:text-blue-700 underline"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  },
+};
 
 interface DestinationLayoutProps {
   slug: string;
@@ -165,9 +202,20 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </Suspense>
             </div>
 
+            {/* Video Section */}
+            {destination.video_url && (
+              <div className="mb-8">
+                <VideoEmbed 
+                  src={destination.video_url} 
+                  title={translation?.destination_name || 'Video della destinazione'} 
+                  className="w-full"
+                />
+              </div>
+            )}
+
             {translation?.description && (
               <article className="prose prose-base md:prose-lg max-w-none mb-6 md:mb-8">
-                <ReactMarkdown>{translation.description}</ReactMarkdown>
+                <ReactMarkdown components={markdownComponents}>{translation.description}</ReactMarkdown>
               </article>
             )}
 

@@ -37,7 +37,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
         <div className="relative h-64 sm:h-80 lg:h-[500px]">
           <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
             <Image
-              src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
+              src="/excellence.webp"
               alt="Eccellenze Italiane"
               fill
               className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
@@ -111,7 +111,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
           {/* Hero Image - Mobile */}
           <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
             <Image
-              src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
+              src="/excellence.webp"
               alt="Eccellenze Italiane"
               fill
               className="object-cover"
@@ -147,7 +147,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
       <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
         <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
           <Image
-            src="https://directus-production-93f0.up.railway.app/assets/8782334a-2aa5-40be-87d0-960d8e79e7ff?cache-buster=2025-06-10T15:39:16.782Z&key=system-large-contain"
+            src="/excellence.webp"
             alt="Eccellenze Italiane"
             fill
             className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"

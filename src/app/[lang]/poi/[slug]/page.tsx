@@ -10,10 +10,47 @@ import CompanyDestinationBox from '@/components/destinations/CompanyDestinationB
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import LatestArticles from '@/components/magazine/LatestArticles';
 import GoogleMaps from '@/components/widgets/GoogleMaps';
+import VideoEmbed from '@/components/widgets/VideoEmbed';
 
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
 }
+
+// Custom components for ReactMarkdown
+const markdownComponents = {
+  a: ({ href, children, ...props }: any) => {
+    // Check if the link is a video URL
+    if (href && (
+      href.includes('youtube.com/watch') ||
+      href.includes('youtu.be/') ||
+      href.includes('vimeo.com/') ||
+      href.match(/\.(mp4|webm|ogg)$/i)
+    )) {
+      return (
+        <div className="my-6">
+          <VideoEmbed 
+            src={href} 
+            title={typeof children === 'string' ? children : 'Video'} 
+            className="w-full"
+          />
+        </div>
+      );
+    }
+    
+    // Regular link
+    return (
+      <a 
+        href={href} 
+        target={href?.startsWith('http') ? '_blank' : undefined}
+        rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+        className="text-blue-600 hover:text-blue-700 underline"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  },
+};
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, slug } = await params;
@@ -212,7 +249,7 @@ export default async function CompanyPage({ params }: PageProps) {
               {/* Description */}
               {translation?.description && (
                 <article className="prose prose-base md:prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:hover:text-blue-700">
-                  <ReactMarkdown>{translation.description}</ReactMarkdown>
+                  <ReactMarkdown components={markdownComponents}>{translation.description}</ReactMarkdown>
                 </article>
               )}
             </div>

@@ -22,6 +22,7 @@ export interface Destination {
   } | null;
   type: 'region' | 'province' | 'municipality';
   image?: string;
+  video_url?: string; // YouTube, Vimeo, or direct video URL
   lat?: number;
   long?: number;
   translations: Translation[];
@@ -87,6 +88,7 @@ export interface ArticleTranslation {
 export interface Article {
   id: string;
   image?: string;
+  video_url?: string; // YouTube, Vimeo, or direct video URL
   date_created: string;
   featured_status: 'none' | 'homepage' | 'top' | 'editor' | 'trending';
   category_id?: {
@@ -303,10 +305,8 @@ class DirectusClient {
             'featured',
             'active',
             'featured_status',
-            'socials',
             'translations.seo_title',
-            'translations.seo_summary',
-            'translations.slug_permalink'
+            'translations.seo_summary'
           ],
           deep: {
             translations: {
@@ -348,7 +348,6 @@ class DirectusClient {
             'featured',
             'active',
             'featured_status',
-            'socials',
             'translations.seo_title',
             'translations.seo_summary',
             'translations.slug_permalink'
@@ -389,7 +388,6 @@ class DirectusClient {
             'active',
             'featured_status',
             'category_id',
-            'category_id.translations.name',
             'translations.seo_title',
             'translations.seo_summary'
           ],
@@ -407,7 +405,10 @@ class DirectusClient {
         }
       });
 
-      return response.data?.data || [];
+      return (response.data?.data || []).filter((company: Company) => {
+        const translation = company.translations?.find((t: any) => t.languages_code === lang);
+        return translation?.seo_title?.trim();
+      });
     } catch (error) {
       console.error('Error fetching homepage companies:', error);
       return [];
@@ -470,7 +471,8 @@ class DirectusClient {
           filter: {
             featured_status: { _neq: 'homepage' },
             status: { _eq: 'published' },
-            category_id: { _neq: 9 }
+            category_id: { _neq: 9 },
+            languages_code: { _eq: lang  }
           },
           fields: [
             'id',
@@ -715,6 +717,11 @@ class DirectusClient {
   
       // Parametri base per la richiesta
       const params: Record<string, any> = {
+        filter: {
+          status: {
+            _eq: 'published'
+          }
+        },
         sort: "-date_created",
         fields: [
           "id",
@@ -932,6 +939,7 @@ class DirectusClient {
     try {
       const response = await this.client.get('/items/articles', {
         params: {
+          'filter[status][_eq]': 'published',
           'filter[category_id][translations][slug_permalink][_eq]': categorySlug,
           'fields[]': [
             'id',
@@ -959,7 +967,8 @@ class DirectusClient {
                 }
               }
             }
-          }
+          },
+          'sort': ['-date_created'] 
         }
       });
   
