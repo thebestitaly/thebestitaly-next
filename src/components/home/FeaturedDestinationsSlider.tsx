@@ -120,7 +120,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
     if (provinceSlug) path += `/${provinceSlug}`;
     if (municipalitySlug) path += `/${municipalitySlug}`;
     
-    return `/${lang}${path}/`;
+    return `/${lang}${path}`;
   };
 
   if (isLoading) {

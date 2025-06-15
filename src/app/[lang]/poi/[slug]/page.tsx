@@ -11,6 +11,8 @@ import Breadcrumb from '@/components/layout/Breadcrumb';
 import LatestArticles from '@/components/magazine/LatestArticles';
 import GoogleMaps from '@/components/widgets/GoogleMaps';
 import VideoEmbed from '@/components/widgets/VideoEmbed';
+import ImageGallery from '@/components/companies/ImageGallery';
+import RelatedPOI from '@/components/companies/RelatedPOI';
 
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
@@ -18,6 +20,30 @@ interface PageProps {
 
 // Custom components for ReactMarkdown
 const markdownComponents = {
+  h2: ({ node, ...props }: any) => {
+    const text = props.children?.toString() || '';
+    // Remove any markdown formatting from the text
+    const cleanText = text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+      .replace(/\*(.*?)\*/g, '$1')     // Remove italic
+      .replace(/`(.*?)`/g, '$1')       // Remove code
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Remove links, keep text
+    
+    const id = cleanText.toLowerCase().replace(/\W+/g, '-').replace(/^-+|-+$/g, '');
+    return <h2 id={id} {...props} />;
+  },
+  h3: ({ node, ...props }: any) => {
+    const text = props.children?.toString() || '';
+    // Remove any markdown formatting from the text
+    const cleanText = text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+      .replace(/\*(.*?)\*/g, '$1')     // Remove italic
+      .replace(/`(.*?)`/g, '$1')       // Remove code
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Remove links, keep text
+    
+    const id = cleanText.toLowerCase().replace(/\W+/g, '-').replace(/^-+|-+$/g, '');
+    return <h3 id={id} {...props} />;
+  },
   a: ({ href, children, ...props }: any) => {
     // Check if the link is a video URL
     if (href && (
@@ -67,12 +93,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const translation = company.translations?.[0];
     
+    // Fallback to English if current language fields are empty
+    let englishTranslation = null;
+    if (lang !== 'en' && (!translation?.seo_title || !translation?.seo_summary)) {
+      try {
+        const englishCompany = await directusClient.getCompanyBySlug(slug, 'en');
+        englishTranslation = englishCompany?.translations?.[0];
+      } catch (error) {
+        console.error('Error fetching English translation:', error);
+      }
+    }
+    
     // Generate proper canonical URL for this POI page
     const canonicalUrl = generateCanonicalUrl(lang, ['poi', slug]);
     
     return generateSEO({
-      title: `${translation?.seo_title || company.company_name} | TheBestItaly`,
-      description: translation?.seo_summary || `Scopri ${company.company_name}, una delle eccellenze italiane selezionate da TheBestItaly.`,
+      title: `${translation?.seo_title || englishTranslation?.seo_title || company.company_name} | TheBestItaly`,
+      description: translation?.seo_summary || englishTranslation?.seo_summary || `Scopri ${company.company_name}, una delle eccellenze italiane selezionate da TheBestItaly.`,
       type: 'article',
       canonicalUrl,
     });
@@ -96,6 +133,17 @@ export default async function CompanyPage({ params }: PageProps) {
     }
 
     const translation = company.translations?.[0];
+    
+    // Fallback to English if current language fields are empty
+    let englishTranslation = null;
+    if (lang !== 'en' && (!translation?.seo_title || !translation?.seo_summary || !translation?.description)) {
+      try {
+        const englishCompany = await directusClient.getCompanyBySlug(slug, 'en');
+        englishTranslation = englishCompany?.translations?.[0];
+      } catch (error) {
+        console.error('Error fetching English translation:', error);
+      }
+    }
     
     // Get destination coordinates for the map
     let destination = null;
@@ -123,9 +171,9 @@ export default async function CompanyPage({ params }: PageProps) {
             </h1>
             
             {/* SEO Summary instead of SEO Title */}
-            {translation?.seo_summary && (
+            {(translation?.seo_summary || englishTranslation?.seo_summary) && (
               <p className="text-base text-gray-600 mb-4">
-                {translation.seo_summary}
+                {translation?.seo_summary || englishTranslation?.seo_summary}
               </p>
             )}
             
@@ -200,9 +248,9 @@ export default async function CompanyPage({ params }: PageProps) {
                 </h1>
 
                 {/* SEO Title */}
-                {translation?.seo_title && (
+                {(translation?.seo_title || englishTranslation?.seo_title) && (
                   <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
-                    {translation.seo_title}
+                    {translation?.seo_title || englishTranslation?.seo_title}
                   </p>
                 )}
 
@@ -244,12 +292,22 @@ export default async function CompanyPage({ params }: PageProps) {
         {/* Main Content */}
         <div className="container mx-auto py-6 md:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
+           
             {/* Main Content */}
             <div className="lg:col-span-2 px-4 md:px-0">
+              {/* Image Gallery */}
+              {(company.featured_image || (company.images && company.images.length > 0)) && (
+                <ImageGallery 
+                  images={company.images || []}
+                  companyName={company.company_name}
+                  featuredImage={company.featured_image}
+                />
+              )}
+              
               {/* Description */}
-              {translation?.description && (
+              {(translation?.description || englishTranslation?.description) && (
                 <article className="prose prose-base md:prose-lg max-w-none text-gray-600 prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:hover:text-blue-700">
-                  <ReactMarkdown components={markdownComponents}>{translation.description}</ReactMarkdown>
+                  <ReactMarkdown components={markdownComponents}>{translation?.description || englishTranslation?.description}</ReactMarkdown>
                 </article>
               )}
             </div>
@@ -293,22 +351,15 @@ export default async function CompanyPage({ params }: PageProps) {
                 </div>
               </div>
 
-              {/* Additional Images */}
-              {company.images && company.images.length > 0 && (
-                <div className="rounded-xl md:rounded-2xl p-4 md:p-6">
-                  <div className="grid grid-cols-2 gap-3 md:gap-4">
-                    {company.images.slice(0, 4).map((image: any, index: number) => (
-                      <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden">
-                        <Image
-                          src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${image.directus_files_id}`}
-                          alt={`${company.company_name} - Immagine ${index + 1}`}
-                          fill
-                          className="object-cover hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              
+
+              {/* Related POI */}
+              {company.destination_id && (
+                <RelatedPOI 
+                  currentCompanyId={company.id}
+                  destinationId={company.destination_id} 
+                  lang={lang} 
+                />
               )}
 
               {/* Destination Box */}
@@ -328,7 +379,7 @@ export default async function CompanyPage({ params }: PageProps) {
                   Unisciti alle migliori eccellenze italiane presenti su TheBestItaly
                 </p>
                 <Link
-                  href="/it/contact"
+                  href="/it/landing"
                   className="inline-block w-full text-white px-4 md:px-6 py-2 md:py-3 rounded-lg transition-colors duration-200 font-semibold text-center hover:opacity-90 text-sm md:text-base"
                   style={{ backgroundColor: '#0066cc' }}
                 >
@@ -337,11 +388,13 @@ export default async function CompanyPage({ params }: PageProps) {
               </div>
 
               {/* Google Maps */}
-              {destination && destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
+              {((company.lat && company.long && company.lat !== 0 && company.long !== 0) || 
+                (destination && destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0)) && (
                 <div className="rounded-xl md:rounded-2xl p-4 md:p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Posizione</h3>
                   <GoogleMaps 
-                    lat={destination.lat} 
-                    lng={destination.long} 
+                    lat={company.lat && company.long ? company.lat : destination?.lat || 0} 
+                    lng={company.lat && company.long ? company.long : destination?.long || 0} 
                     name={company.company_name}
                     height="300px"
                   />

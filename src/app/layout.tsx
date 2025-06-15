@@ -1,51 +1,57 @@
 import type { Metadata } from 'next'
+import directusClient from '@/lib/directus';
 
-export const metadata: Metadata = {
-  title: {
-    default: 'The Best Italy - Discover Amazing Destinations & Experiences',
-    template: '%s | The Best Italy'
-  },
-  description: 'Discover the best destinations, experiences, accommodations and hidden gems in Italy. Your ultimate guide to Italian excellence.',
-  keywords: ['Italy', 'travel', 'destinations', 'tourism', 'Italian experiences', 'vacation', 'hotels', 'restaurants'],
-  authors: [{ name: 'The Best Italy Team' }],
-  creator: 'The Best Italy',
-  publisher: 'The Best Italy',
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+export async function generateMetadata(): Promise<Metadata> {
+  let pageTitle = '';
+  let pageDescription = 'Scopri le migliori destinazioni e aziende d\'Italia. La guida completa per il turismo di qualità.';
+
+  try {
+    // Fetch the title record with ID = 1
+    const record = await directusClient.get('/items/titles/1', {
+      params: {
+        fields: ['translations.title', 'translations.seo_title', 'translations.seo_summary'],
+        deep: {
+          translations: {
+            _filter: {
+              languages_code: { _eq: 'it' }
+            }
+          }
+        }
+      }
+    });
+
+    const titleData = record?.data?.data;
+    const translation = titleData?.translations?.[0];
+    if (translation) {
+      pageTitle = translation.seo_title || translation.title || pageTitle;
+      pageDescription = translation.seo_summary || pageDescription;
+    }
+  } catch (error) {
+    console.warn('Could not fetch titles from database, using defaults:', error);
+    // Utilizziamo i valori di default già impostati
+  }
+
+  return {
+    title: {
+      default: pageTitle,
+      template: '%s'
     },
-  },
-  openGraph: {
-    type: 'website',
-    locale: 'it_IT',
-    url: 'https://thebestitaly.it',
-    siteName: 'The Best Italy',
-    title: 'The Best Italy - Discover Amazing Destinations & Experiences',
-    description: 'Discover the best destinations, experiences, accommodations and hidden gems in Italy.',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'The Best Italy - Discover Amazing Destinations & Experiences',
-    description: 'Discover the best destinations, experiences, accommodations and hidden gems in Italy.',
-  },
-  alternates: {
-    languages: {
-      'it': 'https://thebestitaly.it/it',
-      'en': 'https://thebestitaly.it/en',
-      'fr': 'https://thebestitaly.it/fr',
-      'de': 'https://thebestitaly.it/de',
-      'es': 'https://thebestitaly.it/es',
+    description: pageDescription,
+    keywords: ['Italy', 'travel', 'destinations', 'tourism', 'Italian experiences', 'vacation', 'hotels', 'restaurants'],
+    openGraph: {
+      type: 'website',
+      locale: 'it_IT',
+      url: 'https://thebestitaly.eu',
+      siteName: 'TheBestItaly',
+      title: pageTitle,
+      description: pageDescription,
     },
-  },
-  verification: {
-    google: process.env.GOOGLE_VERIFICATION,
-  },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDescription,
+    },
+  };
 }
 
 export default function RootLayout({
@@ -54,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html>
+    <html lang="it" dir="ltr" className="font-sans">
       <head>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -91,7 +97,7 @@ export default function RootLayout({
         />
         {/* End Google Tag Manager */}
       </head>
-      <body>
+      <body className="antialiased">
         {/* Google Tag Manager (noscript) - Lazy Load */}
         <noscript>
           <iframe 

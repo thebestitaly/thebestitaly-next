@@ -23,9 +23,7 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
   const { data: companies, isLoading, error } = useQuery({
     queryKey: ["destination-companies", destinationId, lang],
     queryFn: async () => {
-      console.log('🔍 Query: Fetching companies for destination:', destinationId);
       const result = await directusClient.getCompaniesByDestination(destinationId, lang, destinationType);
-      console.log('📊 Query result:', result?.length || 0, 'companies found');
       return result;
     },
     enabled: !!destinationId,

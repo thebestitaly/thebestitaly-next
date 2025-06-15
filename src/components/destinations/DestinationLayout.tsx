@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import directusClient, { getSlugsAndBreadcrumbs } from "@/lib/directus";
 import Breadcrumb from "@/components/layout/Breadcrumb";
-import Seo from "@/components/widgets/Seo";
+
 import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
 import { lazy, Suspense } from "react";
@@ -19,6 +19,30 @@ const DestinationCompanies = lazy(() => import("@/components/destinations/Destin
 
 // Custom components for ReactMarkdown
 const markdownComponents = {
+  h2: ({ node, ...props }: any) => {
+    const text = props.children?.toString() || '';
+    // Remove any markdown formatting from the text
+    const cleanText = text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+      .replace(/\*(.*?)\*/g, '$1')     // Remove italic
+      .replace(/`(.*?)`/g, '$1')       // Remove code
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Remove links, keep text
+    
+    const id = cleanText.toLowerCase().replace(/\W+/g, '-').replace(/^-+|-+$/g, '');
+    return <h2 id={id} {...props} />;
+  },
+  h3: ({ node, ...props }: any) => {
+    const text = props.children?.toString() || '';
+    // Remove any markdown formatting from the text
+    const cleanText = text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+      .replace(/\*(.*?)\*/g, '$1')     // Remove italic
+      .replace(/`(.*?)`/g, '$1')       // Remove code
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Remove links, keep text
+    
+    const id = cleanText.toLowerCase().replace(/\W+/g, '-').replace(/^-+|-+$/g, '');
+    return <h3 id={id} {...props} />;
+  },
   a: ({ href, children, ...props }: any) => {
     // Check if the link is a video URL
     if (href && (
@@ -90,19 +114,18 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
   const provinceSlug = slugData.provinceSlug || (type === "province" ? slug : "");
   const municipalitySlug = type === "municipality" ? slug : "";
 
-  // SEO Configuration
-  const seoTitle = translation?.seo_title || translation?.destination_name || "Destination";
-  const seoDescription = translation?.seo_summary || "Discover beautiful destinations in Italy.";
+  // Schema for structured data (still needed for page content)
   const seoImage = destination.image
     ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`
     : undefined;
+  const seoDescription = translation?.seo_summary || "Discover beautiful destinations in Italy.";
+  
   const schema = {
     "@context": "https://schema.org",
     "@type": type === "municipality" ? "City" : type === "province" ? "AdministrativeArea" : "Region",
     name: translation?.destination_name,
     description: seoDescription,
     image: seoImage,
-    url: `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/${regionSlug}/${provinceSlug}/${municipalitySlug}`,
   };
 
   // Contenuto per il Table of Contents - usa il contenuto reale della descrizione
@@ -110,7 +133,12 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
   return (
     <div className="min-h-screen">
-      <Seo title={seoTitle} description={seoDescription} image={seoImage} schema={schema} />
+      {/* Schema.org structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+      {/* SEO meta tags are handled by generateMetadata in page.tsx files */}
       
       {/* Mobile Header - Studenti.it style */}
       <div className="md:hidden">

@@ -7,6 +7,7 @@ interface SEOProps {
   description: string;
   image?: string;
   type?: 'website' | 'article';
+  canonicalUrl?: string;
   article?: {
     publishedTime: string;
     modifiedTime?: string;
@@ -24,7 +25,7 @@ function getCurrentURL() {
   return '';
 }
 
-const Seo: React.FC<SEOProps> = ({ title, description, image, type = 'website', article, schema }) => {
+const Seo: React.FC<SEOProps> = ({ title, description, image, type = 'website', canonicalUrl, article, schema }) => {
   const [currentURL, setCurrentURL] = useState<string>('');
 
   useEffect(() => {
@@ -33,6 +34,9 @@ const Seo: React.FC<SEOProps> = ({ title, description, image, type = 'website', 
 
   const defaultImage = `${process.env.NEXT_PUBLIC_APP_URL || currentURL}/images/default-og.jpg`;
   const finalImage = image || defaultImage;
+  
+  // Use provided canonicalUrl or fallback to current URL
+  const finalCanonicalUrl = canonicalUrl || currentURL;
 
   return (
     <>
@@ -42,12 +46,12 @@ const Seo: React.FC<SEOProps> = ({ title, description, image, type = 'website', 
       <meta property="og:description" content={description} />
       <meta property="og:type" content={type} />
       <meta property="og:image" content={finalImage} />
-      {currentURL && <meta property="og:url" content={currentURL} />}
+      {finalCanonicalUrl && <meta property="og:url" content={finalCanonicalUrl} />}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={finalImage} />
-      {currentURL && <link rel="canonical" href={currentURL} />}
+      {finalCanonicalUrl && <link rel="canonical" href={finalCanonicalUrl} />}
 
       {schema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />

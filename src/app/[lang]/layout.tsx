@@ -21,11 +21,11 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'it': 'https://thebestitaly.it/it',
-        'en': 'https://thebestitaly.it/en',
-        'fr': 'https://thebestitaly.it/fr',
-        'de': 'https://thebestitaly.it/de',
-        'es': 'https://thebestitaly.it/es',
+        'it': 'https://thebestitaly.eu/it',
+        'en': 'https://thebestitaly.eu/en',
+        'fr': 'https://thebestitaly.eu/fr',
+        'de': 'https://thebestitaly.eu/de',
+        'es': 'https://thebestitaly.eu/es',
       },
     },
   };
@@ -41,9 +41,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       dir={isRTL ? 'rtl' : 'ltr'}
       className="font-sans"
     >
-      <head>
-        <link rel="canonical" href={generateCanonicalUrl(lang)} />
-      </head>
       <body className="antialiased">
         <ClientProviders lang={lang}>
           <Suspense fallback={<div>Loading...</div>}>

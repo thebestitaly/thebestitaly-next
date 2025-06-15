@@ -1,7 +1,7 @@
 // app/[lang]/page.tsx
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import { getTranslations } from '@/lib/directus';
+import directusClient, { getTranslations } from '@/lib/directus';
 import FeaturedDestinationsSlider from '../../components/home/FeaturedDestinationsSlider';
 import FeaturedCompaniesSlider from '../../components/home/FeaturedCompaniesSlider';
 import HomepageDestinationsCarousel from '../../components/home/HomepageDestinationsCarousel';
@@ -19,14 +19,47 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
-  const homeTranslations = await getTranslations(lang, 'homepage');
   
-  // Generate proper canonical URL for this page using helper
+  let pageTitle = 'TheBestItaly';
+  let pageDescription = 'Scopri le migliori destinazioni e eccellenze d\'Italia. La guida completa per il turismo di qualità.';
+
+  try {
+    // Fetch homepage specific data from titles collection with ID = 2 (homepage)
+    const record = await directusClient.get('/items/titles/1', {
+      params: {
+        fields: ['translations.title', 'translations.seo_title', 'translations.seo_summary'],
+        deep: {
+          translations: {
+            _filter: {
+              languages_code: { _eq: lang }
+            }
+          }
+        }
+      }
+    });
+
+    const titleData = record?.data?.data;
+    const translation = titleData?.translations?.[0];
+    if (translation) {
+      pageTitle = translation.seo_title || translation.title || pageTitle;
+      pageDescription = translation.seo_summary || pageDescription;
+    }
+  } catch (error) {
+    console.warn('Could not fetch homepage titles from database, using defaults:', error);
+    // Fallback to translations
+    const homeTranslations = await getTranslations(lang, 'homepage');
+    if (homeTranslations) {
+      pageTitle = homeTranslations.seo_title || pageTitle;
+      pageDescription = homeTranslations.seo_summary || pageDescription;
+    }
+  }
+  
+  // Generate proper canonical URL for homepage
   const canonicalUrl = generateCanonicalUrl(lang);
 
   return generateSEO({
-    title: `${homeTranslations?.seo_title || 'TheBestItaly'} | TheBestItaly`,
-    description: homeTranslations?.seo_summary || '',
+    title: pageTitle,
+    description: pageDescription,
     type: 'website',
     canonicalUrl,
   });

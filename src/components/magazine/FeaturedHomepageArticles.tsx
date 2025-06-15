@@ -29,10 +29,8 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        console.log('Fetch result:', result);
         return result.data;
       } catch (error) {
-        console.error('Fetch error:', error);
         throw error;
       }
     },
@@ -40,15 +38,6 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
   });
 
   const articles = articlesData || [];
-
-  // Debug temporaneo
-  console.log('Featured Articles Debug:', {
-    articlesData,
-    articles,
-    articlesLength: articles.length,
-    firstArticle: articles[0],
-    lang
-  });
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % articles.length);
@@ -105,13 +94,6 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
             const translation = article.translations?.find(
               (t: any) => t.languages_code === lang
             );
-
-            console.log('Article rendering debug:', {
-              articleId: article.id,
-              translations: article.translations,
-              foundTranslation: translation,
-              lang
-            });
 
             if (!translation) {
               console.log('No translation found for article', article.id, 'lang:', lang);

@@ -23,8 +23,16 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ content }) => {
 
     while ((match = headingRegex.exec(content)) !== null) {
       const level = match[1].length;
-      const text = match[2].trim();
-      const id = text.toLowerCase().replace(/\W+/g, '-');
+      let text = match[2].trim();
+      
+      // Remove any markdown formatting from the text (like **bold**, *italic*, etc.)
+      text = text.replace(/\*\*(.*?)\*\*/g, '$1'); // Remove bold
+      text = text.replace(/\*(.*?)\*/g, '$1');     // Remove italic
+      text = text.replace(/`(.*?)`/g, '$1');       // Remove code
+      text = text.replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Remove links, keep text
+      
+      // Generate ID exactly like ReactMarkdown does
+      const id = text.toLowerCase().replace(/\W+/g, '-').replace(/^-+|-+$/g, '');
       
       items.push({ id, text, level });
     }
@@ -35,22 +43,35 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ content }) => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
+        // Sort entries by their position in the document
+        const visibleEntries = entries.filter(entry => entry.isIntersecting);
+        
+        if (visibleEntries.length > 0) {
+          // Get the topmost visible entry
+          const sortedEntries = visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          setActiveId(sortedEntries[0].target.id);
+        }
       },
-      { rootMargin: '-20% 0px -35% 0px' }
+      { 
+        rootMargin: '-10% 0px -70% 0px',
+        threshold: 0.1
+      }
     );
 
-    // Observe all headings
-    tocItems.forEach((item) => {
-      const element = document.getElementById(item.id);
-      if (element) {
-        observer.observe(element);
-      }
-    });
+    // Observe all headings with a small delay to ensure DOM is ready
+    const observeHeadings = () => {
+      tocItems.forEach((item) => {
+        const element = document.getElementById(item.id);
+        if (element) {
+          observer.observe(element);
+        }
+      });
+    };
+
+    if (tocItems.length > 0) {
+      // Small delay to ensure DOM elements are rendered
+      setTimeout(observeHeadings, 100);
+    }
 
     return () => observer.disconnect();
   }, [tocItems]);
@@ -62,7 +83,18 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ content }) => {
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Get the header height to account for sticky headers
+      const headerHeight = 80; // Adjust based on your header height
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+      
+      // Update active ID immediately for better UX
+      setActiveId(id);
     }
   };
 

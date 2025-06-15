@@ -18,10 +18,6 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
   if (isLoading) return <div>Loading destination...</div>;
   if (!destination) return null;
 
-  console.log('DESTINATION:', destination);
-  console.log('REGION_ID:', destination.region_id);
-  console.log('PROVINCE_ID:', destination.province_id);
-
   const translation = destination.translations?.[0];
   const destName = translation?.destination_name || "";
   const destSummary = translation?.seo_summary || "";
@@ -75,10 +71,6 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
 
   return (
     <div className="rounded-xl md:rounded-2xl p-4 md:p-6 bg-gray-50">
-      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">
-        📍 Città di riferimento
-      </h3>
-      
       <div className="space-y-3">
         {hierarchy.map((item, index) => (
           <a

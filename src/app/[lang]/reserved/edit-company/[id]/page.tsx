@@ -179,8 +179,7 @@ export default function EditCompanyPage() {
           body: JSON.stringify({
             description: formData.description,
             seo_title: formData.seo_title,
-            seo_summary: formData.seo_summary,
-            slug_permalink: formData.slug_permalink
+            seo_summary: formData.seo_summary
           }),
         });
 

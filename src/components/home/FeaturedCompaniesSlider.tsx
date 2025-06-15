@@ -12,13 +12,18 @@ interface Company {
   website?: string;
   featured_image?: string;
   slug_permalink?: string;
+  active: boolean;
+  lat: number;
+  long: number;
+  featured_status: string;
   category_id?: {
     id: number;
     translations?: {
       name?: string;
     }[];
   };
-  translations?: {
+  translations: {
+    languages_code: string;
     seo_title?: string;
     seo_summary?: string;
   }[];
@@ -66,14 +71,20 @@ interface FeaturedCompaniesSliderProps {
     }
   });
 
+  // Companies are already filtered by the API call with the correct conditions:
+  // - featured_status = 'homepage'
+  // - active = true  
+  // - have translation for current language
+  const filteredCompanies = companies;
+
   const nextSlide = () => {
-    if (!companies?.length) return;
-    setCurrentSlide((prev) => (prev + 1) % companies.length);
+    if (!filteredCompanies?.length) return;
+    setCurrentSlide((prev) => (prev + 1) % filteredCompanies.length);
   };
 
   const prevSlide = () => {
-    if (!companies?.length) return;
-    setCurrentSlide((prev) => (prev - 1 + companies.length) % companies.length);
+    if (!filteredCompanies?.length) return;
+    setCurrentSlide((prev) => (prev - 1 + filteredCompanies.length) % filteredCompanies.length);
   };
 
   if (error) {
@@ -103,7 +114,7 @@ interface FeaturedCompaniesSliderProps {
     );
   }
 
-  if (!companies?.length) {
+  if (!filteredCompanies?.length) {
     return null;
   }
 
@@ -115,7 +126,7 @@ interface FeaturedCompaniesSliderProps {
           className="flex transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
-          {companies?.map((company: Company) => {
+          {filteredCompanies.map((company: Company) => {
             const translation = company.translations?.[0];
             const categoryTranslation = company.category_id?.translations?.[0];
 
@@ -229,9 +240,9 @@ interface FeaturedCompaniesSliderProps {
       </div>
 
       {/* Lines Indicator */}
-      {companies.length > 1 && (
+      {filteredCompanies.length > 1 && (
         <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex space-x-2">
-          {companies.map((company: Company, index: number) => (
+          {filteredCompanies.map((company: Company, index: number) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}

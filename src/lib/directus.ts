@@ -122,6 +122,8 @@ export interface Company {
   slug_permalink: string;
   email: string;
   phone: string;
+  lat?: number;
+  long?: number;
   category_id: number;
   destination_id: number;
   active: boolean;
@@ -232,10 +234,10 @@ class DirectusClient {
   constructor() {
     // Create the client without hardcoded headers
     // Use proxy API route in browser to avoid CORS issues
-    const baseURL = typeof window !== 'undefined' 
-      ? '/api/directus' 
-      : process.env.NEXT_PUBLIC_DIRECTUS_URL;
-      
+    const isBrowser = typeof window !== 'undefined';
+    const baseURL = isBrowser
+      ? '/api/directus'
+      : process.env.NEXT_PUBLIC_APP_URL + '/api/directus';
     this.client = axios.create({
       baseURL,
     });
@@ -329,7 +331,7 @@ class DirectusClient {
 
   async getCompanies(lang: string, filters: Record<string, any> = {}) {
     try {
-      const response = await this.client.get('/items/companies', {
+      const response = await this.client.get('', {
         params: {
           filter: {
             ...filters
@@ -387,12 +389,21 @@ class DirectusClient {
             'featured_image',
             'active',
             'featured_status',
-            'category_id',
+            'category_id.id',
+            'category_id.translations.name',
+            'translations.languages_code',
             'translations.seo_title',
             'translations.seo_summary'
           ],
           deep: {
             translations: {
+              _filter: {
+                languages_code: {
+                  _eq: lang
+                }
+              }
+            },
+            'category_id.translations': {
               _filter: {
                 languages_code: {
                   _eq: lang
@@ -405,9 +416,9 @@ class DirectusClient {
         }
       });
 
+      // Filtra solo le companies che hanno almeno una traduzione per la lingua richiesta
       return (response.data?.data || []).filter((company: Company) => {
-        const translation = company.translations?.find((t: any) => t.languages_code === lang);
-        return translation?.seo_title?.trim();
+        return company.translations && company.translations.length > 0;
       });
     } catch (error) {
       console.error('Error fetching homepage companies:', error);
@@ -471,8 +482,7 @@ class DirectusClient {
           filter: {
             featured_status: { _neq: 'homepage' },
             status: { _eq: 'published' },
-            category_id: { _neq: 9 },
-            languages_code: { _eq: lang  }
+            category_id: { _neq: 9 }
           },
           fields: [
             'id',
@@ -529,6 +539,8 @@ class DirectusClient {
             'company_name',
             'email',
             'phone',
+            'lat',
+            'long',
             'category_id',
             'destination_id',
             'images.id',
@@ -916,12 +928,24 @@ class DirectusClient {
           'filter[id][_eq]': id,
           'fields[]': [
             'id',
-            'parent.translations.slug_permalink',
+            'type',
+            'image',
+            'region_id',
+            'region_id.translations.slug_permalink',
+            'region_id.translations.destination_name',
+            'region_id.image',
+            'province_id',
+            'province_id.translations.slug_permalink',
+            'province_id.translations.destination_name',
+            'province_id.image',
             'translations.slug_permalink',
             'translations.destination_name',
+            'translations.seo_summary',
+            'translations.description'
           ],
           'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'deep[parent.translations][_filter][languages_code][_eq]': languageCode,
+          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
+          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
         },
       });
 
@@ -1309,6 +1333,157 @@ class DirectusClient {
       return response.data.data || [];
     } catch (error) {
       console.error('❌ Error fetching homepage destinations:', error);
+      return [];
+    }
+  }
+
+  // Metodi semplici per sitemap - solo URLs essenziali
+  public async getDestinationsForSitemap(lang: string): Promise<Array<{slug_permalink: string, type: string}>> {
+    try {
+      // Query molto semplice per evitare errori 500
+      const response = await this.client.get('/items/destinations', {
+        params: {
+          'fields': ['type', 'translations.*'],
+          'limit': 200
+        }
+      });
+
+      const destinations = response.data?.data || [];
+      console.log(`Raw destinations data:`, destinations.length);
+      
+      // Filtra manualmente per lingua e mappa i risultati
+      const filtered = destinations
+        .map((dest: any) => {
+          // Trova la traduzione per la lingua corrente
+          const translation = dest.translations?.find((t: any) => t.languages_code === lang);
+          if (translation?.slug_permalink && dest.type) {
+            return {
+              slug_permalink: translation.slug_permalink,
+              type: dest.type
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+      
+      console.log(`Filtered destinations for ${lang}:`, filtered.length);
+      return filtered;
+        
+    } catch (error) {
+      console.error('Error fetching destinations for sitemap:', error);
+      // Proviamo con una query ancora più semplice
+      try {
+        console.log('Trying simpler destinations query...');
+        const simpleResponse = await this.client.get('/items/destinations', {
+          params: {
+            'limit': 50
+          }
+        });
+        console.log('Simple query worked, destinations available:', simpleResponse.data?.data?.length || 0);
+        return [];
+      } catch (simpleError) {
+        console.error('Even simple destinations query failed:', simpleError);
+        return [];
+      }
+    }
+  }
+
+  public async getCompaniesForSitemap(): Promise<Array<{slug_permalink: string}>> {
+    try {
+      const response = await this.client.get('/items/companies', {
+        params: {
+          'filter': { 'active': { '_eq': true } },
+          'fields': ['slug_permalink'],
+          'limit': 1000
+        }
+      });
+
+      const companies = response.data?.data || [];
+      
+      return companies
+        .map((company: any) => ({
+          slug_permalink: company.slug_permalink
+        }))
+        .filter((company: any) => company.slug_permalink);
+        
+    } catch (error) {
+      console.error('Error fetching companies for sitemap:', error);
+      return [];
+    }
+  }
+
+  public async getArticlesForSitemap(lang: string): Promise<Array<{slug_permalink: string, date_created?: string}>> {
+    try {
+      const response = await this.client.get('/items/articles', {
+        params: {
+          'filter': { 'status': { '_eq': 'published' } },
+          'fields': ['date_created', 'translations.slug_permalink'],
+          'deep': {
+            'translations': {
+              '_filter': {
+                'languages_code': { '_eq': lang }
+              }
+            }
+          },
+          'limit': 500,
+          'sort': ['-date_created']
+        }
+      });
+
+      const articles = response.data?.data || [];
+      
+      return articles
+        .map((article: any) => {
+          const translation = article.translations?.[0];
+          if (translation?.slug_permalink) {
+            return {
+              slug_permalink: translation.slug_permalink,
+              date_created: article.date_created
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+        
+    } catch (error) {
+      console.error('Error fetching articles for sitemap:', error);
+      return [];
+    }
+  }
+
+  public async getCategoriesForSitemap(lang: string): Promise<Array<{slug_permalink: string}>> {
+    try {
+      const response = await this.client.get('/items/categorias', {
+        params: {
+          'filter': { 'visible': { '_eq': true } },
+          'fields': ['translations.slug_permalink'],
+          'deep': {
+            'translations': {
+              '_filter': {
+                'languages_code': { '_eq': lang }
+              }
+            }
+          },
+          'limit': 100
+        }
+      });
+
+      const categories = response.data?.data || [];
+      
+      return categories
+        .map((category: any) => {
+          const translation = category.translations?.[0];
+          if (translation?.slug_permalink) {
+            return {
+              slug_permalink: translation.slug_permalink
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+        
+    } catch (error) {
+      console.error('Error fetching categories for sitemap:', error);
       return [];
     }
   }

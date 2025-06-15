@@ -18,13 +18,16 @@ interface SEOProps {
 
 // Helper function to generate canonical URLs consistently
 export function generateCanonicalUrl(lang: string, path?: string[]): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.it';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
   
   if (!path || path.length === 0) {
     return `${baseUrl}/${lang}`;
   }
   
-  const cleanPath = path.filter(segment => segment && segment.trim() !== '').join('/');
+  const cleanPath = path
+    .filter(segment => segment && segment.trim() !== '')
+    .join('/');
+  
   return `${baseUrl}/${lang}/${cleanPath}`;
 }
 
@@ -38,7 +41,7 @@ export function generateMetadata({
   article,
   schema,
 }: SEOProps): Metadata {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.thebestitaly.eu';
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
   const defaultImage = `${siteUrl}/images/default-og.jpg`;
   const finalImage = image || defaultImage;
 
@@ -65,10 +68,14 @@ export function generateMetadata({
       description,
       images: [finalImage],
     },
-    alternates: {
-      canonical: canonicalUrl,
-    },
   };
+
+  // Always add canonical URL if provided
+  if (canonicalUrl) {
+    metadata.alternates = {
+      canonical: canonicalUrl,
+    };
+  }
 
   // Note: Next.js OpenGraph doesn't support article-specific fields in current version
   // if (type === 'article' && article) {
