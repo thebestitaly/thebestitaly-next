@@ -118,14 +118,63 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
   const seoImage = destination.image
     ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`
     : undefined;
-  const seoDescription = translation?.seo_summary || "Discover beautiful destinations in Italy.";
+  const seoDescription = translation?.seo_summary || translation?.description || "Discover beautiful destinations in Italy.";
+  
+  // Improved schema for destinations
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+  let canonicalUrl = `${baseUrl}/${lang}`;
+  if (regionSlug) canonicalUrl += `/${regionSlug}`;
+  if (provinceSlug) canonicalUrl += `/${provinceSlug}`;
+  if (municipalitySlug) canonicalUrl += `/${municipalitySlug}`;
   
   const schema = {
     "@context": "https://schema.org",
-    "@type": type === "municipality" ? "City" : type === "province" ? "AdministrativeArea" : "Region",
-    name: translation?.destination_name,
-    description: seoDescription,
-    image: seoImage,
+    "@type": type === "municipality" ? "City" : type === "province" ? "AdministrativeArea" : "AdministrativeArea",
+    "name": translation?.destination_name,
+    "description": seoDescription,
+    "url": canonicalUrl,
+    "containedInPlace": type === "municipality" ? [
+      {
+        "@type": "AdministrativeArea",
+        "name": provinceSlug,
+        "containedInPlace": {
+          "@type": "AdministrativeArea",
+          "name": regionSlug,
+          "containedInPlace": {
+            "@type": "Country",
+            "name": "Italy",
+            "url": "https://thebestitaly.eu"
+          }
+        }
+      }
+    ] : type === "province" ? [
+      {
+        "@type": "AdministrativeArea",
+        "name": regionSlug,
+        "containedInPlace": {
+          "@type": "Country",
+          "name": "Italy",
+          "url": "https://thebestitaly.eu"
+        }
+      }
+    ] : {
+      "@type": "Country",
+      "name": "Italy",
+      "url": "https://thebestitaly.eu"
+    },
+    "geo": destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 ? {
+      "@type": "GeoCoordinates",
+      "latitude": destination.lat,
+      "longitude": destination.long
+    } : undefined,
+    "image": seoImage ? {
+      "@type": "ImageObject",
+      "url": seoImage,
+      "width": 1200,
+      "height": 630
+    } : undefined,
+    "touristType": "Cultural Tourism, Food Tourism, Nature Tourism",
+    "keywords": `${translation?.destination_name}, Italy, travel, tourism, destinations, attractions`
   };
 
   // Contenuto per il Table of Contents - usa il contenuto reale della descrizione
@@ -140,84 +189,42 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
       />
       {/* SEO meta tags are handled by generateMetadata in page.tsx files */}
       
-      {/* Mobile Header - Studenti.it style */}
-      <div className="md:hidden">
-        {/* Breadcrumb Mobile */}
-        <div className="px-4 pt-4">
-          <Breadcrumb variant="mobile" />
-        </div>
-        
-        <div className="px-4 pt-4 pb-0">
-          {/* Titolo più grande */}
-          <h1 className="text-5xl font-bold text-gray-900 mb-3 mt-3">
-            {translation?.destination_name}
-          </h1>
-          
-          {/* SEO Summary invece di SEO Title */}
-          {translation?.seo_summary && (
-            <p className="text-xl text-gray-600 mb-4">
-              {translation.seo_summary}
-            </p>
-          )}
-        </div>
-        
-        {/* Hero Image - Mobile - Attaccata al bottom con stesso margine laterale */}
-        {destination.image && (
-          <div className="px-4 mt-12">
-            <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
-              <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=800&height=450&fit=cover&quality=85`}
-                alt={translation?.destination_name || ""}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* TOC - Table of Contents */}
-        <div className="px-4">
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <TableOfContents content={tocContent} />
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Hero Section */}
-      <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
-        {/* Desktop: Image with overlay */}
-        {destination.image && (
-          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
-            <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=600&fit=cover&quality=85`}
-              alt={translation?.destination_name || ""}
-              fill
-              className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
-              priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
-          </div>
-        )}
-        
-        <div className="relative z-10 h-full flex items-end">
-          <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
-            <div className="max-w-4xl">
-              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
-                {translation?.destination_name}
-              </h1>
-              {translation?.seo_title && <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">{translation.seo_title}</p>}
-            </div>
-          </div>        
-        </div>
-      </div>
-
-      {/* Breadcrumb - Desktop only */}
-      <div className="hidden md:block">
+      {/* Breadcrumb - Always on top */}
+      <div className="px-4 pt-4">
         <Breadcrumb />
       </div>
+      
+      {/* Header Section - Responsive */}
+      <div className="container mx-auto px-4 pt-4 pb-0 ">
+        {/* Responsive title */}
+        <h1 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 mt-3">
+          {translation?.destination_name}
+        </h1>
+        
+        {/* SEO Summary responsive */}
+        {translation?.seo_summary && (
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-4">
+            {translation.seo_summary}
+          </p>
+        )}
+      </div>
+      
+      {/* Hero Image - Responsive */}
+      {destination.image && (
+        <div className="px-4 mt-6 md:mt-12">
+          <div className="container mx-auto relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[5/2] mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
+            <Image
+              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=500&fit=cover&quality=85`}
+              alt={translation?.destination_name || ""}
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 80vw, (max-width: 1200px) 60vw, 50vw"
+            />
+          </div>
+        </div>
+      )}
+      
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6 md:py-12">

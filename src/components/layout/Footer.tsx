@@ -71,7 +71,7 @@ const Footer: React.FC = () => {
      <div className="container mx-auto px-4">
        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
          <div>
-           <h3 className="text-xl font-bold mb-4">TheBestItaly</h3>
+           <p className="text-xl font-bold mb-4">TheBestItaly</p>
            <p className="text-gray-300">
              {footerTranslations?.description || "Default footer description"}
            </p>

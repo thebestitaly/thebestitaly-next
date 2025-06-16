@@ -9,6 +9,9 @@ import GetYourGuideWidget from '@/components/widgets/GetYourGuideWidget';
 import ArticlesSidebar from '@/components/widgets/ArticlesSidebar';
 import TableOfContents from '@/components/widgets/TableOfContents';
 import VideoEmbed from '@/components/widgets/VideoEmbed';
+import { getArticleHreflang } from '@/lib/directus';
+import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
+import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 
 interface PageProps {
   params: Promise<{
@@ -39,60 +42,72 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
     
     const canonicalUrl = `${baseUrl}/${lang}/magazine/${slug}`;
+    
+    // Get hreflang links
+    const hreflangs = await getArticleHreflang(article.id);
+    
+    // Ensure we have a proper meta description
+    const metaDescription = translation?.seo_summary || 
+                          `${translation?.titolo_articolo} - Read our latest travel article about Italy on TheBestItaly magazine.`;
+    
     const imageUrl = article.image 
       ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`
       : `${baseUrl}/images/default-og.jpg`;
 
-    // Schema markup for structured data
+    // Improved schema markup for article
     const schema = {
       "@context": "https://schema.org",
       "@type": "Article",
       "headline": translation?.titolo_articolo || '',
-      "description": translation?.seo_summary || '',
+      "description": metaDescription,
+      "image": {
+        "@type": "ImageObject",
+        "url": imageUrl,
+        "width": 1200,
+        "height": 630
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "TheBestItaly",
+        "url": "https://thebestitaly.eu"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "TheBestItaly",
+        "url": "https://thebestitaly.eu",
+        "logo": {
+          "@type": "ImageObject",
+          "url": `${baseUrl}/images/logo.png`,
+          "width": 200,
+          "height": 60
+        }
+      },
       "datePublished": article.date_created,
       "dateModified": article.date_created,
-      "author": {
-        "@type": "Person",
-        "name": "TheBestItaly"
+      "url": canonicalUrl,
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": canonicalUrl
       },
-      "image": imageUrl,
-      "url": canonicalUrl
+      "articleSection": article.category_id?.translations?.[0]?.nome_categoria || "Travel",
+      "keywords": "Italy, travel, tourism, destinations, magazine",
+      "sameAs": Object.values(hreflangs)
     };
 
-    return {
+    return generateSEO({
       title: translation?.titolo_articolo || 'Article',
-      description: translation?.seo_summary || 'Read our latest article',
-      alternates: {
-        canonical: canonicalUrl,
-      },
-      openGraph: {
-        title: translation?.titolo_articolo || 'Article',
-        description: translation?.seo_summary || 'Read our latest article',
-        type: 'article',
-        url: canonicalUrl,
-        images: [
-          {
-            url: imageUrl,
-            width: 1200,
-            height: 630,
-            alt: translation?.titolo_articolo || 'Article image',
-          },
-        ],
+      description: metaDescription,
+      type: 'article',
+      canonicalUrl,
+      hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
+      article: {
         publishedTime: article.date_created,
         modifiedTime: article.date_created,
-        authors: ['TheBestItaly'],
-        section: 'Travel',
+        author: 'TheBestItaly',
+        category: article.category_id?.translations?.[0]?.nome_categoria || 'Travel'
       },
-      twitter: {
-        card: 'summary_large_image',
-        title: translation?.titolo_articolo || 'Article',
-        description: translation?.seo_summary || 'Read our latest article',
-        images: [imageUrl],
-      },
-      other: {
-        'application/ld+json': JSON.stringify(schema),
-      },
-    };
+      schema,
+    });
   } catch (error) {
     console.error('Error generating metadata:', error);
     return {
@@ -132,6 +147,51 @@ export default async function MagazineArticlePage({ params }: PageProps) {
 
   const translation = article.translations[0];
   const categoryTranslation = article.category_id?.translations?.[0];
+  
+  // Generate schema for article
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+  const canonicalUrl = `${baseUrl}/${lang}/magazine/${slug}`;
+  const imageUrl = article.image 
+    ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`
+    : `${baseUrl}/images/default-og.jpg`;
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": translation?.titolo_articolo || '',
+    "description": translation?.seo_summary || `${translation?.titolo_articolo} - Read our latest travel article about Italy on TheBestItaly magazine.`,
+    "image": {
+      "@type": "ImageObject",
+      "url": imageUrl,
+      "width": 1200,
+      "height": 630
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "TheBestItaly",
+      "url": "https://thebestitaly.eu"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "TheBestItaly",
+      "url": "https://thebestitaly.eu",
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${baseUrl}/images/logo.png`,
+        "width": 200,
+        "height": 60
+      }
+    },
+    "datePublished": article.date_created,
+    "dateModified": article.date_created,
+    "url": canonicalUrl,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": canonicalUrl
+    },
+    "articleSection": article.category_id?.translations?.[0]?.nome_categoria || "Travel",
+    "keywords": "Italy, travel, tourism, destinations, magazine"
+  };
 
   // Custom Breadcrumb Component for Articles
   const ArticleBreadcrumb = () => (
@@ -179,67 +239,46 @@ export default async function MagazineArticlePage({ params }: PageProps) {
 
   return (
     <div>
-      {/* Mobile Header - Studenti.it style */}
-      <div className="md:hidden">
-        <div className="px-4 pt-6 pb-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {translation?.titolo_articolo}
-          </h1>
-          {translation?.seo_summary && (
-            <p className="text-base text-gray-600 mb-4">
-              {translation.seo_summary}
-            </p>
-          )}
-          
-          {/* Hero Image - Mobile */}
-          {article.image && (
-            <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
-              <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
-                alt={translation?.titolo_articolo || ''}
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          )}
-          
-          {/* TOC - Table of Contents */}
-          <div className="rounded-lg mb-6">
-            <TableOfContents content={translation?.description || ''} />
-          </div>
+      <JsonLdSchema schema={schema} />
+      
+      {/* Breadcrumb - Always on top */}
+      <ArticleBreadcrumb />
+      
+      {/* Header Section - Responsive */}
+      <div className="container mx-auto px-4 pt-6 pb-4 ">
+      <div className="w-full md:w-1/2">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
+          {translation?.titolo_articolo}
+        </h1>
+        {translation?.seo_summary && (
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4">
+            {translation.seo_summary}
+          </p>
+        )}
         </div>
       </div>
-
-      {/* Desktop Hero Section */}
-      <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
-        {/* Desktop: Image with overlay */}
-        {article.image && (
-          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
+      
+      {/* Hero Image - Responsive */}
+      {article.image && (
+        <div className="container mx-auto px-4 mb-4 md:mb-8">
+          <div className="relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[5/2] overflow-hidden rounded-xl md:rounded-2xl">
             <Image
               src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
               alt={translation?.titolo_articolo || ''}
               fill
-              className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
+              className="object-cover"
               priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
-          </div>
-        )}
-        
-        <div className="relative z-10 h-full flex items-end">
-          <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">
-            <div className="max-w-4xl">
-              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">{translation?.titolo_articolo}</h1>
-              {translation?.seo_summary && <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">{translation.seo_summary}</p>}
-            </div>
           </div>
         </div>
-      </div>
-
-      {/* Breadcrumb - Desktop only */}
-      <div className="hidden md:block">
-        <ArticleBreadcrumb />
+      )}
+      
+      {/* TOC - Table of Contents - Mobile only here */}
+      <div className="md:hidden px-4">
+        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <TableOfContents content={translation?.description || ''} />
+        </div>
       </div>
 
       <div className="container mx-auto px-4 py-4 md:py-8">

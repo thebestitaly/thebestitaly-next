@@ -3,7 +3,7 @@
 import { Metadata } from 'next';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from "@/components/widgets/seo-utils";
 import DestinationLayout from "@/components/destinations/DestinationLayout";
-import directusClient from '@/lib/directus';
+import directusClient, { getDestinationHreflang } from '@/lib/directus';
 
 interface MunicipalityPageProps {
   params: Promise<{
@@ -31,12 +31,52 @@ export async function generateMetadata({ params }: MunicipalityPageProps): Promi
     
     // Generate proper canonical URL for this municipality page using helper
     const canonicalUrl = generateCanonicalUrl(lang, [region, province, municipality]);
+    
+    // Get hreflang links
+    const hreflangs = destination?.id ? await getDestinationHreflang(destination.id) : {};
+    
+    // Ensure we have a proper meta description
+    const metaDescription = translation?.seo_summary || 
+                          `Discover ${translation?.destination_name || municipality} in ${province}, ${region}, Italy. Complete guide to the best attractions, hotels, restaurants and local experiences.`;
+    
+    // Improved schema for municipality/city
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "City",
+      "name": translation?.destination_name || municipality,
+      "description": metaDescription,
+      "url": canonicalUrl,
+      "containedInPlace": [
+        {
+          "@type": "AdministrativeArea",
+          "name": province,
+          "containedInPlace": {
+            "@type": "AdministrativeArea", 
+            "name": region,
+            "containedInPlace": {
+              "@type": "Country",
+              "name": "Italy",
+              "url": "https://thebestitaly.eu"
+            }
+          }
+        }
+      ],
+      "geo": destination?.lat && destination?.long ? {
+        "@type": "GeoCoordinates",
+        "latitude": destination.lat,
+        "longitude": destination.long
+      } : undefined,
+      "image": destination?.image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}` : undefined,
+      "sameAs": Object.values(hreflangs)
+    };
 
     return generateSEO({
       title: `${translation?.seo_title || translation?.destination_name || municipality} | TheBestItaly`,
-      description: translation?.seo_summary || `Discover ${translation?.destination_name || municipality} - the best destinations and experiences in Italy.`,
+      description: metaDescription,
       type: "website",
       canonicalUrl,
+      hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
+      schema,
     });
   } catch (error) {
     console.error("Error generating metadata:", error);
@@ -46,7 +86,7 @@ export async function generateMetadata({ params }: MunicipalityPageProps): Promi
     
     return generateSEO({
       title: `${municipality} | TheBestItaly`,
-      description: `Discover the best destinations and experiences in ${municipality}, Italy.`,
+      description: `Discover the best destinations and experiences in ${municipality}, ${province}, ${region}, Italy.`,
       type: "website",
       canonicalUrl,
     });

@@ -1,7 +1,7 @@
 // app/[lang]/page.tsx
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import directusClient, { getTranslations } from '@/lib/directus';
+import directusClient, { getTranslations, getSupportedLanguages } from '@/lib/directus';
 import FeaturedDestinationsSlider from '../../components/home/FeaturedDestinationsSlider';
 import FeaturedCompaniesSlider from '../../components/home/FeaturedCompaniesSlider';
 import HomepageDestinationsCarousel from '../../components/home/HomepageDestinationsCarousel';
@@ -12,6 +12,7 @@ import CategoriesList from '../../components/magazine/CategoriesList';
 import ProjectIntro from '../../components/home/ProjectIntro';
 import BookExperience from '../../components/home/BookExperience';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
+import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 
 interface PageProps {
   params: Promise<{ lang: string }>;
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang } = await params;
   
   let pageTitle = 'TheBestItaly';
-  let pageDescription = 'Scopri le migliori destinazioni e eccellenze d\'Italia. La guida completa per il turismo di qualità.';
+  let pageDescription = 'Discover the best destinations and excellences of Italy. The complete guide for quality tourism.';
 
   try {
     // Fetch homepage specific data from titles collection with ID = 2 (homepage)
@@ -56,21 +57,93 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   
   // Generate proper canonical URL for homepage
   const canonicalUrl = generateCanonicalUrl(lang);
+  
+  // Generate hreflang for homepage (all supported languages)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+  const supportedLangs = await getSupportedLanguages();
+  const hreflangs: { [key: string]: string } = {};
+  
+  supportedLangs.forEach(supportedLang => {
+    hreflangs[supportedLang] = `${baseUrl}/${supportedLang}`;
+  });
+  
+  // Schema for homepage
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "TheBestItaly",
+    "description": pageDescription,
+    "url": baseUrl,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": `${baseUrl}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "TheBestItaly",
+      "url": baseUrl,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${baseUrl}/images/logo.png`,
+        "width": 200,
+        "height": 60
+      }
+    },
+    "sameAs": Object.values(hreflangs)
+  };
 
   return generateSEO({
     title: pageTitle,
     description: pageDescription,
     type: 'website',
     canonicalUrl,
+    hreflangs,
+    schema,
   });
 }
 
 export default async function Home({ params }: PageProps) {
   const { lang } = await params;
   const homeTranslations = await getTranslations(lang, 'homepage');
+  
+  // Generate schema for homepage
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+  const supportedLangs = await getSupportedLanguages();
+  const hreflangs: { [key: string]: string } = {};
+  
+  supportedLangs.forEach(supportedLang => {
+    hreflangs[supportedLang] = `${baseUrl}/${supportedLang}`;
+  });
+  
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "TheBestItaly",
+    "description": "Discover the best destinations and excellences of Italy. The complete guide for quality tourism.",
+    "url": baseUrl,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": `${baseUrl}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "TheBestItaly",
+      "url": baseUrl,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${baseUrl}/images/logo.png`,
+        "width": 200,
+        "height": 60
+      }
+    },
+    "sameAs": Object.values(hreflangs)
+  };
 
   return (
     <div>
+      <JsonLdSchema schema={schema} />
       <Suspense fallback={<div>Loading...</div>}>
         <FeaturedDestinationsSlider />
         <div className="container mx-auto px-4 py-12">

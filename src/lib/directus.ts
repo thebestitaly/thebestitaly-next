@@ -1528,3 +1528,179 @@ export const fetchArticleBySlug = async (slug: string, languageCode: string) => 
 
 const directusClient = new DirectusClient();
 export default directusClient;
+
+// Add interface for hreflang data
+interface HreflangData {
+  [lang: string]: string;
+}
+
+/**
+ * Get multilingual slugs for destinations (for hreflang)
+ */
+export const getDestinationHreflang = async (destinationId: string): Promise<HreflangData> => {
+  try {
+    const response = await directusClient.get(`/items/destinations/${destinationId}`, {
+      params: {
+        fields: [
+          'id',
+          'type',
+          'region_id',
+          'province_id',
+          'translations.languages_code',
+          'translations.slug_permalink',
+          'region_id.translations.languages_code',
+          'region_id.translations.slug_permalink',
+          'province_id.translations.languages_code',
+          'province_id.translations.slug_permalink',
+        ],
+      },
+    });
+
+    const destination = response.data.data;
+    if (!destination || !destination.translations) {
+      return {};
+    }
+
+    const hreflangs: HreflangData = {};
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+
+    destination.translations.forEach((translation: any) => {
+      const lang = translation.languages_code;
+      const slug = translation.slug_permalink;
+      
+      if (!lang || !slug) return;
+
+      let path = '';
+      
+      if (destination.type === 'region') {
+        path = `/${lang}/${slug}`;
+      } else if (destination.type === 'province') {
+        const regionTranslation = destination.region_id?.translations?.find(
+          (t: any) => t.languages_code === lang
+        );
+        if (regionTranslation?.slug_permalink) {
+          path = `/${lang}/${regionTranslation.slug_permalink}/${slug}`;
+        }
+      } else if (destination.type === 'municipality') {
+        const regionTranslation = destination.region_id?.translations?.find(
+          (t: any) => t.languages_code === lang
+        );
+        const provinceTranslation = destination.province_id?.translations?.find(
+          (t: any) => t.languages_code === lang
+        );
+        if (regionTranslation?.slug_permalink && provinceTranslation?.slug_permalink) {
+          path = `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${slug}`;
+        }
+      }
+
+      if (path) {
+        hreflangs[lang] = `${baseUrl}${path}`;
+      }
+    });
+
+    return hreflangs;
+  } catch (error) {
+    console.error('Error fetching destination hreflang:', error);
+    return {};
+  }
+};
+
+/**
+ * Get multilingual slugs for articles (for hreflang)
+ */
+export const getArticleHreflang = async (articleId: string): Promise<HreflangData> => {
+  try {
+    const response = await directusClient.get(`/items/articles/${articleId}`, {
+      params: {
+        fields: [
+          'id',
+          'translations.languages_code',
+          'translations.slug_permalink',
+        ],
+      },
+    });
+
+    const article = response.data.data;
+    if (!article || !article.translations) {
+      return {};
+    }
+
+    const hreflangs: HreflangData = {};
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+
+    article.translations.forEach((translation: any) => {
+      const lang = translation.languages_code;
+      const slug = translation.slug_permalink;
+      
+      if (lang && slug) {
+        hreflangs[lang] = `${baseUrl}/${lang}/magazine/${slug}`;
+      }
+    });
+
+    return hreflangs;
+  } catch (error) {
+    console.error('Error fetching article hreflang:', error);
+    return {};
+  }
+};
+
+/**
+ * Get multilingual slugs for companies/POI (for hreflang)
+ */
+export const getCompanyHreflang = async (companyId: string): Promise<HreflangData> => {
+  try {
+    const response = await directusClient.get(`/items/companies/${companyId}`, {
+      params: {
+        fields: [
+          'id',
+          'slug_permalink',
+        ],
+      },
+    });
+
+    const company = response.data.data;
+    if (!company || !company.slug_permalink) {
+      return {};
+    }
+
+    const hreflangs: HreflangData = {};
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+    
+    // For companies, the slug is the same across all languages
+    // Only the content language changes
+    const supportedLangs = ['it', 'en', 'fr', 'de', 'es'];
+    
+    supportedLangs.forEach(lang => {
+      hreflangs[lang] = `${baseUrl}/${lang}/poi/${company.slug_permalink}`;
+    });
+
+    return hreflangs;
+  } catch (error) {
+    console.error('Error fetching company hreflang:', error);
+    return {};
+  }
+};
+
+/**
+ * Get all supported languages from database
+ */
+export const getSupportedLanguages = async (): Promise<string[]> => {
+  try {
+    const response = await directusClient.get('/items/languages', {
+      params: {
+        fields: ['code'],
+        filter: {
+          active: { _eq: true }
+        },
+        sort: ['code']
+      }
+    });
+
+    const languages = response.data?.data || [];
+    return languages.map((lang: any) => lang.code).filter(Boolean);
+  } catch (error) {
+    console.error('Error fetching supported languages:', error);
+    // Fallback to known languages
+    return ['it', 'en', 'fr', 'de', 'es'];
+  }
+};

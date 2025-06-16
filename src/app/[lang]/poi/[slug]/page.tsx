@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ExternalLink, Phone, Mail, Globe, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import directusClient from '../../../../lib/directus';
+import directusClient, { getCompanyHreflang } from '../../../../lib/directus';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 import CompanyDestinationBox from '@/components/destinations/CompanyDestinationBox';
 import Breadcrumb from '@/components/layout/Breadcrumb';
@@ -107,11 +107,52 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Generate proper canonical URL for this POI page
     const canonicalUrl = generateCanonicalUrl(lang, ['poi', slug]);
     
+    // Get hreflang links
+    const hreflangs = await getCompanyHreflang(company.id.toString());
+    
+    // Ensure we have a proper meta description
+    const metaDescription = translation?.seo_summary || 
+                          englishTranslation?.seo_summary || 
+                          `Discover ${company.company_name}, one of the best Italian excellences selected by TheBestItaly. Experience authentic Italian quality and tradition.`;
+    
+    // Improved schema for company/POI
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": company.category_id === 1 ? "LodgingBusiness" : 
+               company.category_id === 2 ? "Restaurant" : 
+               company.category_id === 3 ? "TouristAttraction" : "LocalBusiness",
+      "name": company.company_name,
+      "description": metaDescription,
+      "url": canonicalUrl,
+      "image": company.featured_image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}` : undefined,
+      "telephone": company.phone || undefined,
+      "email": company.email || undefined,
+      "website": company.website || undefined,
+      "address": company.destination_id ? {
+        "@type": "PostalAddress",
+        "addressCountry": "IT"
+      } : undefined,
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.5",
+        "bestRating": "5",
+        "worstRating": "1",
+        "ratingCount": "1"
+      },
+      "sameAs": [
+        ...Object.values(hreflangs),
+        ...(company.website ? [company.website] : []),
+        ...(company.socials ? Object.values(company.socials).filter(Boolean) : [])
+      ].filter(Boolean)
+    };
+    
     return generateSEO({
       title: `${translation?.seo_title || englishTranslation?.seo_title || company.company_name} | TheBestItaly`,
-      description: translation?.seo_summary || englishTranslation?.seo_summary || `Scopri ${company.company_name}, una delle eccellenze italiane selezionate da TheBestItaly.`,
+      description: metaDescription,
       type: 'article',
       canonicalUrl,
+      hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
+      schema,
     });
   } catch (error) {
     console.error('Error generating metadata:', error);
@@ -157,137 +198,67 @@ export default async function CompanyPage({ params }: PageProps) {
 
     return (
       <div className="min-h-screen">
-        {/* Mobile Header - Studenti.it style */}
-        <div className="md:hidden">
-          {/* Breadcrumb Mobile */}
-          <div className="px-4 pt-4">
-            <Breadcrumb variant="mobile" />
-          </div>
+        {/* Breadcrumb - Always on top */}
+        <div className="px-4 pt-4">
+          <Breadcrumb />
+        </div>
+        
+        {/* Header Section - Responsive */}
+        <div className="container mx-auto px-4 pt-4 pb-0 ">
+          {/* Company Name - Responsive */}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
+            {company.company_name}
+          </h1>
           
-          <div className="px-4 pt-4 pb-0">
-            {/* Company Name - Bigger */}
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              {company.company_name}
-            </h1>
-            
-            {/* SEO Summary instead of SEO Title */}
-            {(translation?.seo_summary || englishTranslation?.seo_summary) && (
-              <p className="text-base text-gray-600 mb-4">
-                {translation?.seo_summary || englishTranslation?.seo_summary}
-              </p>
+          {/* SEO Summary responsive */}
+          {(translation?.seo_summary || englishTranslation?.seo_summary) && (
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4">
+              {translation?.seo_summary || englishTranslation?.seo_summary}
+            </p>
+          )}
+          
+          {/* Quick Actions - Responsive */}
+          <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-4 md:mb-6">
+            {company.website && (
+              <Link
+                href={company.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-white font-semibold px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl transition-all duration-300 hover:opacity-90 text-sm md:text-base"
+                style={{ backgroundColor: '#0066cc' }}
+              >
+                <Globe className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                Visita Sito Web
+              </Link>
             )}
             
-            {/* Quick Actions - Mobile */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              {company.website && (
-                <Link
-                  href={company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:opacity-90 text-sm"
-                  style={{ backgroundColor: '#0066cc' }}
-                >
-                  <Globe className="w-4 h-4 mr-2" />
-                  Visita Sito Web
-                </Link>
-              )}
-              
-              {company.phone && (
-                <a
-                  href={`tel:${company.phone}`}
-                  className="inline-flex items-center px-4 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all duration-300 text-sm"
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  Chiama
-                </a>
-              )}
-            </div>
+            {company.phone && (
+              <a
+                href={`tel:${company.phone}`}
+                className="inline-flex items-center px-4 md:px-6 py-2 md:py-3 border-2 border-gray-300 md:border-gray-400 text-gray-700 font-semibold rounded-lg md:rounded-xl hover:bg-gray-50 transition-all duration-300 text-sm md:text-base"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                Chiama
+              </a>
+            )}
           </div>
-          
-          {/* Hero Image - Mobile - Attached to bottom with same side margins */}
-          {company.featured_image && (
-            <div className="px-4">
-              <div className="relative aspect-[16/9] overflow-hidden rounded-xl">
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
-                  alt={company.company_name}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* Desktop Hero Section */}
-        <div className="hidden md:block relative h-96 lg:h-[500px]">
-          {/* Background Image */}
-          {company.featured_image && (
-            <div className="absolute inset-0 m-10">
+        
+        {/* Hero Image - Responsive */}
+        {company.featured_image && (
+          <div className="px-4 mt-6 md:mt-12">
+            <div className="container mx-auto relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[5/2] mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
               <Image
                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
                 alt={company.company_name}
                 fill
-                className="object-cover rounded-2xl"
+                className="object-cover"
                 priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent rounded-2xl" />
-            </div>
-          )}
-
-          {/* Content */}
-          <div className="relative z-10 h-full flex items-end">
-            <div className="container mx-auto px-4 pb-12">
-             
-              <div className="max-w-4xl">
-                
-                {/* Company Name */}
-                <h1 className="text-4xl lg:text-6xl font-black text-white leading-none mb-4">
-                  {company.company_name}
-                </h1>
-
-                {/* SEO Title */}
-                {(translation?.seo_title || englishTranslation?.seo_title) && (
-                  <p className="text-xl lg:text-2xl font-light text-white/90 mb-6 leading-relaxed">
-                    {translation?.seo_title || englishTranslation?.seo_title}
-                  </p>
-                )}
-
-                {/* Quick Actions */}
-                <div className="flex flex-wrap items-center gap-4 mb-8">
-                  {company.website && (
-                    <Link
-                      href={company.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 hover:opacity-90"
-                      style={{ backgroundColor: '#0066cc' }}
-                    >
-                      <Globe className="w-5 h-5 mr-2" />
-                      Visita Sito Web
-                    </Link>
-                  )}
-                  
-                  {company.phone && (
-                    <a
-                      href={`tel:${company.phone}`}
-                      className="inline-flex items-center px-6 py-3 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-all duration-300"
-                    >
-                      <Phone className="w-4 h-4 mr-2" />
-                      Chiama
-                    </a>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
-        </div>
-
-        {/* Breadcrumb - Desktop only */}
-        <div className="hidden md:block">
-          <Breadcrumb />
-        </div>
+        )}
 
         {/* Main Content */}
         <div className="container mx-auto py-6 md:py-12">

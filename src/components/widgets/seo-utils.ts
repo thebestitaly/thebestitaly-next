@@ -7,6 +7,7 @@ interface SEOProps {
   image?: string;
   type?: 'website' | 'article';
   canonicalUrl?: string;
+  hreflangs?: { [lang: string]: string };
   article?: {
     publishedTime: string;
     modifiedTime?: string;
@@ -26,7 +27,7 @@ export function generateCanonicalUrl(lang: string, path?: string[]): string {
   
   const cleanPath = path
     .filter(segment => segment && segment.trim() !== '')
-    .join('/');
+    .join('');
   
   return `${baseUrl}/${lang}/${cleanPath}`;
 }
@@ -38,6 +39,7 @@ export function generateMetadata({
   image,
   type = 'website',
   canonicalUrl,
+  hreflangs,
   article,
   schema,
 }: SEOProps): Metadata {
@@ -70,17 +72,28 @@ export function generateMetadata({
     },
   };
 
-  // Always add canonical URL if provided
-  if (canonicalUrl) {
+  // Add canonical URL and hreflang if provided
+  if (canonicalUrl || hreflangs) {
     metadata.alternates = {
-      canonical: canonicalUrl,
+      ...(canonicalUrl && { canonical: canonicalUrl }),
+      ...(hreflangs && { languages: hreflangs }),
     };
   }
 
-  // Note: Next.js OpenGraph doesn't support article-specific fields in current version
-  // if (type === 'article' && article) {
-  //   // Article-specific metadata would go here if supported
-  // }
+  // Note: Schema is now handled by JsonLdSchema component
+  // to ensure proper insertion into DOM in Next.js 13+
+
+  // Article-specific fields for Open Graph
+  if (type === 'article' && article) {
+    metadata.openGraph = {
+      ...metadata.openGraph,
+      type: 'article',
+      publishedTime: article.publishedTime,
+      ...(article.modifiedTime && { modifiedTime: article.modifiedTime }),
+      ...(article.author && { authors: [article.author] }),
+      ...(article.category && { section: article.category }),
+    };
+  }
 
   return metadata;
 }
