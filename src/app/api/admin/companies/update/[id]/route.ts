@@ -36,6 +36,15 @@ export async function PUT(
     if (body.featured_image) {
       companyPayload.featured_image = body.featured_image;
     }
+    if (body.destination_id) {
+      companyPayload.destination_id = parseInt(body.destination_id);
+    }
+    if (body.lat) {
+      companyPayload.lat = parseFloat(body.lat);
+    }
+    if (body.long) {
+      companyPayload.long = parseFloat(body.long);
+    }
 
     console.log('Updating company with payload:', companyPayload);
 

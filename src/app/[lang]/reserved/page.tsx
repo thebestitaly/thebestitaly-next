@@ -108,8 +108,6 @@ function ArticlesList() {
         // Mostra tutti gli articoli (draft + published) limitati a 20
       });
 
-      console.log("Risposta Directus articoli:", articles);
-
       // Mappa gli articoli recuperati al formato ArticleSummary
       const mappedArticles: ArticleSummary[] = articles.map((article: any) => {
         const articleTranslation = article.translations?.[0];
@@ -125,7 +123,6 @@ function ArticlesList() {
         };
       });
 
-      console.log("Articoli mappati:", mappedArticles);
       setArticles(mappedArticles);
 
     } catch (err) {
@@ -146,8 +143,7 @@ function ArticlesList() {
 
       const destinationsResponse = await directusClient.getDestinationsByType("region", LANG_IT);
 
-      console.log("Risposta Directus destinazioni:", destinationsResponse);
-
+     
       const mappedDestinations: DestinationSummary[] = destinationsResponse.map((destination: any) => {
         const destinationTranslation = destination.translations?.[0];
         return {
@@ -182,8 +178,7 @@ function ArticlesList() {
       // Usiamo getCompaniesForListing per l'area admin (senza filtri)
       const companiesResponse = await directusClient.getCompaniesForListing(LANG_IT, {});
 
-      console.log("Risposta Directus companies:", companiesResponse);
-
+      
       const mappedCompanies: CompanySummary[] = companiesResponse.map((company: any) => {
         const companyTranslation = company.translations?.[0];
         return {
@@ -198,9 +193,15 @@ function ArticlesList() {
         };
       });
 
-      console.log("Companies mappate:", mappedCompanies);
-      setCompanies(mappedCompanies);
-      setFilteredCompanies(mappedCompanies);
+      // Ordina per ID decrescente (ultimo creato per primo)
+      const sortedCompanies = mappedCompanies.sort((a, b) => {
+        const idA = typeof a.id === 'string' ? parseInt(a.id) : a.id;
+        const idB = typeof b.id === 'string' ? parseInt(b.id) : b.id;
+        return idB - idA;
+      });
+
+      setCompanies(sortedCompanies);
+      setFilteredCompanies(sortedCompanies);
 
     } catch (err) {
       console.error("Errore nel caricamento companies:", err);

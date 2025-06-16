@@ -18,7 +18,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
       console.log('🔍 Fetching companies for eccellenze page...');
       const result = await directusClient.getCompaniesForListing(lang, {
         active: { _eq: true }
-      });
+      }, 50); // Limite di 50 companies per la homepage
       console.log('📊 Companies result:', result);
       
       // Triple-check: filter only active companies on client side as well

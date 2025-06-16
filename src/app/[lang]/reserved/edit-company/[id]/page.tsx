@@ -101,7 +101,7 @@ export default function EditCompanyPage() {
     const fetchCompany = async () => {
       try {
         // Use proxy API to avoid CORS issues
-        const response = await fetch(`/api/directus/items/companies?filter[id][_eq]=${id}&fields=id,company_name,website,email,phone,active,featured_image,translations.*&deep[translations][_filter][languages_code][_eq]=it`, {
+        const response = await fetch(`/api/directus/items/companies?filter[id][_eq]=${id}&fields=id,company_name,website,email,phone,active,featured_image,slug_permalink,translations.*&deep[translations][_filter][languages_code][_eq]=it`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -129,7 +129,7 @@ export default function EditCompanyPage() {
             description: italianTranslation?.description || '',
             seo_title: italianTranslation?.seo_title || '',
             seo_summary: italianTranslation?.seo_summary || '',
-            slug_permalink: italianTranslation?.slug_permalink || ''
+            slug_permalink: companyData.slug_permalink || '' // Leggi dal campo principale, non dalla traduzione
           });
 
           // Imposta preview immagine esistente
@@ -157,16 +157,7 @@ export default function EditCompanyPage() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
       
-      // Auto-genera slug se si sta modificando il nome
-      if (name === 'company_name' && value) {
-        const autoSlug = value
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim();
-        setFormData(prev => ({ ...prev, slug_permalink: autoSlug }));
-      }
+      // NON auto-generare slug in modalità edit - mantieni quello esistente
     }
   };
 
@@ -216,7 +207,7 @@ export default function EditCompanyPage() {
         email: formData.email || null,
         phone: formData.phone || null,
         active: formData.active,
-        slug_permalink: formData.slug_permalink,
+        slug_permalink: formData.slug_permalink, // Mantieni lo slug esistente (non modificabile dall'utente)
         description: formData.description,
         seo_title: formData.seo_title,
         seo_summary: formData.seo_summary,
@@ -596,16 +587,19 @@ export default function EditCompanyPage() {
               {/* Slug */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Slug Permalink
+                  Slug Permalink (non modificabile)
                 </label>
                 <input
                   type="text"
                   name="slug_permalink"
                   value={formData.slug_permalink}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  readOnly
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"
                   placeholder="slug-della-company"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Lo slug non può essere modificato per mantenere la coerenza degli URL
+                </p>
               </div>
 
               {/* Pulsanti */}

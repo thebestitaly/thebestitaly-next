@@ -12,6 +12,20 @@ interface SitemapEntry {
 const sitemapCache = new Map<string, { data: string; timestamp: number }>();
 const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 ore
 
+// Funzione per escapare caratteri XML
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, function (c) {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
 async function generateSitemap(lang: string): Promise<string> {
   const baseUrl = 'https://thebestitaly.eu';
   const currentDate = new Date().toISOString();
@@ -61,7 +75,7 @@ async function generateSitemap(lang: string): Promise<string> {
 
     articles.forEach((article: any) => {
       const translation = article.translations?.[0];
-      if (translation?.slug_permalink) {
+      if (translation?.slug_permalink && !translation.slug_permalink.includes('<') && !translation.slug_permalink.includes('>')) {
         entries.push({
           url: `${baseUrl}/${lang}/magazine/${translation.slug_permalink}`,
           lastModified: article.date_created || currentDate,
@@ -91,7 +105,7 @@ async function generateSitemap(lang: string): Promise<string> {
     console.log(`🏢 Found ${companies.length} companies`);
 
     companies.forEach((company: any) => {
-      if (company.slug_permalink) {
+      if (company.slug_permalink && !company.slug_permalink.includes('<') && !company.slug_permalink.includes('>')) {
         entries.push({
           url: `${baseUrl}/${lang}/poi/${company.slug_permalink}`,
           lastModified: currentDate,
@@ -127,7 +141,7 @@ async function generateSitemap(lang: string): Promise<string> {
 
     categories.forEach((category: any) => {
       const translation = category.translations?.[0];
-      if (translation?.slug_permalink) {
+      if (translation?.slug_permalink && !translation.slug_permalink.includes('<') && !translation.slug_permalink.includes('>')) {
         entries.push({
           url: `${baseUrl}/${lang}/magazine/c/${translation.slug_permalink}`,
           lastModified: currentDate,
@@ -232,7 +246,7 @@ async function generateSitemap(lang: string): Promise<string> {
           }
         }
 
-        if (url) {
+        if (url && url.length < 2000 && !url.includes('<') && !url.includes('>')) {
           entries.push({
             url,
             lastModified: currentDate,
@@ -249,11 +263,11 @@ async function generateSitemap(lang: string): Promise<string> {
     console.error('❌ Error fetching destinations:', error);
   }
 
-  // Genera XML
+  // Genera XML con escape dei caratteri speciali
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${entries.map(entry => `  <url>
-    <loc>${entry.url}</loc>
+    <loc>${escapeXml(entry.url)}</loc>
     <lastmod>${entry.lastModified}</lastmod>
     <changefreq>${entry.changeFrequency}</changefreq>
     <priority>${entry.priority}</priority>

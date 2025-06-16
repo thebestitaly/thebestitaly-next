@@ -335,7 +335,7 @@ class DirectusClient {
       return false;
     }
   }
-  async getCompaniesForListing(lang: string, filters: Record<string, any> = {}) {
+  async getCompaniesForListing(lang: string, filters: Record<string, any> = {}, limit?: number) {
     try {
       const response = await this.client.get('/items/companies', {
         params: {
@@ -365,7 +365,9 @@ class DirectusClient {
                 }
               }
             }
-          }
+          },
+          limit: limit !== undefined ? limit : -1, // Usa il limite specificato o tutti i record
+          sort: ['-id'] // Ordina per ID decrescente (più recenti prima)
         }
       });
 
@@ -901,6 +903,7 @@ class DirectusClient {
             'translations.slug_permalink',
           ],
           'deep[translations][_filter][languages_code][_eq]': lang,
+          limit: -1, // Ottieni tutti i record
         },
       });
   

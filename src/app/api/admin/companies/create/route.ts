@@ -50,6 +50,15 @@ export async function POST(request: NextRequest) {
     if (body.phone) {
       companyPayload.phone = body.phone;
     }
+    if (body.destination_id) {
+      companyPayload.destination_id = parseInt(body.destination_id);
+    }
+    if (body.lat) {
+      companyPayload.lat = parseFloat(body.lat);
+    }
+    if (body.long) {
+      companyPayload.long = parseFloat(body.long);
+    }
 
     console.log('Creating company with payload:', companyPayload);
 

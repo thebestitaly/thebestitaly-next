@@ -143,18 +143,11 @@ export default function RelatedPOI({ currentCompanyId, destinationId, lang }: Re
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
+                  <h4 className="font-semibold text-gray-900 text-md leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {company.company_name}
                   </h4>
-                  
-                  {translation?.seo_title && (
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-1">
-                      {translation.seo_title}
-                    </p>
-                  )}
-                  
                   {translation?.seo_summary && (
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    <p className="text-sm text-gray-900 mt-1 line-clamp-2">
                       {translation.seo_summary}
                     </p>
                   )}
@@ -170,23 +163,7 @@ export default function RelatedPOI({ currentCompanyId, destinationId, lang }: Re
         })}
       </div>
       
-      {/* Show location context */}
-      {currentDestination && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <p className="text-xs text-gray-600">
-            {sameDestinationCompanies?.length > 0 && (
-              <span className="inline-block mr-2">
-                {sameDestinationCompanies.length} in {currentDestination.translations?.[0]?.destination_name}
-              </span>
-            )}
-            {sameRegionCompanies?.length > 0 && (
-              <span className="inline-block">
-                {sameRegionCompanies.length} nella regione
-              </span>
-            )}
-          </p>
-        </div>
-      )}
+      
     </div>
   );
 } 

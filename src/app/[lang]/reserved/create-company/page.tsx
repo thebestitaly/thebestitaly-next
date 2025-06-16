@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import directusClient from "../../../../lib/directus";
 
@@ -16,10 +16,150 @@ export default function CreateCompanyPage() {
     description: '',
     seo_title: '',
     seo_summary: '',
-    slug_permalink: ''
+    slug_permalink: '',
+    category_id: '',
+    destination_id: '',
+    lat: '',
+    long: '',
+    address: '' // Nuovo campo per l'indirizzo
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [destinations, setDestinations] = useState<any[]>([]);
+  const [filteredDestinations, setFilteredDestinations] = useState<any[]>([]);
+  const [destinationSearch, setDestinationSearch] = useState('');
+  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
+  const [selectedDestination, setSelectedDestination] = useState<any>(null);
+  const [loadingData, setLoadingData] = useState(true);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
+
+  // Carica categorie e destinazioni all'avvio
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Carica categorie companies
+        const categoriesResponse = await directusClient.getCompanyCategories('it');
+        setCategories(categoriesResponse);
+
+        // Carica TUTTE le destinazioni (non solo municipalities)
+        const [regionsResponse, provincesResponse, municipalitiesResponse] = await Promise.all([
+          directusClient.getDestinations({ type: 'region', lang: 'it' }),
+          directusClient.getDestinations({ type: 'province', lang: 'it' }),
+          directusClient.getDestinations({ type: 'municipality', lang: 'it' })
+        ]);
+        
+        // Combina tutte le destinazioni con etichette per tipo
+        const allDestinations = [
+          ...regionsResponse.map(d => ({ ...d, typeLabel: 'Regione' })),
+          ...provincesResponse.map(d => ({ ...d, typeLabel: 'Provincia' })),
+          ...municipalitiesResponse.map(d => ({ ...d, typeLabel: 'Comune' }))
+        ];
+        
+        setDestinations(allDestinations);
+        setFilteredDestinations(allDestinations);
+      } catch (error) {
+        console.error('Errore caricamento dati:', error);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Chiudi dropdown quando si clicca fuori
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.destination-dropdown')) {
+        setShowDestinationDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filtro destinazioni in base alla ricerca
+  useEffect(() => {
+    if (!destinationSearch.trim()) {
+      setFilteredDestinations(destinations.slice(0, 100)); // Mostra solo prime 100 se non c'è ricerca
+      return;
+    }
+
+    // Inizia la ricerca solo da 3 caratteri
+    if (destinationSearch.trim().length < 3) {
+      setFilteredDestinations([]);
+      return;
+    }
+
+    const searchLower = destinationSearch.toLowerCase();
+    const filtered = destinations.filter(destination => {
+      const name = destination.translations?.[0]?.destination_name || '';
+      return name.toLowerCase().includes(searchLower);
+    });
+    
+    // Ordina per rilevanza: prima quelli che iniziano con la ricerca, poi quelli che la contengono
+    const sorted = filtered.sort((a, b) => {
+      const nameA = a.translations?.[0]?.destination_name?.toLowerCase() || '';
+      const nameB = b.translations?.[0]?.destination_name?.toLowerCase() || '';
+      
+      const aStarts = nameA.startsWith(searchLower);
+      const bStarts = nameB.startsWith(searchLower);
+      
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      
+      return nameA.localeCompare(nameB);
+    });
+    
+    // MOSTRA TUTTI i risultati filtrati, non limitare
+    console.log(`🔍 Ricerca "${destinationSearch}": trovati ${sorted.length} risultati su ${destinations.length} totali`);
+    setFilteredDestinations(sorted);
+  }, [destinationSearch, destinations]);
+
+  // Geocoding automatico dall'indirizzo
+  const handleAddressGeocoding = async (address: string) => {
+    if (!address.trim()) return;
+    
+    setGeocodingLoading(true);
+    try {
+      // Usa Nominatim con headers appropriati e User-Agent
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Italy')}&limit=1&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'TheBestItaly/1.0 (https://thebestitaly.com)',
+            'Accept': 'application/json',
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const { lat, lon } = data[0];
+          setFormData(prev => ({
+            ...prev,
+            lat: parseFloat(lat).toFixed(6),
+            long: parseFloat(lon).toFixed(6)
+          }));
+          alert(`✅ Coordinate trovate: ${lat}, ${lon}`);
+          console.log(`📍 Coordinate trovate: ${lat}, ${lon}`);
+        } else {
+          alert('❌ Nessuna coordinata trovata per questo indirizzo. Prova con un indirizzo più specifico.');
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Errore geocoding:', error);
+      alert(`❌ Errore nel geocoding: ${error instanceof Error ? error.message : 'Errore sconosciuto'}. Prova con un indirizzo più specifico o inserisci le coordinate manualmente.`);
+    } finally {
+      setGeocodingLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -41,6 +181,25 @@ export default function CreateCompanyPage() {
         setFormData(prev => ({ ...prev, slug_permalink: autoSlug }));
       }
     }
+  };
+
+  const handleDestinationSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDestinationSearch(value);
+    setShowDestinationDropdown(true);
+    
+    // Reset selezione se l'utente sta digitando
+    if (selectedDestination && value !== selectedDestination.translations?.[0]?.destination_name) {
+      setSelectedDestination(null);
+      setFormData(prev => ({ ...prev, destination_id: '' }));
+    }
+  };
+
+  const selectDestination = (destination: any) => {
+    setSelectedDestination(destination);
+    setDestinationSearch(destination.translations?.[0]?.destination_name || '');
+    setFormData(prev => ({ ...prev, destination_id: destination.id.toString() }));
+    setShowDestinationDropdown(false);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,13 +261,17 @@ export default function CreateCompanyPage() {
         seo_summary: formData.seo_summary,
         slug_permalink: formData.slug_permalink,
         featured_status: 'none', // Default
-        category: null, // Default
+        category: formData.category_id ? parseInt(formData.category_id) : null,
         image: imageId,
         // Campi aggiuntivi specifici per companies
         website: formData.website,
         email: formData.email,
         phone: formData.phone,
-        active: formData.active
+        active: formData.active,
+        category_id: formData.category_id ? parseInt(formData.category_id) : null,
+        destination_id: formData.destination_id ? parseInt(formData.destination_id) : null,
+        lat: formData.lat ? parseFloat(formData.lat) : null,
+        long: formData.long ? parseFloat(formData.long) : null
       };
 
       // Crea la company tramite API route
@@ -183,6 +346,166 @@ export default function CreateCompanyPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Es. Hotel Bella Vista, Ristorante Da Mario..."
               />
+            </div>
+
+            {/* Categoria e Destinazione */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Categoria *
+                </label>
+                {loadingData ? (
+                  <div className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50">
+                    Caricamento categorie...
+                  </div>
+                ) : (
+                  <select
+                    name="category_id"
+                    value={formData.category_id}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Seleziona categoria</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.translations?.[0]?.name || category.name || `Categoria ${category.id}`}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Destinazione * 
+                  {selectedDestination && (
+                    <span className="text-xs text-purple-600 ml-2">
+                      (ID: {selectedDestination.id} - {selectedDestination.typeLabel})
+                    </span>
+                  )}
+                </label>
+                {loadingData ? (
+                  <div className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50">
+                    Caricamento destinazioni...
+                  </div>
+                ) : (
+                  <div className="relative destination-dropdown">
+                    <input
+                      type="text"
+                      value={destinationSearch}
+                      onChange={handleDestinationSearch}
+                      onFocus={() => setShowDestinationDropdown(true)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="Cerca destinazione... (minimo 3 caratteri)"
+                      required={!selectedDestination}
+                    />
+                    
+                    {showDestinationDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {destinationSearch.trim().length > 0 && destinationSearch.trim().length < 3 ? (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            Digita almeno 3 caratteri per iniziare la ricerca...
+                          </div>
+                        ) : filteredDestinations.length > 0 ? (
+                          <>
+                            {/* Header con conteggio risultati */}
+                            <div className="px-4 py-2 text-sm text-gray-600 bg-gray-50 border-b border-gray-200 sticky top-0">
+                              {filteredDestinations.length} risultati trovati
+                            </div>
+                            
+                            {filteredDestinations.map((destination) => (
+                              <button
+                                key={destination.id}
+                                type="button"
+                                onClick={() => selectDestination(destination)}
+                                className="w-full px-4 py-3 text-left hover:bg-purple-50 border-b border-gray-100 last:border-b-0 flex justify-between items-center"
+                              >
+                                <span>
+                                  {destination.translations?.[0]?.destination_name || `Destinazione ${destination.id}`}
+                                </span>
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                  {destination.typeLabel} - ID: {destination.id}
+                                </span>
+                              </button>
+                            ))}
+                            
+                            {/* Footer con info */}
+                            <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50 border-t border-gray-200 sticky bottom-0">
+                              Scorri per vedere tutti i {filteredDestinations.length} risultati
+                            </div>
+                          </>
+                        ) : destinationSearch.trim().length >= 3 ? (
+                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                            Nessun risultato trovato per "{destinationSearch}"
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Indirizzo per Geocoding */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Indirizzo (per calcolo automatico coordinate)
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Es. Via Roma 123, Milano"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddressGeocoding(formData.address)}
+                  disabled={!formData.address.trim() || geocodingLoading}
+                  className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {geocodingLoading ? '🔄' : '📍'} Trova Coordinate
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Inserisci l'indirizzo e clicca "Trova Coordinate" per calcolare automaticamente latitudine e longitudine
+              </p>
+            </div>
+
+            {/* Coordinate GPS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Latitudine
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  name="lat"
+                  value={formData.lat}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Es. 45.4642"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Longitudine
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  name="long"
+                  value={formData.long}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Es. 9.1900"
+                />
+              </div>
             </div>
 
             {/* Informazioni di contatto */}
