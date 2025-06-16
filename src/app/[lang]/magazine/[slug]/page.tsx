@@ -9,6 +9,7 @@ import GetYourGuideWidget from '@/components/widgets/GetYourGuideWidget';
 import ArticlesSidebar from '@/components/widgets/ArticlesSidebar';
 import TableOfContents from '@/components/widgets/TableOfContents';
 import VideoEmbed from '@/components/widgets/VideoEmbed';
+import ArticleDestinationBox from '@/components/destinations/ArticleDestinationBox';
 import { getArticleHreflang } from '@/lib/directus';
 import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
 import JsonLdSchema from '@/components/widgets/JsonLdSchema';
@@ -279,6 +280,16 @@ export default async function MagazineArticlePage({ params }: PageProps) {
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
           <TableOfContents content={translation?.description || ''} />
         </div>
+        
+        {/* Destination Box - Mobile */}
+        {article.destination_id && (
+          <div className="mb-6">
+            <ArticleDestinationBox 
+              destinationId={article.destination_id} 
+              lang={lang} 
+            />
+          </div>
+        )}
       </div>
 
       <div className="container mx-auto px-4 py-4 md:py-8">
@@ -360,6 +371,15 @@ export default async function MagazineArticlePage({ params }: PageProps) {
               <div className="hidden md:block">
                 <TableOfContents content={translation?.description || ''} />
               </div>
+              
+              {/* Destination Box - Show only if article has a destination */}
+              {article.destination_id && (
+                <ArticleDestinationBox 
+                  destinationId={article.destination_id} 
+                  lang={lang} 
+                />
+              )}
+              
               <ArticlesSidebar lang={lang} />
             </div>
           </div>

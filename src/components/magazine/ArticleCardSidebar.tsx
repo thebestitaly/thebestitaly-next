@@ -38,7 +38,7 @@ const ArticleCardSidebar: React.FC<ArticleCardSidebarProps> = ({ article, lang }
               </div>
             </div>
           )}
-          <div className="content pt-4 pb-2">
+          <div className="content pt-2 pb-2">
             {/* Category Badge */}
             {article.category_id && (
               <div className="mb-2">

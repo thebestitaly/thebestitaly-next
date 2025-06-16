@@ -16,8 +16,16 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
   }, []);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['articles', lang],
-    queryFn: () => directusClient.getArticles(lang),
+    queryKey: ['articles', lang, 'sidebar'],
+    queryFn: () => directusClient.getArticles(
+      lang, 
+      0, // offset
+      20, // limit
+      {
+        // Escludi categoria 9
+        category_id: { _neq: 9 }
+      }
+    ),
     enabled: isClient,
   });
 
@@ -47,7 +55,7 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
     <div>
       <h3 className="text-lg font-bold mb-4 text-gray-800">Latest Articles</h3>
       <ul className="space-y-4">
-        {data.articles.slice(0, 20).map((article) => (
+        {data.articles.map((article) => (
           <ArticleCardSidebar key={article.id} article={article} lang={lang} />
         ))}
       </ul>

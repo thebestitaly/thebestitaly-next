@@ -70,7 +70,7 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
   }
 
   return (
-    <div className="rounded-xl md:rounded-2xl p-4 md:p-6 bg-gray-50">
+    <div className="rounded-xl md:rounded-2xl bg-gray-50">
       <div className="space-y-3">
         {hierarchy.map((item, index) => (
           <a

@@ -73,6 +73,16 @@ export default function CreateArticlePage() {
     }
   };
 
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    // Reset the file input
+    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleAdditionalImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
@@ -98,7 +108,7 @@ export default function CreateArticlePage() {
     setIsLoading(true);
 
     try {
-      console.log('Creazione articolo...');
+      console.log('Creazione articolo tramite API...');
       
       let imageId = null;
       
@@ -108,20 +118,17 @@ export default function CreateArticlePage() {
         const formDataImage = new FormData();
         formDataImage.append('file', selectedImage);
         
-        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/files`, {
+        const uploadResponse = await fetch('/api/admin/files/upload', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-          },
           body: formDataImage,
         });
-        
+
         if (!uploadResponse.ok) {
-          throw new Error('Errore upload immagine featured');
+          throw new Error('Errore upload immagine principale');
         }
-        
+
         const uploadResult = await uploadResponse.json();
-        imageId = uploadResult.data.id;
+        imageId = uploadResult.file.id;
         console.log('Immagine featured caricata con ID:', imageId);
       }
 
@@ -133,109 +140,52 @@ export default function CreateArticlePage() {
           const formDataImage = new FormData();
           formDataImage.append('file', image);
           
-          const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/files`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-            },
-            body: formDataImage,
-          });
-          
-          if (uploadResponse.ok) {
-            const uploadResult = await uploadResponse.json();
-            additionalImageIds.push(uploadResult.data.id);
-            console.log('Immagine aggiuntiva caricata con ID:', uploadResult.data.id);
+          try {
+            const uploadResponse = await fetch('/api/admin/files/upload', {
+              method: 'POST',
+              body: formDataImage,
+            });
+
+            if (uploadResponse.ok) {
+              const uploadResult = await uploadResponse.json();
+              additionalImageIds.push(uploadResult.file.id);
+              console.log('Immagine aggiuntiva caricata con ID:', uploadResult.file.id);
+            }
+          } catch (err) {
+            console.error('Errore upload immagine aggiuntiva:', err);
           }
         }
       }
 
-      // Crea l'articolo principale
-      const articlePayload: Record<string, unknown> = {
-        date_created: new Date().toISOString(),
-        featured_status: formData.featured_status,
-        category: formData.category ? parseInt(formData.category) : null
-      };
-
-      if (imageId) {
-        articlePayload.image = imageId;
-      }
-
-      const articleResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/articles`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(articlePayload),
-      });
-
-      if (!articleResponse.ok) {
-        const errorData = await articleResponse.json();
-        console.error('Errore API articolo:', errorData);
-        throw new Error('Errore creazione articolo');
-      }
-
-      const article = await articleResponse.json();
-      console.log('Articolo creato:', article.data);
-
-      // Crea la traduzione italiana
-      const translationPayload = {
-        articles_id: article.data.id,
-        languages_code: 'it',
+      // Prepara i dati per l'API
+      const createData = {
         titolo_articolo: formData.titolo_articolo,
         description: formData.description,
         seo_title: formData.seo_title,
         seo_summary: formData.seo_summary,
-        slug_permalink: formData.slug_permalink
+        slug_permalink: formData.slug_permalink,
+        featured_status: formData.featured_status,
+        category: formData.category,
+        image: imageId,
+        additionalImages: additionalImageIds
       };
 
-      const translationResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/articles_translations`, {
+      // Crea l'articolo tramite API route
+      const response = await fetch('/api/admin/articles/create', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(translationPayload),
+        body: JSON.stringify(createData),
       });
 
-      if (!translationResponse.ok) {
-        const errorData = await translationResponse.json();
-        console.error('Errore API traduzione:', errorData);
-        throw new Error('Errore creazione traduzione');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore durante la creazione');
       }
 
-      const translation = await translationResponse.json();
-      console.log('Traduzione italiana creata:', translation.data);
-
-      // Crea le relazioni per le immagini aggiuntive
-      if (additionalImageIds.length > 0) {
-        console.log('Creazione relazioni immagini aggiuntive...');
-        for (const imageId of additionalImageIds) {
-          try {
-            const relationPayload = {
-              articles_id: article.data.id,
-              directus_files_id: imageId
-            };
-
-            const relationResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/articles_files`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(relationPayload),
-            });
-
-            if (relationResponse.ok) {
-              console.log('Relazione immagine creata per ID:', imageId);
-            } else {
-              console.error('Errore creazione relazione per immagine:', imageId);
-            }
-          } catch (err) {
-            console.error('Errore nella creazione relazione immagine:', err);
-          }
-        }
-      }
+      const result = await response.json();
+      console.log('Articolo creato con successo:', result);
       
       alert('✅ Articolo creato con successo!');
       router.push('/it/reserved');
@@ -406,13 +356,14 @@ export default function CreateArticlePage() {
                 Immagine Articolo
               </label>
               <input
+                id="image-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
               {imagePreview && (
-                <div className="mt-4">
+                <div className="mt-4 flex items-center space-x-4">
                   <Image
                     src={imagePreview}
                     alt="Anteprima"
@@ -420,6 +371,13 @@ export default function CreateArticlePage() {
                     height={128}
                     className="object-cover rounded-lg border"
                   />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="px-3 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors duration-200"
+                  >
+                    🗑️ Rimuovi
+                  </button>
                 </div>
               )}
             </div>

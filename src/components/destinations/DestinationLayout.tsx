@@ -13,7 +13,7 @@ import { lazy, Suspense } from "react";
 // Lazy load dei componenti non critici
 const GetYourGuideWidget = lazy(() => import("@/components/widgets/GetYourGuideWidget"));
 const DestinationSidebar = lazy(() => import("@/components/destinations/DestinationSidebar"));
-const ArticlesSidebar = lazy(() => import("@/components/widgets/ArticlesSidebar"));
+const DestinationArticlesSidebar = lazy(() => import("@/components/destinations/DestinationArticlesSidebar"));
 const GoogleMaps = lazy(() => import("@/components/widgets/GoogleMaps"));
 const DestinationCompanies = lazy(() => import("@/components/destinations/DestinationCompanies"));
 
@@ -109,6 +109,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
   const translation = destination.translations[0];
   const provinceId = destination.province_id?.id || null; // Estrai l'ID corretto
+  const regionId = destination.region_id?.id || null; // Estrai l'ID della regione
   // Determina gli slug e gli ID per il breadcrumb e la sidebar
   const regionSlug = slugData.regionSlug || parentSlug || "";
   const provinceSlug = slugData.provinceSlug || (type === "province" ? slug : "");
@@ -298,12 +299,13 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                   provinceSlug={slugData.provinceSlug}
                   currentSlug={translation?.slug_permalink || ""}
                   provinceId={provinceId || undefined}  // Passa solo l'ID della provincia come stringa
+                  regionId={regionId || undefined}  // Passa l'ID della regione
                   lang={lang}
                   type={destination.type}
                 />
               </Suspense>
               <Suspense fallback={<div className="h-48 bg-gray-100 rounded-lg animate-pulse"></div>}>
-                <ArticlesSidebar lang={lang} />
+                <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
               </Suspense>
             </div>
             
@@ -316,12 +318,13 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                   provinceSlug={slugData.provinceSlug}
                   currentSlug={translation?.slug_permalink || ""}
                   provinceId={provinceId || undefined}
+                  regionId={regionId || undefined}  // Passa l'ID della regione
                   lang={lang}
                   type={destination.type}
                 />
               </Suspense>
               <Suspense fallback={<div className="h-48 bg-gray-100 rounded-lg animate-pulse"></div>}>
-                <ArticlesSidebar lang={lang} />
+                <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
               </Suspense>
             </div>
           </div>

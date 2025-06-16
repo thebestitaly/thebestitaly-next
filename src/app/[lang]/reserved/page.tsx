@@ -87,10 +87,14 @@ function ArticlesList() {
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
   const [destinations, setDestinations] = useState<DestinationSummary[]>([]);
   const [companies, setCompanies] = useState<CompanySummary[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<CompanySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'articles' | 'destinations' | 'companies'>('articles');
   const [translatingItems, setTranslatingItems] = useState<Set<string | number>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [companiesPage, setCompaniesPage] = useState(0);
+  const COMPANIES_PER_PAGE = 10;
 
   // Funzione per recuperare gli articoli
   const fetchArticles = async (): Promise<void> => {
@@ -100,8 +104,8 @@ function ArticlesList() {
 
       console.log("Iniziando fetch articoli...");
 
-      const { articles } = await directusClient.getArticles(LANG_IT, 0, 10, {
-        status: { _eq: "draft" }
+      const { articles } = await directusClient.getArticles(LANG_IT, 0, 20, {
+        // Mostra tutti gli articoli (draft + published) limitati a 20
       });
 
       console.log("Risposta Directus articoli:", articles);
@@ -111,7 +115,7 @@ function ArticlesList() {
         const articleTranslation = article.translations?.[0];
         return {
           id: article.id,
-          status: "draft", // assumiamo draft dato il filtro
+          status: article.status || "draft", // Usa lo status reale dall'articolo
           date_created: article.date_created,
           date_updated: article.date_updated || null,
           image: article.image,
@@ -175,8 +179,8 @@ function ArticlesList() {
 
       console.log("Iniziando fetch companies...");
 
-      // Rimuoviamo il filtro active per vedere tutte le companies nell'area admin
-      const companiesResponse = await directusClient.getCompanies(LANG_IT, {});
+      // Usiamo getCompaniesForListing per l'area admin (senza filtri)
+      const companiesResponse = await directusClient.getCompaniesForListing(LANG_IT, {});
 
       console.log("Risposta Directus companies:", companiesResponse);
 
@@ -196,6 +200,7 @@ function ArticlesList() {
 
       console.log("Companies mappate:", mappedCompanies);
       setCompanies(mappedCompanies);
+      setFilteredCompanies(mappedCompanies);
 
     } catch (err) {
       console.error("Errore nel caricamento companies:", err);
@@ -325,6 +330,21 @@ function ArticlesList() {
       });
     }
   }
+
+  // Effetto per filtrare le companies
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredCompanies(companies);
+    } else {
+      const filtered = companies.filter(company =>
+        company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (company.website && company.website.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (company.description && company.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredCompanies(filtered);
+    }
+    setCompaniesPage(0); // Reset page when search changes
+  }, [searchTerm, companies]);
 
   // Carica i dati in base al tab attivo
   useEffect(() => {
@@ -748,11 +768,45 @@ function ArticlesList() {
                                 <>🚀 Traduci</>
                               )}
                             </button>
+                            
+                            <a
+                              href={`/it/reserved/edit-destination/${destination.id}`}
+                              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold text-sm rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md text-center"
+                            >
+                              ✏️ Modifica
+                            </a>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Pagination per companies */}
+                  {filteredCompanies.length > COMPANIES_PER_PAGE && (
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-700">
+                          Mostrando {companiesPage * COMPANIES_PER_PAGE + 1} - {Math.min((companiesPage + 1) * COMPANIES_PER_PAGE, filteredCompanies.length)} di {filteredCompanies.length} aziende
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setCompaniesPage(Math.max(0, companiesPage - 1))}
+                            disabled={companiesPage === 0}
+                            className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-50"
+                          >
+                            Precedente
+                          </button>
+                          <button
+                            onClick={() => setCompaniesPage(Math.min(Math.floor(filteredCompanies.length / COMPANIES_PER_PAGE), companiesPage + 1))}
+                            disabled={(companiesPage + 1) * COMPANIES_PER_PAGE >= filteredCompanies.length}
+                            className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-50"
+                          >
+                            Successivo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-center py-16">
@@ -772,10 +826,30 @@ function ArticlesList() {
               {companies.length > 0 ? (
                 <>
                   <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-purple-50 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-900">Lista Aziende</h2>
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-lg font-semibold text-gray-900">Lista Aziende ({filteredCompanies.length})</h2>
+                      <div className="flex items-center space-x-4">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Cerca aziende..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          />
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {companies.map((company) => (
+                    {filteredCompanies
+                      .slice(companiesPage * COMPANIES_PER_PAGE, (companiesPage + 1) * COMPANIES_PER_PAGE)
+                      .map((company) => (
                       <div
                         key={company.id}
                         className="p-6 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all duration-200 group"

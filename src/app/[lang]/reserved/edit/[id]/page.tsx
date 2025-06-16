@@ -2,10 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { createDirectus, rest, readItems } from '@directus/sdk';
-
-// Client Directus
-const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL || '').with(rest());
+import directusClient from '../../../../../lib/directus';
 
 // Lista delle 50 lingue supportate
 const ALL_LANGS = [
@@ -70,6 +67,8 @@ interface ArticleData {
   id: string | number;
   status: string;
   featured_status?: string;
+  category_id?: number;
+  destination_id?: number;
   titolo_articolo: string;
   seo_summary: string;
   description: string;
@@ -95,6 +94,8 @@ const EditArticlePage = () => {
   const [translationProgress, setTranslationProgress] = useState<TranslationStatus[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [destinations, setDestinations] = useState<any[]>([]);
   const router = useRouter();
 
   // Carica i dati dell'articolo
@@ -106,36 +107,25 @@ const EditArticlePage = () => {
         setLoading(true);
         setError(null);
 
-        const response = await directus.request(
-          readItems("articles", {
-            filter: { id: { _eq: id } },
-            fields: [
-              "id",
-              "status",
-              "featured_status",
-              "image",
-              "translations.*"
-            ],
-            deep: {
-              translations: { 
-                _filter: { 
-                  languages_code: { _eq: "it" } 
-                } 
-              },
-            },
-            limit: 1
-          })
-        );
+        const response = await fetch(`/api/admin/articles/${id}`);
+        
+        if (!response.ok) {
+          throw new Error('Errore nel caricamento dell\'articolo');
+        }
+        
+        const result = await response.json();
 
-        if (response && response.length > 0) {
-          const articleData = response[0];
-          const translation = articleData.translations?.[0];
+        if (result && result.data) {
+          const articleData = result.data;
+          const translation = articleData.translations?.find((t: any) => t.languages_code === 'it');
           
           if (translation) {
             const articleState = {
               id: articleData.id,
               status: articleData.status,
               featured_status: articleData.featured_status,
+              category_id: articleData.category_id,
+              destination_id: articleData.destination_id,
               titolo_articolo: translation.titolo_articolo || '',
               seo_summary: translation.seo_summary || '',
               description: translation.description || '',
@@ -165,6 +155,30 @@ const EditArticlePage = () => {
     fetchArticle();
   }, [id]);
 
+  // Carica categorie e destinazioni
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Carica categorie
+        const categoriesResponse = await fetch('/api/directus/items/categories?fields=id,translations.nome_categoria&deep[translations][_filter][languages_code][_eq]=it');
+        if (categoriesResponse.ok) {
+          const categoriesData = await categoriesResponse.json();
+          setCategories(categoriesData.data || []);
+        }
+
+        // Carica destinazioni
+        const destinationsResponse = await fetch('/api/directus/items/destinations?fields=id,translations.destination_name&deep[translations][_filter][languages_code][_eq]=it&limit=100');
+        if (destinationsResponse.ok) {
+          const destinationsData = await destinationsResponse.json();
+          setDestinations(destinationsData.data || []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento dati:', error);
+      }
+    };
+    loadData();
+  }, []);
+
   // Gestione cambio immagine
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -189,65 +203,47 @@ const EditArticlePage = () => {
 
       // Upload nuova immagine se selezionata
       if (selectedImage) {
-        console.log('Upload nuova immagine...');
+        console.log('Upload nuova immagine tramite API...');
         const formDataImage = new FormData();
         formDataImage.append('file', selectedImage);
         
-        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/files`, {
+        const uploadResponse = await fetch('/api/admin/files/upload', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-          },
           body: formDataImage,
         });
         
         if (uploadResponse.ok) {
           const uploadResult = await uploadResponse.json();
-          imageId = uploadResult.data.id;
+          imageId = uploadResult.file.id;
           console.log('Nuova immagine caricata con ID:', imageId);
+        } else {
+          throw new Error('Errore upload immagine');
         }
       }
 
-      // Aggiorna l'articolo principale (featured_status e immagine)
-      const articleUpdateResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/articles/${id}`, {
-        method: 'PATCH',
+      // Aggiorna l'articolo tramite API route
+      const updateData = {
+        titolo_articolo: article.titolo_articolo,
+        seo_summary: article.seo_summary,
+        description: article.description,
+        slug_permalink: article.slug_permalink,
+        featured_status: article.featured_status || 'none',
+        category_id: article.category_id,
+        destination_id: article.destination_id,
+        image: imageId
+      };
+
+      const updateResponse = await fetch(`/api/admin/articles/update/${id}`, {
+        method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          featured_status: article.featured_status || 'none',
-          image: imageId
-        }),
+        body: JSON.stringify(updateData),
       });
 
-      if (!articleUpdateResponse.ok) {
-        throw new Error('Errore aggiornamento articolo');
-      }
-
-      // Aggiorna la traduzione italiana
-      const translationUpdateResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/articles_translations`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filter: {
-            articles_id: { _eq: id },
-            languages_code: { _eq: 'it' }
-          },
-          data: {
-            titolo_articolo: article.titolo_articolo,
-            seo_summary: article.seo_summary,
-            description: article.description,
-            slug_permalink: article.slug_permalink
-          }
-        }),
-      });
-
-      if (!translationUpdateResponse.ok) {
-        throw new Error('Errore aggiornamento traduzione');
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        throw new Error(errorData.error || 'Errore aggiornamento articolo');
       }
 
       alert('✅ Articolo aggiornato con successo!');
@@ -502,6 +498,44 @@ const EditArticlePage = () => {
               <option value="top">Top</option>
               <option value="editor">Editor&apos;s Choice</option>
               <option value="trending">Trending</option>
+            </select>
+          </div>
+
+          {/* Categoria */}
+          <div className="bg-white border rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Categoria
+            </label>
+            <select
+              value={article.category_id || ''}
+              onChange={(e) => setArticle({...article, category_id: e.target.value ? parseInt(e.target.value) : undefined})}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Seleziona una categoria</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.translations?.[0]?.nome_categoria || `Categoria ${category.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Destinazione */}
+          <div className="bg-white border rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Destinazione
+            </label>
+            <select
+              value={article.destination_id || ''}
+              onChange={(e) => setArticle({...article, destination_id: e.target.value ? parseInt(e.target.value) : undefined})}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Seleziona una destinazione</option>
+              {destinations.map((destination) => (
+                <option key={destination.id} value={destination.id}>
+                  {destination.translations?.[0]?.destination_name || `Destinazione ${destination.id}`}
+                </option>
+              ))}
             </select>
           </div>
 

@@ -98,6 +98,7 @@ export interface Article {
       slug_permalink: string;
     }[];
   };
+  destination_id?: string | number;
   translations: {
     languages_code: string;
     titolo_articolo: string;
@@ -232,14 +233,16 @@ class DirectusClient {
   private client: AxiosInstance;
 
   constructor() {
-    // Create the client without hardcoded headers
-    // Use proxy API route in browser to avoid CORS issues
+    // DirectusClient per LETTURA - usa proxy per evitare CORS
+    // Le operazioni di SCRITTURA usano API routes dedicate in /api/admin/
     const isBrowser = typeof window !== 'undefined';
-    const baseURL = isBrowser
-      ? '/api/directus'
+    const baseURL = isBrowser 
+      ? '/api/directus' 
       : process.env.NEXT_PUBLIC_APP_URL + '/api/directus';
+      
     this.client = axios.create({
       baseURL,
+      timeout: 10000,
     });
   
     this.setupInterceptors();
@@ -275,6 +278,36 @@ class DirectusClient {
       return response;
     } catch (error) {
       console.error(`Error fetching data from ${url}:`, error);
+      throw error;
+    }
+  }
+
+  public async post(url: string, data?: any, config?: object) {
+    try {
+      const response = await this.client.post(url, data, config);
+      return response;
+    } catch (error) {
+      console.error('DirectusClient POST error:', error);
+      throw error;
+    }
+  }
+
+  public async put(url: string, data?: any, config?: object) {
+    try {
+      const response = await this.client.put(url, data, config);
+      return response;
+    } catch (error) {
+      console.error('DirectusClient PUT error:', error);
+      throw error;
+    }
+  }
+
+  public async delete(url: string, config?: object) {
+    try {
+      const response = await this.client.delete(url, config);
+      return response;
+    } catch (error) {
+      console.error('DirectusClient DELETE error:', error);
       throw error;
     }
   }
@@ -331,7 +364,7 @@ class DirectusClient {
 
   async getCompanies(lang: string, filters: Record<string, any> = {}) {
     try {
-      const response = await this.client.get('', {
+      const response = await this.client.get('/items/companies', {
         params: {
           filter: {
             ...filters
@@ -611,6 +644,7 @@ class DirectusClient {
             'category_id.id',
             'category_id.translations.nome_categoria',
             'category_id.translations.slug_permalink',
+            'destination_id',
             'date_created',
             'translations.titolo_articolo',
             'translations.description',
@@ -729,11 +763,6 @@ class DirectusClient {
   
       // Parametri base per la richiesta
       const params: Record<string, any> = {
-        filter: {
-          status: {
-            _eq: 'published'
-          }
-        },
         sort: "-date_created",
         fields: [
           "id",
@@ -741,6 +770,7 @@ class DirectusClient {
           "category_id.id",
           "category_id.translations.nome_categoria",
           "category_id.translations.slug_permalink",
+          "destination_id",
           "date_created",
           "featured_status",
           "translations.languages_code",
@@ -755,8 +785,12 @@ class DirectusClient {
         meta: 'total_count',
       };
 
-      // Inizializza il filtro
-      params.filter = {};
+      // Inizializza il filtro con status published (sempre presente)
+      params.filter = {
+        status: {
+          _eq: 'published'
+        }
+      };
 
       // Aggiungi filtri opzionali se presenti
       if (Object.keys(filters).length > 0) {
@@ -1699,8 +1733,54 @@ export const getSupportedLanguages = async (): Promise<string[]> => {
     const languages = response.data?.data || [];
     return languages.map((lang: any) => lang.code).filter(Boolean);
   } catch (error) {
-    console.error('Error fetching supported languages:', error);
-    // Fallback to known languages
+    // Silently fallback to known languages if languages collection is not accessible
+    // This is expected behavior when using read-only tokens
     return ['it', 'en', 'fr', 'de', 'es'];
+  }
+};
+
+/**
+ * Get page titles and content from the titles collection
+ * @param titleId - The ID of the title record (1=homepage, 2=experience, 3=eccellenze, etc.)
+ * @param lang - Language code
+ */
+export const getPageTitles = async (titleId: number, lang: string): Promise<{
+  title?: string;
+  seo_title?: string;
+  seo_summary?: string;
+} | null> => {
+  try {
+    const response = await directusClient.get(`/items/titles/${titleId}`, {
+      params: {
+        fields: [
+          'translations.title',
+          'translations.seo_title', 
+          'translations.seo_summary'
+        ],
+        deep: {
+          translations: {
+            _filter: {
+              languages_code: { _eq: lang }
+            }
+          }
+        }
+      }
+    });
+
+    const titleData = response.data?.data;
+    const translation = titleData?.translations?.[0];
+    
+    if (translation) {
+      return {
+        title: translation.title,
+        seo_title: translation.seo_title,
+        seo_summary: translation.seo_summary
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn(`Could not fetch titles from database for ID ${titleId}, lang ${lang}:`, error);
+    return null;
   }
 };

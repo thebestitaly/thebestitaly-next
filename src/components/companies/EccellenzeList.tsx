@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import Breadcrumb from '../layout/Breadcrumb';
-import directusClient from '../../lib/directus';
+import directusClient, { getTranslations, getPageTitles } from '../../lib/directus';
 
 interface EccellenzeListProps {
   lang: string;
@@ -30,6 +30,132 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
     queryFn: () => directusClient.getCompanyCategories(lang)
   });
 
+  // Fetch page translations for Eccellenze page
+  const { data: pageTranslations } = useQuery({
+    queryKey: ['eccellenze-translations', lang],
+    queryFn: () => getTranslations(lang, 'eccellenze'),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Fetch page titles from database (ID 3 = eccellenze page)
+  const { data: pageTitles } = useQuery({
+    queryKey: ['page-titles-eccellenze', lang],
+    queryFn: () => getPageTitles(3, lang),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Get dynamic content with language-specific fallbacks (only used if database fails)
+  const getFallbacks = (lang: string) => {
+    switch (lang) {
+      case 'it':
+        return {
+          title: '🏆 Eccellenze',
+          subtitle: 'Le Migliori Esperienze Italiane',
+          description: 'Scopri una selezione curata delle migliori eccellenze italiane: hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche che rendono l\'Italia un paese straordinario.',
+          loading: 'Caricamento eccellenze italiane...',
+          error_title: 'Errore nel caricamento',
+          error_message: 'Non è stato possibile caricare le eccellenze.',
+          no_data_title: 'Eccellenze Italiane',
+          no_data_message: 'Al momento non ci sono eccellenze disponibili.',
+          toc_title: 'In questa pagina:',
+          toc_all: '• Tutte le eccellenze',
+          toc_categories: '• Categorie disponibili',
+          toc_join: '• Unisciti a noi'
+        };
+      case 'en':
+        return {
+          title: '🏆 Excellence',
+          subtitle: 'The Best Italian Experiences',
+          description: 'Discover a curated selection of the best Italian excellence: luxury hotels, starred restaurants, authentic experiences and unique activities that make Italy an extraordinary country.',
+          loading: 'Loading Italian excellence...',
+          error_title: 'Loading Error',
+          error_message: 'Unable to load excellence.',
+          no_data_title: 'Italian Excellence',
+          no_data_message: 'No excellence available at the moment.',
+          toc_title: 'On this page:',
+          toc_all: '• All excellence',
+          toc_categories: '• Available categories',
+          toc_join: '• Join us'
+        };
+      case 'fr':
+        return {
+          title: '🏆 Excellence',
+          subtitle: 'Les Meilleures Expériences Italiennes',
+          description: 'Découvrez une sélection soignée des meilleures excellences italiennes : hôtels de luxe, restaurants étoilés, expériences authentiques et activités uniques qui font de l\'Italie un pays extraordinaire.',
+          loading: 'Chargement des excellences italiennes...',
+          error_title: 'Erreur de chargement',
+          error_message: 'Impossible de charger les excellences.',
+          no_data_title: 'Excellence Italienne',
+          no_data_message: 'Aucune excellence disponible pour le moment.',
+          toc_title: 'Sur cette page:',
+          toc_all: '• Toutes les excellences',
+          toc_categories: '• Catégories disponibles',
+          toc_join: '• Rejoignez-nous'
+        };
+      case 'de':
+        return {
+          title: '🏆 Exzellenz',
+          subtitle: 'Die Besten Italienischen Erfahrungen',
+          description: 'Entdecken Sie eine kuratierte Auswahl der besten italienischen Exzellenz: Luxushotels, Sterne-Restaurants, authentische Erfahrungen und einzigartige Aktivitäten, die Italien zu einem außergewöhnlichen Land machen.',
+          loading: 'Italienische Exzellenz wird geladen...',
+          error_title: 'Ladefehler',
+          error_message: 'Exzellenz konnte nicht geladen werden.',
+          no_data_title: 'Italienische Exzellenz',
+          no_data_message: 'Momentan ist keine Exzellenz verfügbar.',
+          toc_title: 'Auf dieser Seite:',
+          toc_all: '• Alle Exzellenz',
+          toc_categories: '• Verfügbare Kategorien',
+          toc_join: '• Machen Sie mit'
+        };
+      case 'es':
+        return {
+          title: '🏆 Excelencia',
+          subtitle: 'Las Mejores Experiencias Italianas',
+          description: 'Descubre una selección curada de la mejor excelencia italiana: hoteles de lujo, restaurantes con estrellas, experiencias auténticas y actividades únicas que hacen de Italia un país extraordinario.',
+          loading: 'Cargando excelencia italiana...',
+          error_title: 'Error de carga',
+          error_message: 'No se pudo cargar la excelencia.',
+          no_data_title: 'Excelencia Italiana',
+          no_data_message: 'No hay excelencia disponible en este momento.',
+          toc_title: 'En esta página:',
+          toc_all: '• Toda la excelencia',
+          toc_categories: '• Categorías disponibles',
+          toc_join: '• Únete a nosotros'
+        };
+      default:
+        return {
+          title: '🏆 Excellence',
+          subtitle: 'The Best Italian Experiences',
+          description: 'Discover a curated selection of the best Italian excellence: luxury hotels, starred restaurants, authentic experiences and unique activities that make Italy an extraordinary country.',
+          loading: 'Loading Italian excellence...',
+          error_title: 'Loading Error',
+          error_message: 'Unable to load excellence.',
+          no_data_title: 'Italian Excellence',
+          no_data_message: 'No excellence available at the moment.',
+          toc_title: 'On this page:',
+          toc_all: '• All excellence',
+          toc_categories: '• Available categories',
+          toc_join: '• Join us'
+        };
+    }
+  };
+
+  const fallbacks = getFallbacks(lang);
+  
+  // Use database content first, then translations, then fallbacks
+  const pageTitle = pageTitles?.seo_title || pageTitles?.title || pageTranslations?.title || fallbacks.title;
+  const pageSubtitle = pageTranslations?.subtitle || fallbacks.subtitle;
+  const pageDescription = pageTitles?.seo_summary || pageTranslations?.description || fallbacks.description;
+  const loadingText = pageTranslations?.loading || fallbacks.loading;
+  const errorTitle = pageTranslations?.error_title || fallbacks.error_title;
+  const errorMessage = pageTranslations?.error_message || fallbacks.error_message;
+  const noDataTitle = pageTranslations?.no_data_title || fallbacks.no_data_title;
+  const noDataMessage = pageTranslations?.no_data_message || fallbacks.no_data_message;
+  const tocTitle = pageTranslations?.toc_title || fallbacks.toc_title;
+  const tocAllExcellence = pageTranslations?.toc_all || fallbacks.toc_all;
+  const tocCategories = pageTranslations?.toc_categories || fallbacks.toc_categories;
+  const tocJoinUs = pageTranslations?.toc_join || fallbacks.toc_join;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
@@ -37,8 +163,8 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
         <div className="relative h-64 sm:h-80 lg:h-[500px]">
           <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
             <Image
-              src="/excellence.webp"
-              alt="Eccellenze Italiane"
+              src="/images/excellence.webp"
+              alt={pageTitle}
               fill
               className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
               priority
@@ -49,15 +175,13 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
             <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
               <div className="max-w-4xl">
                 <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
-                  🏆 Eccellenze
+                  {pageTitle}
                 </h1>
                 <h2 className="text-base sm:text-lg lg:text-2xl font-light text-white/90 mb-3 sm:mb-4 lg:mb-6 leading-relaxed">
-                  Le Migliori Esperienze Italiane
+                  {pageSubtitle}
                 </h2>
                 <p className="text-sm sm:text-base lg:text-lg text-white/80 max-w-3xl leading-relaxed">
-                  Scopri una selezione curata delle migliori eccellenze italiane: 
-                  hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche 
-                  che rendono l'Italia un paese straordinario.
+                  {pageDescription}
                 </p>
               </div>
             </div>        
@@ -67,7 +191,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
         <div className="container mx-auto px-4 py-12">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Caricamento eccellenze italiane...</p>
+            <p className="text-gray-600">{loadingText}</p>
           </div>
         </div>
       </div>
@@ -78,8 +202,8 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="text-center text-red-600">
-          <h2 className="text-2xl font-bold mb-4">Errore nel caricamento</h2>
-          <p>Non è stato possibile caricare le eccellenze.</p>
+          <h2 className="text-2xl font-bold mb-4">{errorTitle}</h2>
+          <p>{errorMessage}</p>
         </div>
       </div>
     );
@@ -89,8 +213,8 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Eccellenze Italiane</h2>
-          <p className="text-gray-600">Al momento non ci sono eccellenze disponibili.</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{noDataTitle}</h2>
+          <p className="text-gray-600">{noDataMessage}</p>
         </div>
       </div>
     );
@@ -102,17 +226,17 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
       <div className="md:hidden">
         <div className="px-4 pt-6 pb-4">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            🏆 Eccellenze
+            {pageTitle}
           </h1>
           <p className="text-base text-gray-600 mb-4">
-            Le Migliori Esperienze Italiane
+            {pageSubtitle}
           </p>
           
           {/* Hero Image - Mobile */}
           <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
             <Image
-              src="/excellence.webp"
-              alt="Eccellenze Italiane"
+              src="/images/excellence.webp"
+              alt={pageTitle}
               fill
               className="object-cover"
               priority
@@ -121,21 +245,21 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
           
           {/* TOC - Table of Contents */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-gray-900 mb-3 text-sm">In questa pagina:</h3>
+            <h3 className="font-semibold text-gray-900 mb-3 text-sm">{tocTitle}</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <a href="#eccellenze-list" className="text-blue-600 hover:text-blue-800">
-                  • Tutte le eccellenze
+                  {tocAllExcellence}
                 </a>
               </li>
               <li>
                 <a href="#categories" className="text-blue-600 hover:text-blue-800">
-                  • Categorie disponibili
+                  {tocCategories}
                 </a>
               </li>
               <li>
                 <a href="#join-us" className="text-blue-600 hover:text-blue-800">
-                  • Unisciti a noi
+                  {tocJoinUs}
                 </a>
               </li>
             </ul>
@@ -147,8 +271,8 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
       <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
         <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
           <Image
-            src="/excellence.webp"
-            alt="Eccellenze Italiane"
+            src="/images/excellence.webp"
+            alt={pageTitle}
             fill
             className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
             priority
@@ -159,15 +283,13 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
           <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
             <div className="max-w-4xl">
               <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
-                🏆 Eccellenze
+                {pageTitle}
               </h1>
               <h2 className="text-base sm:text-lg lg:text-2xl font-light text-white/90 mb-3 sm:mb-4 lg:mb-6 leading-relaxed">
-                Le Migliori Esperienze Italiane
+                {pageSubtitle}
               </h2>
               <p className="text-sm sm:text-base lg:text-lg text-white/80 max-w-3xl leading-relaxed">
-                Scopri una selezione curata delle migliori eccellenze italiane: 
-                hotel di lusso, ristoranti stellati, esperienze autentiche e attività uniche 
-                che rendono l'Italia un paese straordinario.
+                {pageDescription}
               </p>
             </div>
           </div>        

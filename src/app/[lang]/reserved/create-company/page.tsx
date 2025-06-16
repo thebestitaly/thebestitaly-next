@@ -55,12 +55,22 @@ export default function CreateCompanyPage() {
     }
   };
 
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    // Reset the file input
+    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log('Creazione company...');
+      console.log('Creazione company tramite API...');
       
       let imageId = null;
       
@@ -70,84 +80,60 @@ export default function CreateCompanyPage() {
         const formDataImage = new FormData();
         formDataImage.append('file', selectedImage);
         
-        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/files`, {
+        const uploadResponse = await fetch('/api/admin/files/upload', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-          },
           body: formDataImage,
         });
-        
+
         if (!uploadResponse.ok) {
           throw new Error('Errore upload immagine');
         }
-        
+
         const uploadResult = await uploadResponse.json();
-        imageId = uploadResult.data.id;
+        imageId = uploadResult.file.id;
         console.log('Immagine caricata con ID:', imageId);
       }
 
-      // Crea la company principale
-      const companyPayload: any = {
-        company_name: formData.company_name,
-        website: formData.website || null,
-        email: formData.email || null,
-        phone: formData.phone || null,
-        active: formData.active,
-        slug_permalink: formData.slug_permalink
-      };
-
-      if (imageId) {
-        companyPayload.featured_image = imageId;
-      }
-
-      const companyResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/companies`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(companyPayload),
-      });
-
-      if (!companyResponse.ok) {
-        throw new Error('Errore creazione company');
-      }
-
-      const company = await companyResponse.json();
-      console.log('Company creata:', company.data);
-
-      // Crea la traduzione italiana
-      const translationPayload = {
-        companies_id: company.data.id,
-        languages_code: 'it',
+      // Prepara i dati per l'API
+      const createData = {
+        nome_azienda: formData.company_name, // Mapping del campo
         description: formData.description,
         seo_title: formData.seo_title,
-        seo_summary: formData.seo_summary
+        seo_summary: formData.seo_summary,
+        slug_permalink: formData.slug_permalink,
+        featured_status: 'none', // Default
+        category: null, // Default
+        image: imageId,
+        // Campi aggiuntivi specifici per companies
+        website: formData.website,
+        email: formData.email,
+        phone: formData.phone,
+        active: formData.active
       };
 
-      const translationResponse = await fetch(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/items/companies_translations`, {
+      // Crea la company tramite API route
+      const response = await fetch('/api/admin/companies/create', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(translationPayload),
+        body: JSON.stringify(createData),
       });
 
-      if (!translationResponse.ok) {
-        throw new Error('Errore creazione traduzione');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore durante la creazione');
       }
 
-      const translation = await translationResponse.json();
-      console.log('Traduzione italiana creata:', translation.data);
+      const result = await response.json();
+      console.log('Company creata con successo:', result);
       
       alert('✅ Company creata con successo!');
       router.push('/it/reserved');
       
     } catch (error) {
       console.error('Errore durante la creazione:', error);
-      alert('❌ Errore durante la creazione della company');
+      alert(`❌ Errore durante la creazione della company: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -265,19 +251,29 @@ export default function CreateCompanyPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Immagine Company
               </label>
-              <div className="flex items-center space-x-6">
+              <div className="space-y-4">
                 <input
+                  id="image-upload"
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                 />
                 {imagePreview && (
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-20 h-20 object-cover rounded-xl border border-gray-200"
-                  />
+                  <div className="flex items-center space-x-4">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-20 h-20 object-cover rounded-xl border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="px-3 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors duration-200"
+                    >
+                      🗑️ Rimuovi
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
