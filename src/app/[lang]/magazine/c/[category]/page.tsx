@@ -12,8 +12,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category } = await params;
   
-  let pageTitle = 'Category';
-  let pageDescription = 'Scopri gli articoli di questa categoria.';
+  // Create meaningful fallbacks based on category slug
+  const categoryName = category ? category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Category';
+  let pageTitle = categoryName;
+  let pageDescription = `Discover articles about ${categoryName.toLowerCase()} in Italy. Read our latest travel guides, tips and insights about Italian destinations and experiences.`;
 
   try {
     // Get categories and find the one matching the slug

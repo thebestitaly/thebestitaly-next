@@ -30,9 +30,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const article = await directusClient.getArticleBySlug(slug, lang);
     
     if (!article) {
+      // Create meaningful fallback based on slug
+      const articleTitle = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       return {
-        title: 'Article Not Found',
-        description: 'The requested article could not be found.',
+        title: `${articleTitle} | TheBestItaly`,
+        description: `Discover ${articleTitle.toLowerCase()} - Read our latest travel article about Italy on TheBestItaly magazine.`,
       };
     }
 
@@ -47,9 +49,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Get hreflang links
     const hreflangs = await getArticleHreflang(article.id);
     
-    // Ensure we have a proper meta description
+    // Ensure we have a proper meta description with better fallback
     const metaDescription = translation?.seo_summary || 
-                          `${translation?.titolo_articolo} - Read our latest travel article about Italy on TheBestItaly magazine.`;
+                          (translation?.titolo_articolo ? `${translation.titolo_articolo} - Read our latest travel article about Italy on TheBestItaly magazine.` : '') ||
+                          `Discover ${slug.replace(/-/g, ' ')} - Read our latest travel article about Italy on TheBestItaly magazine.`;
     
     const imageUrl = article.image 
       ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`
@@ -111,9 +114,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   } catch (error) {
     console.error('Error generating metadata:', error);
+    // Create meaningful fallback based on slug even in error case
+    const articleTitle = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     return {
-      title: 'Article',
-      description: 'Read our latest article',
+      title: `${articleTitle} | TheBestItaly`,
+      description: `Discover ${articleTitle.toLowerCase()} - Read our latest travel article about Italy on TheBestItaly magazine.`,
     };
   }
 }
