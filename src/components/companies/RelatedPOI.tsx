@@ -105,7 +105,7 @@ export default function RelatedPOI({ currentCompanyId, destinationId, lang }: Re
   }
 
   return (
-    <div className="rounded-xl md:rounded-2xl bg-gray-50 p-4 md:p-6">
+    <div className="rounded-xl md:rounded-2xl bg-blue-50 p-4">
       <div className="flex items-center mb-4">
         <MapPin className="w-5 h-5 text-blue-600 mr-2" />
         <h3 className="text-lg font-bold text-gray-900">
@@ -125,14 +125,14 @@ export default function RelatedPOI({ currentCompanyId, destinationId, lang }: Re
             >
               <div className="flex space-x-3 p-3 rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200">
                 {/* Image */}
-                <div className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden bg-gray-200">
+                <div className="flex-shrink-0 w-32 h-24 relative rounded-lg overflow-hidden bg-gray-200">
                   {company.featured_image ? (
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=100&height=100&fit=cover`}
+                      src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=200&height=150&fit=cover`}
                       alt={company.company_name}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-200"
-                      sizes="64px"
+                      sizes="128px"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">

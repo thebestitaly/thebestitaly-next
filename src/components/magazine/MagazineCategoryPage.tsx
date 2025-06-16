@@ -9,11 +9,18 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import Seo from "@/components/widgets/Seo";
 import ArticleGrid from "./ArticleGrid";
 
-const MagazineCategoryPage: React.FC = () => {
+interface MagazineCategoryPageProps {
+  lang?: string;
+  category?: string;
+}
+
+const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propLang, category: propCategory }) => {
   const params = useParams<{ lang: string; category: string }>();
-  const lang = params?.lang;
-  const category = params?.category;
+  const lang = propLang || params?.lang;
+  const category = propCategory || params?.category;
   const [currentUrl, setCurrentUrl] = useState("");
+  
+
 
   useEffect(() => {
     // Se non ti serve usare 'currentUrl' per SEO SSR, potresti rimuoverlo
@@ -31,14 +38,42 @@ const MagazineCategoryPage: React.FC = () => {
       // TODO: Implement proper category fetching from Directus
       // For now, we get the category from the articles data
       const categories = await directusClient.getCategories(lang || 'it');
-      return categories.find(cat => 
+      const foundCategory = categories.find(cat => 
         cat.translations.some(t => t.slug_permalink === category)
       );
+      
+      // Always return a valid object, even if category is not found
+      if (foundCategory) {
+        return foundCategory;
+      }
+      
+      // Create a fallback category with meaningful defaults
+      const fallbackTitle = category ? category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Category';
+      return {
+        id: 0,
+        nome_categoria: fallbackTitle,
+        image: '',
+        visible: true,
+        translations: [{
+          id: 0,
+          languages_code: lang || 'it',
+          nome_categoria: fallbackTitle,
+          seo_title: fallbackTitle,
+          seo_summary: `Discover articles about ${fallbackTitle.toLowerCase()}`,
+          slug_permalink: category || ''
+        }]
+      };
     },
     enabled: !!category,
   });
 
   const categoryTranslation = categoryInfo?.translations?.[0];
+  
+  // Fallback values if category is not found
+  const displayTitle = categoryTranslation?.nome_categoria || 
+    (category ? category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Category');
+  const displayDescription = categoryTranslation?.seo_summary || 
+    `Discover articles about ${displayTitle.toLowerCase()}`;
 
   // Schema for SEO
   const categorySchema = {
@@ -74,26 +109,32 @@ const MagazineCategoryPage: React.FC = () => {
         schema={categorySchema}
       />
       <div className="relative h-64 sm:h-80 lg:h-[500px]">
-        {categoryInfo?.image && (
-          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
-            <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`}
-              alt={categoryTranslation?.nome_categoria || "Category image"}
-              fill
-              className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
-          </div>
-        )}
+        {/* Always show background, with image if available or gradient if not */}
+        <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
+          {categoryInfo?.image ? (
+            <>
+              <Image
+                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`}
+                alt={categoryTranslation?.nome_categoria || "Category image"}
+                fill
+                className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 rounded-lg sm:rounded-xl lg:rounded-2xl" />
+          )}
+        </div>
         <div className="relative z-10 h-full flex items-end">
           <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
             <div className="max-w-4xl">
               <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
-                {categoryTranslation?.nome_categoria}
+                {displayTitle}
               </h1>
               <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">
-                {categoryTranslation?.seo_summary}
+                {displayDescription}
               </p>
             </div>
           </div>        

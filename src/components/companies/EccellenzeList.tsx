@@ -20,7 +20,19 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
         active: { _eq: true }
       });
       console.log('📊 Companies result:', result);
-      return result;
+      
+      // Triple-check: filter only active companies on client side as well
+      // This handles cases where active might be null or undefined
+      const activeCompanies = result.filter((company: any) => company.active === true);
+      console.log('✅ Active companies only:', activeCompanies.length, 'out of', result.length);
+      
+      // Log any non-active companies for debugging
+      const nonActiveCompanies = result.filter((company: any) => company.active !== true);
+      if (nonActiveCompanies.length > 0) {
+        console.log('⚠️ Found non-active companies:', nonActiveCompanies.map((c: any) => ({ id: c.id, name: c.company_name, active: c.active })));
+      }
+      
+      return activeCompanies;
     }
   });
 
@@ -161,14 +173,15 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
       <div className="min-h-screen bg-white">
         {/* Hero Section */}
         <div className="relative h-64 sm:h-80 lg:h-[500px]">
-          <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
-            <Image
-              src="/images/excellence.webp"
-              alt={pageTitle}
-              fill
-              className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
-              priority
-            />
+                  <div className="absolute inset-0 m-4 sm:m-6 lg:m-10 relative">
+          <Image
+            src="/images/excellence.webp"
+            alt={pageTitle}
+            fill
+            className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
+            sizes="100vw"
+            priority
+          />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
           </div>
           <div className="relative z-10 h-full flex items-end">
@@ -239,6 +252,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
               alt={pageTitle}
               fill
               className="object-cover"
+              sizes="100vw"
               priority
             />
           </div>
@@ -303,8 +317,10 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
 
       {/* Companies Grid */}
       <div id="eccellenze-list" className="container mx-auto px-4 py-8 md:py-16">
+        
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
-          {companies.map((company: any) => {
+          {companies.filter((company: any) => company.active === true).map((company: any) => {
             const translation = company.translations?.[0];
             const category = categories?.find((cat: any) => cat.id === company.category_id);
             const categoryName = category?.translations?.[0]?.nome_categoria;
@@ -329,6 +345,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                         alt={company.company_name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-4xl md:text-8xl">

@@ -15,6 +15,7 @@ interface SEOProps {
     category?: string;
   };
   schema?: object;
+  noindex?: boolean;
 }
 
 // Helper function to generate canonical URLs consistently
@@ -27,7 +28,7 @@ export function generateCanonicalUrl(lang: string, path?: string[]): string {
   
   const cleanPath = path
     .filter(segment => segment && segment.trim() !== '')
-    .join('');
+    .join('/');
   
   return `${baseUrl}/${lang}/${cleanPath}`;
 }
@@ -42,6 +43,7 @@ export function generateMetadata({
   hreflangs,
   article,
   schema,
+  noindex,
 }: SEOProps): Metadata {
   const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
   const defaultImage = `${siteUrl}/images/default-og.jpg`;
@@ -77,6 +79,14 @@ export function generateMetadata({
     metadata.alternates = {
       ...(canonicalUrl && { canonical: canonicalUrl }),
       ...(hreflangs && { languages: hreflangs }),
+    };
+  }
+
+  // Add noindex if specified
+  if (noindex) {
+    metadata.robots = {
+      index: false,
+      follow: true,
     };
   }
 

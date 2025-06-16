@@ -115,6 +115,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
                           englishTranslation?.seo_summary || 
                           `Discover ${company.company_name}, one of the best Italian excellences selected by TheBestItaly. Experience authentic Italian quality and tradition.`;
     
+    // Check if we're using English fallback (page not fully translated)
+    const isUsingEnglishFallback = lang !== 'en' && (!translation?.description || !translation?.seo_title || !translation?.seo_summary) && englishTranslation;
+    
     // Improved schema for company/POI
     const schema = {
       "@context": "https://schema.org",
@@ -153,6 +156,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonicalUrl,
       hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
       schema,
+      noindex: isUsingEnglishFallback, // Add noindex if using English fallback
     });
   } catch (error) {
     console.error('Error generating metadata:', error);
@@ -177,10 +181,14 @@ export default async function CompanyPage({ params }: PageProps) {
     
     // Fallback to English if current language fields are empty
     let englishTranslation = null;
+    let isUsingEnglishFallback = false;
     if (lang !== 'en' && (!translation?.seo_title || !translation?.seo_summary || !translation?.description)) {
       try {
         const englishCompany = await directusClient.getCompanyBySlug(slug, 'en');
         englishTranslation = englishCompany?.translations?.[0];
+        if (englishTranslation && (englishTranslation.description || englishTranslation.seo_title || englishTranslation.seo_summary)) {
+          isUsingEnglishFallback = true;
+        }
       } catch (error) {
         console.error('Error fetching English translation:', error);
       }
@@ -198,10 +206,47 @@ export default async function CompanyPage({ params }: PageProps) {
 
     return (
       <div className="min-h-screen">
+        {/* Script to modify HTML lang attribute when using English fallback */}
+        {isUsingEnglishFallback && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  if (typeof document !== 'undefined') {
+                    document.documentElement.setAttribute('lang', 'en');
+                    document.documentElement.setAttribute('dir', 'ltr');
+                    document.documentElement.setAttribute('class', 'font-sans');
+                  }
+                })();
+              `
+            }}
+          />
+        )}
+        
         {/* Breadcrumb - Always on top */}
         <div className="px-4 pt-4">
           <Breadcrumb />
         </div>
+        
+        {/* Language Fallback Notice */}
+        {isUsingEnglishFallback && (
+          <div className="container mx-auto px-4 pt-2 pb-0">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-800">
+                    This page is not yet available in this language. The displayed content is in English.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Header Section - Responsive */}
         <div className="container mx-auto px-4 pt-4 pb-0 ">
@@ -361,8 +406,8 @@ export default async function CompanyPage({ params }: PageProps) {
               {/* Google Maps */}
               {((company.lat && company.long && company.lat !== 0 && company.long !== 0) || 
                 (destination && destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0)) && (
-                <div className="rounded-xl md:rounded-2xl p-4 md:p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Posizione</h3>
+                <div className="rounded-xl md:rounded-2xl">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Position</h3>
                   <GoogleMaps 
                     lat={company.lat && company.long ? company.lat : destination?.lat || 0} 
                     lng={company.lat && company.long ? company.long : destination?.long || 0} 

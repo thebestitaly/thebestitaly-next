@@ -110,6 +110,11 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         return { type: "magazine", id: response.data?.data?.[0]?.articles_id };
       }
 
+      if (pageInfo.pageType === "poi") {
+        // For POI/companies, we use the slug directly since it's the same across languages
+        return { type: "poi", slug: pageInfo.slug };
+      }
+
       return null;
     },
     enabled: !!pageInfo?.slug,
@@ -161,6 +166,17 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         return slugMap;
       }
 
+      if (contentId.type === "poi" && contentId.slug) {
+        // For POI/companies, the slug is the same across all languages
+        // We just return the same slug for all languages
+        const slugMap: Record<string, string> = {};
+        const supportedLangs = ['it', 'en', 'fr', 'de', 'es', 'pt', 'nl', 'ro', 'sv', 'pl'];
+        supportedLangs.forEach(lang => {
+          slugMap[lang] = contentId.slug;
+        });
+        return slugMap;
+      }
+
       return {};
     },
     enabled: !!contentId,
@@ -195,6 +211,13 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             newPath = `/${language.code}/magazine/${slug}`;
           } else {
             newPath = `/${language.code}/magazine/${pageInfo.slug}`;
+          }
+        } else if (pageInfo.pageType === 'poi' && translatedSlugs) {
+          const slug = translatedSlugs[language.code];
+          if (slug) {
+            newPath = `/${language.code}/poi/${slug}`;
+          } else {
+            newPath = `/${language.code}/poi/${pageInfo.slug}`;
           }
         } else {
           newPath = pathname ? `/${language.code}${pathname.substring(currentLang.length + 1)}` : `/${language.code}`;

@@ -1723,9 +1723,6 @@ export const getSupportedLanguages = async (): Promise<string[]> => {
     const response = await directusClient.get('/items/languages', {
       params: {
         fields: ['code'],
-        filter: {
-          active: { _eq: true }
-        },
         sort: ['code']
       }
     });

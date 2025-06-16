@@ -57,10 +57,10 @@ const Footer: React.FC = () => {
    // Mostra sempre lo switcher se siamo in homepage o pagine statiche
    if (pathSegments.length <= 2) return true;  // copre /, /it, /it/experience, ecc.
    
-   // Per magazine e destinazioni
+   // Per magazine, destinazioni E POI (eccellenze)
    if (pathSegments.length >= 3) {
      const [, pageType] = pathSegments;
-     return ["magazine", "region", "province", "municipality"].includes(pageType);
+     return ["magazine", "region", "province", "municipality", "poi"].includes(pageType);
    }
    
    return false;

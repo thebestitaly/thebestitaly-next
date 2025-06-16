@@ -9,7 +9,7 @@ interface MagazineCategoryPageClientProps {
 }
 
 const MagazineCategoryPageClient: React.FC<MagazineCategoryPageClientProps> = ({ lang, category }) => {
-  return <MagazineCategoryPage />;
+  return <MagazineCategoryPage lang={lang} category={category} />;
 };
 
 export default MagazineCategoryPageClient; 
