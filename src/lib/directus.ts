@@ -236,9 +236,20 @@ class DirectusClient {
     // DirectusClient per LETTURA - usa proxy per evitare CORS
     // Le operazioni di SCRITTURA usano API routes dedicate in /api/admin/
     const isBrowser = typeof window !== 'undefined';
-    const baseURL = isBrowser 
-      ? '/api/directus' 
-      : process.env.NEXT_PUBLIC_APP_URL + '/api/directus';
+    
+    let baseURL: string;
+    if (isBrowser) {
+      baseURL = '/api/directus';
+    } else {
+      // Server-side: usa l'URL dell'app se disponibile, altrimenti fallback a Directus diretto
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (appUrl && !appUrl.includes('localhost')) {
+        baseURL = appUrl + '/api/directus';
+      } else {
+        // Fallback diretto a Directus per build/sviluppo
+        baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'https://directus-production-93f0.up.railway.app';
+      }
+    }
       
     this.client = axios.create({
       baseURL,
