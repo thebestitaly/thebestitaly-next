@@ -121,7 +121,6 @@ export interface Company {
   website: string;
   company_name: string;
   slug_permalink: string;
-  email: string;
   phone: string;
   lat?: number;
   long?: number;
@@ -243,7 +242,12 @@ class DirectusClient {
     } else {
       // Server-side: usa l'URL dell'app se disponibile, altrimenti fallback a Directus diretto
       const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-      if (appUrl && !appUrl.includes('localhost')) {
+      const isBuild = process.env.NODE_ENV === 'production' && !process.env.RAILWAY_ENVIRONMENT_NAME;
+      
+      if (isBuild) {
+        // Durante la build, usa direttamente Directus per evitare loop
+        baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'https://directus-production-93f0.up.railway.app';
+      } else if (appUrl && !appUrl.includes('localhost')) {
         baseURL = appUrl + '/api/directus';
       } else {
         // Fallback diretto a Directus per build/sviluppo
@@ -344,7 +348,6 @@ class DirectusClient {
             'company_name',
             'slug_permalink',
             'featured_image',
-            'email',
             'phone',
             'category_id',
             'destination_id',
@@ -387,7 +390,6 @@ class DirectusClient {
             'slug_permalink',
             'featured_image',
             'images',
-            'email',
             'phone',
             'category_id',
             'destination_id',
@@ -581,7 +583,6 @@ class DirectusClient {
             'featured_image',
             'website',
             'company_name',
-            'email',
             'phone',
             'lat',
             'long',
@@ -1233,7 +1234,6 @@ class DirectusClient {
             'company_name',
             'slug_permalink',
             'featured_image',
-            'email',
             'phone',
             'category_id',
             'destination_id',

@@ -74,12 +74,6 @@ export default function ImageGallery({ images, companyName, featuredImage }: Ima
                 <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               
-              {/* Badge for first image */}
-              {index === 0 && featuredImage && (
-                <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                  Principale
-                </div>
-              )}
             </div>
           ))}
           
