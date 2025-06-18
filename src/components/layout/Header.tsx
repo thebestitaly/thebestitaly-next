@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { Search, X, Menu, ChevronDown } from 'lucide-react';
 import directusClient from '../../lib/directus';
-import { useTranslation } from 'react-i18next';
 import { useSectionTranslations } from '@/hooks/useTranslations';
 import InteractiveMap from './InteractiveMap';
 
@@ -14,7 +13,6 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ lang }) => {
-  const { t, i18n } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -47,12 +45,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Cambio lingua
-  useEffect(() => {
-    if (lang && lang !== i18n.language) {
-      i18n.changeLanguage(lang);
-    }
-  }, [lang, i18n]);
+  // Language change is handled by Next.js routing
 
   // Language options for desktop (only main ones)
   const mainLanguages = [
