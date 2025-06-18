@@ -111,14 +111,59 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     "sameAs": Object.values(hreflangs)
   };
 
-  return generateSEO({
+  return {
     title: pageTitle,
     description: pageDescription,
-    type: 'website',
-    canonicalUrl,
-    hreflangs,
-    schema,
-  });
+    keywords: ['Italy', 'travel', 'destinations', 'tourism', 'Italian experiences', 'vacation', 'hotels', 'restaurants', 'excellence', 'made in italy'],
+    authors: [{ name: 'TheBestItaly' }],
+    creator: 'TheBestItaly',
+    publisher: 'TheBestItaly',
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    openGraph: {
+      type: 'website',
+      locale: lang === 'it' ? 'it_IT' : `${lang}_${lang.toUpperCase()}`,
+      url: canonicalUrl,
+      siteName: 'TheBestItaly',
+      title: pageTitle,
+      description: pageDescription,
+      images: [
+        {
+          url: `${baseUrl}/images/hero/hero-img-1.webp`,
+          width: 1200,
+          height: 630,
+          alt: 'TheBestItaly - Discover the Best of Italy',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDescription,
+      images: [`${baseUrl}/images/hero/hero-img-1.webp`],
+      creator: '@thebestitaly',
+      site: '@thebestitaly',
+    },
+    alternates: {
+      canonical: canonicalUrl,
+      languages: hreflangs,
+    },
+    verification: {
+      google: 'your-google-verification-code',
+    },
+    other: {
+      'schema-org': JSON.stringify(schema),
+    },
+  };
 }
 
 export default async function Home({ params }: PageProps) {

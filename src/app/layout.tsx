@@ -2,70 +2,6 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import directusClient from '@/lib/directus';
 
-export async function generateMetadata(): Promise<Metadata> {
-  let pageTitle = 'TheBestItaly - Discover the Best of Italy';
-  let pageDescription = 'Scopri le migliori destinazioni e aziende d\'Italia. La guida completa per il turismo di qualità in oltre 50 lingue.';
-
-  try {
-    // Fetch the title record with ID = 1
-    const record = await directusClient.get('/items/titles/1', {
-      params: {
-        fields: ['translations.title', 'translations.seo_title', 'translations.seo_summary'],
-        deep: {
-          translations: {
-            _filter: {
-              languages_code: { _eq: 'it' }
-            }
-          }
-        }
-      }
-    });
-
-    const titleData = record?.data?.data;
-    const translation = titleData?.translations?.[0];
-    if (translation) {
-      pageTitle = translation.seo_title || translation.title || pageTitle;
-      pageDescription = translation.seo_summary || pageDescription;
-    }
-  } catch (error) {
-    console.warn('Could not fetch titles from database, using defaults:', error);
-    // Utilizziamo i valori di default già impostati
-  }
-
-  return {
-    title: {
-      default: pageTitle,
-      template: '%s | TheBestItaly'
-    },
-    description: pageDescription,
-    keywords: ['Italy', 'travel', 'destinations', 'tourism', 'Italian experiences', 'vacation', 'hotels', 'restaurants'],
-    openGraph: {
-      type: 'website',
-      locale: 'it_IT',
-      url: 'https://thebestitaly.eu',
-      siteName: 'TheBestItaly',
-      title: pageTitle,
-      description: pageDescription,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: pageTitle,
-      description: pageDescription,
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
-  };
-}
-
 export default function RootLayout({
   children,
 }: {
@@ -75,14 +11,29 @@ export default function RootLayout({
     <html lang="it" dir="ltr" className="font-sans">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />
+        <meta name="color-scheme" content="light" />
         
         {/* Performance optimizations */}
         <link rel="preconnect" href="https://directus-production-93f0.up.railway.app" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        
+        {/* Preload critical images */}
+        <link
+          rel="preload"
+          as="image"
+          href="/images/hero/hero-img-1.webp"
+          media="(max-width: 768px)"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/images/hero/hero-img-1.webp"
+          media="(min-width: 769px)"
+        />
         
         {/* Google Fonts - Optimized loading */}
         <link 
