@@ -31,17 +31,25 @@ const HeroSection: React.FC = () => {
   return (
     <div className="relative min-h-[600px]">
       {/* Background Images */}
-      <Image
-        src={backgroundImages[currentImageIndex]}
-        alt={`Italian landscape ${currentImageIndex + 1} - Discover the beauty of Italy`}
-        fill
-        className="object-cover transition-opacity duration-1000"
-        priority
-        sizes="100vw"
-        quality={85}
-        placeholder="blur"
-        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkbHB0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-      />
+      {backgroundImages.map((img, index) => (
+        <div
+          key={img}
+          className={`absolute inset-0 transition-opacity duration-1000 ${
+            index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <Image
+            src={img}
+            alt={`Italy scenic view ${index + 1}`}
+            fill
+            priority={index === 0}
+            sizes="100vw"
+            className="object-cover"
+            quality={90}
+          />
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+      ))}
 
       {/* Decorative elements */}
       <div className="absolute top-20 right-1/4 text-white/50 z-10">

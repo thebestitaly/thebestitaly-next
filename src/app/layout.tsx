@@ -21,26 +21,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         
-        {/* Preload critical images */}
-        <link
-          rel="preload"
-          as="image"
-          href="/images/hero/hero-img-1.webp"
-          media="(max-width: 768px)"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/hero/hero-img-1.webp"
-          media="(min-width: 769px)"
-        />
-        
         {/* Google Fonts - Optimized loading */}
-        <link 
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" 
-          rel="preload"
-          as="style"
-        />
         <link 
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" 
           rel="stylesheet"
