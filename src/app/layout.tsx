@@ -3,8 +3,8 @@ import { headers } from 'next/headers'
 import directusClient from '@/lib/directus';
 
 export async function generateMetadata(): Promise<Metadata> {
-  let pageTitle = '';
-  let pageDescription = 'Scopri le migliori destinazioni e aziende d\'Italia. La guida completa per il turismo di qualità.';
+  let pageTitle = 'TheBestItaly - Discover the Best of Italy';
+  let pageDescription = 'Scopri le migliori destinazioni e aziende d\'Italia. La guida completa per il turismo di qualità in oltre 50 lingue.';
 
   try {
     // Fetch the title record with ID = 1
@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: {
       default: pageTitle,
-      template: '%s'
+      template: '%s | TheBestItaly'
     },
     description: pageDescription,
     keywords: ['Italy', 'travel', 'destinations', 'tourism', 'Italian experiences', 'vacation', 'hotels', 'restaurants'],
@@ -51,6 +51,17 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: pageTitle,
       description: pageDescription,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
   };
 }
@@ -72,6 +83,17 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        
+        {/* Google Fonts - Optimized loading */}
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" 
+          rel="preload"
+          as="style"
+        />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" 
+          rel="stylesheet"
+        />
         
         {/* Google Tag Manager - Lazy Load */}
         <script
