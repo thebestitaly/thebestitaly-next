@@ -9,12 +9,6 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Experimental features per performance
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@headlessui/react'],
-  },
-  
   // Configurazione immagini
   images: {
     formats: ['image/webp', 'image/avif'],
