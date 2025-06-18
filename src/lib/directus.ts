@@ -509,30 +509,34 @@ class DirectusClient {
             'translations.seo_summary',
             'translations.slug_permalink'
           ],
-          // Rimuovi il filtro deep per ottenere tutte le traduzioni
+          // OTTIMIZZAZIONE: Filtra traduzioni per lingua specifica
+          deep: {
+            translations: {
+              _filter: {
+                languages_code: { _eq: lang }
+              }
+            },
+            'category_id.translations': {
+              _filter: {
+                languages_code: { _eq: lang }
+              }
+            }
+          },
           limit: 4,
           sort: ['-date_created']
         }
       });
 
       const articles = response.data?.data || [];
-      
-      // Implementa fallback in italiano per ogni articolo
+      console.log(`[getHomepageArticles] Found ${articles.length} articles for language: ${lang}`);
+
+      // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere le traduzioni corrette
       return articles.map((article: any) => {
-        // Trova la traduzione nella lingua richiesta
-        let translation = article.translations?.find((t: any) => t.languages_code === lang);
-        
-        // Se non esiste, usa il fallback italiano
+        const translation = article.translations?.[0];
+        const categoryTranslation = article.category_id?.translations?.[0];
+
         if (!translation) {
-          translation = article.translations?.find((t: any) => t.languages_code === 'it');
-        }
-        
-        // Trova la traduzione della categoria nella lingua richiesta
-        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === lang);
-        
-        // Se non esiste, usa il fallback italiano per la categoria
-        if (!categoryTranslation) {
-          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+          console.warn(`[getHomepageArticles] Missing translation for article ${article.id}, language: ${lang}`);
         }
 
         return {
@@ -575,30 +579,34 @@ class DirectusClient {
             'translations.seo_summary',
             'translations.slug_permalink'
           ],
-          // Rimuovi il filtro deep per ottenere tutte le traduzioni
+          // OTTIMIZZAZIONE: Filtra traduzioni per lingua specifica
+          deep: {
+            translations: {
+              _filter: {
+                languages_code: { _eq: lang }
+              }
+            },
+            'category_id.translations': {
+              _filter: {
+                languages_code: { _eq: lang }
+              }
+            }
+          },
           limit: 10,
           sort: ['-date_created']
         }
       });
 
       const articles = response.data?.data || [];
-      
-      // Implementa fallback in italiano per ogni articolo
+      console.log(`[getLatestArticlesForHomepage] Found ${articles.length} articles for language: ${lang}`);
+
+      // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere le traduzioni corrette  
       return articles.map((article: any) => {
-        // Trova la traduzione nella lingua richiesta
-        let translation = article.translations?.find((t: any) => t.languages_code === lang);
-        
-        // Se non esiste, usa il fallback italiano
+        const translation = article.translations?.[0];
+        const categoryTranslation = article.category_id?.translations?.[0];
+
         if (!translation) {
-          translation = article.translations?.find((t: any) => t.languages_code === 'it');
-        }
-        
-        // Trova la traduzione della categoria nella lingua richiesta
-        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === lang);
-        
-        // Se non esiste, usa il fallback italiano per la categoria
-        if (!categoryTranslation) {
-          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+          console.warn(`[getLatestArticlesForHomepage] Missing translation for article ${article.id}, language: ${lang}`);
         }
 
         return {
@@ -611,7 +619,7 @@ class DirectusClient {
         };
       });
     } catch (error) {
-      console.error('Error fetching latest articles for homepage:', error);
+      console.error('Error fetching latest articles:', error);
       return [];
     }
   }
@@ -717,29 +725,88 @@ class DirectusClient {
             'translations.description',
             'translations.seo_summary',
             'translations.slug_permalink'
-          ]
-          // Rimuovi il filtro deep per ottenere tutte le traduzioni
+          ],
+          // OTTIMIZZAZIONE: Prova prima con la lingua richiesta
+          'deep': {
+            'translations': {
+              '_filter': {
+                'languages_code': { '_eq': languageCode }
+              }
+            },
+            'category_id.translations': {
+              '_filter': {
+                'languages_code': { '_eq': languageCode }
+              }
+            }
+          }
         }
       });
 
       const article = response.data?.data?.[0];
       if (!article) return null;
 
-      // Implementa fallback in italiano
-      // Trova la traduzione nella lingua richiesta
-      let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
+      // Verifica se abbiamo la traduzione nella lingua richiesta
+      let translation = article.translations?.[0];
+      let categoryTranslation = article.category_id?.translations?.[0];
       
-      // Se non esiste, usa il fallback italiano
-      if (!translation) {
-        translation = article.translations?.find((t: any) => t.languages_code === 'it');
-      }
-      
-      // Trova la traduzione della categoria nella lingua richiesta
-      let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
-      
-      // Se non esiste, usa il fallback italiano per la categoria
-      if (!categoryTranslation) {
-        categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+      // FALLBACK: Se non abbiamo traduzione nella lingua richiesta, rifai la query con italiano
+      if (!translation && languageCode !== 'it') {
+        console.log(`[getArticleBySlug] No translation found for ${languageCode}, trying Italian fallback`);
+        
+        const fallbackResponse = await this.client.get('/items/articles', {
+          params: {
+            'filter': {
+              'translations': {
+                'slug_permalink': {
+                  '_eq': slug
+                }
+              }
+            },
+            'fields': [
+              'id',
+              'uuid_id',
+              'image',
+              'category_id.id',
+              'category_id.uuid_id',
+              'category_id.translations.nome_categoria',
+              'category_id.translations.slug_permalink',
+              'destination_id',
+              'date_created',
+              'translations.languages_code',
+              'translations.titolo_articolo',
+              'translations.description',
+              'translations.seo_summary',
+              'translations.slug_permalink'
+            ],
+            'deep': {
+              'translations': {
+                '_filter': {
+                  'languages_code': { '_eq': 'it' }
+                }
+              },
+              'category_id.translations': {
+                '_filter': {
+                  'languages_code': { '_eq': 'it' }
+                }
+              }
+            }
+          }
+        });
+        
+        const fallbackArticle = fallbackResponse.data?.data?.[0];
+        if (fallbackArticle) {
+          translation = fallbackArticle.translations?.[0];
+          categoryTranslation = fallbackArticle.category_id?.translations?.[0];
+          
+          return {
+            ...fallbackArticle,
+            translations: translation ? [translation] : [],
+            category_id: fallbackArticle.category_id ? {
+              ...fallbackArticle.category_id,
+              translations: categoryTranslation ? [categoryTranslation] : []
+            } : undefined
+          };
+        }
       }
 
       return {
@@ -787,22 +854,86 @@ class DirectusClient {
             'translations.description',
             'translations.seo_summary',
             'translations.slug_permalink'
-          ]
+          ],
+          // OTTIMIZZAZIONE: Prova prima con la lingua richiesta
+          'deep': {
+            'translations': {
+              '_filter': {
+                'languages_code': { '_eq': languageCode }
+              }
+            },
+            'category_id.translations': {
+              '_filter': {
+                'languages_code': { '_eq': languageCode }
+              }
+            }
+          }
         }
       });
 
       const article = response.data?.data?.[0];
       if (!article) return null;
 
-      // Applica fallback in italiano (stesso codice)
-      let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
-      if (!translation) {
-        translation = article.translations?.find((t: any) => t.languages_code === 'it');
-      }
+      // Verifica se abbiamo la traduzione nella lingua richiesta
+      let translation = article.translations?.[0];
+      let categoryTranslation = article.category_id?.translations?.[0];
       
-      let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
-      if (!categoryTranslation) {
-        categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+      // FALLBACK: Se non abbiamo traduzione nella lingua richiesta, rifai la query con italiano
+      if (!translation && languageCode !== 'it') {
+        console.log(`[getArticleByUUID] No translation found for ${languageCode}, trying Italian fallback`);
+        
+        const fallbackResponse = await this.client.get('/items/articles', {
+          params: {
+            'filter': {
+              'uuid_id': {
+                '_eq': uuid
+              }
+            },
+            'fields': [
+              'id',
+              'uuid_id',
+              'image',
+              'category_id.id',
+              'category_id.uuid_id',
+              'category_id.translations.nome_categoria',
+              'category_id.translations.slug_permalink',
+              'destination_id',
+              'date_created',
+              'translations.languages_code',
+              'translations.titolo_articolo',
+              'translations.description',
+              'translations.seo_summary',
+              'translations.slug_permalink'
+            ],
+            'deep': {
+              'translations': {
+                '_filter': {
+                  'languages_code': { '_eq': 'it' }
+                }
+              },
+              'category_id.translations': {
+                '_filter': {
+                  'languages_code': { '_eq': 'it' }
+                }
+              }
+            }
+          }
+        });
+        
+        const fallbackArticle = fallbackResponse.data?.data?.[0];
+        if (fallbackArticle) {
+          translation = fallbackArticle.translations?.[0];
+          categoryTranslation = fallbackArticle.category_id?.translations?.[0];
+          
+          return {
+            ...fallbackArticle,
+            translations: translation ? [translation] : [],
+            category_id: fallbackArticle.category_id ? {
+              ...fallbackArticle.category_id,
+              translations: categoryTranslation ? [categoryTranslation] : []
+            } : undefined
+          };
+        }
       }
 
       return {
@@ -896,7 +1027,7 @@ class DirectusClient {
     }
   }
   
-    public async getArticles(
+  public async getArticles(
     languageCode: string,
     offset: number = 0,
     limit: number = 10,
@@ -911,7 +1042,7 @@ class DirectusClient {
         return { articles: [], total: 0 };
       }
   
-      // Parametri base per la richiesta
+      // Parametri base per la richiesta - OTTIMIZZATO PER LINGUA
       const params: Record<string, any> = {
         sort: "-date_created",
         fields: [
@@ -929,7 +1060,19 @@ class DirectusClient {
           "translations.seo_summary",
           "translations.slug_permalink",
         ],
-        // Rimuovi il filtro deep per ottenere tutte le traduzioni
+        // OTTIMIZZAZIONE: Filtra le traduzioni per lingua specifica
+        deep: {
+          translations: {
+            _filter: {
+              languages_code: { _eq: languageCode }
+            }
+          },
+          'category_id.translations': {
+            _filter: {
+              languages_code: { _eq: languageCode }
+            }
+          }
+        },
         offset: Math.max(offset, 0),
         limit: Math.max(limit, 1),
         meta: 'total_count',
@@ -959,22 +1102,14 @@ class DirectusClient {
       const rawArticles = response.data.data || [];
       const total = response.data.meta?.total_count || 0;
 
-      // Implementa fallback in italiano per ogni articolo
+      // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere solo le traduzioni corrette
       const articles = rawArticles.map((article: any) => {
-        // Trova la traduzione nella lingua richiesta
-        let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
-        
-        // Se non esiste, usa il fallback italiano
+        const translation = article.translations?.[0];
+        const categoryTranslation = article.category_id?.translations?.[0];
+
+        // Se mancano traduzioni (edge case), log warning
         if (!translation) {
-          translation = article.translations?.find((t: any) => t.languages_code === 'it');
-        }
-        
-        // Trova la traduzione della categoria nella lingua richiesta
-        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
-        
-        // Se non esiste, usa il fallback italiano per la categoria
-        if (!categoryTranslation) {
-          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+          console.warn(`[getArticles] Missing translation for article ${article.id}, language: ${languageCode}`);
         }
 
         return {
@@ -1430,7 +1565,7 @@ class DirectusClient {
         return [];
       }
 
-      // Poi ottieni gli articoli usando l'ID della categoria (ottimizzato)
+      // OTTIMIZZAZIONE: Query con deep filtering per lingua specifica
       const response = await this.client.get('/items/articles', {
         params: {
           'filter': {
@@ -1451,29 +1586,35 @@ class DirectusClient {
             'translations.slug_permalink',
             'translations.languages_code'
           ],
+          // OTTIMIZZAZIONE: Filtra traduzioni per lingua specifica
+          'deep': {
+            'translations': {
+              '_filter': {
+                'languages_code': { '_eq': languageCode }
+              }
+            },
+            'category_id.translations': {
+              '_filter': {
+                'languages_code': { '_eq': languageCode }
+              }
+            }
+          },
           'sort': ['-date_created'],
           'limit': Math.min(limit, 50) // Massimo 50 articoli per performance
         }
       });
   
       const articles = response.data?.data || [];
-      
-      // Implementa fallback in italiano per ogni articolo
+      console.log(`[getArticlesByCategory] Found ${articles.length} articles for category: ${categorySlug}, language: ${languageCode}`);
+
+      // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere solo le traduzioni corrette
       return articles.map((article: any) => {
-        // Trova la traduzione nella lingua richiesta
-        let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
-        
-        // Se non esiste, usa il fallback italiano
+        const translation = article.translations?.[0];
+        const categoryTranslation = article.category_id?.translations?.[0];
+
+        // Se mancano traduzioni (edge case), log warning
         if (!translation) {
-          translation = article.translations?.find((t: any) => t.languages_code === 'it');
-        }
-        
-        // Trova la traduzione della categoria nella lingua richiesta
-        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
-        
-        // Se non esiste, usa il fallback italiano per la categoria
-        if (!categoryTranslation) {
-          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+          console.warn(`[getArticlesByCategory] Missing translation for article ${article.id}, language: ${languageCode}`);
         }
 
         return {
@@ -1485,8 +1626,9 @@ class DirectusClient {
           } : undefined
         };
       });
+      
     } catch (error) {
-      console.error('[getArticlesByCategory] Error fetching articles:', error);
+      console.error('[getArticlesByCategory] Error:', error);
       return [];
     }
   }

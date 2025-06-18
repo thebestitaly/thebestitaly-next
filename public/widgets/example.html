@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget TheBestItaly - Esempi</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 2rem;
+        }
+        .widget-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .widget-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+        .widget-description {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+        .widgets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .widget-demo {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f9fafb;
+        }
+        .widget-demo h3 {
+            margin: 0 0 1rem 0;
+            color: #374151;
+            font-size: 1.1rem;
+        }
+        .code-section {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        .instructions {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .instructions h2 {
+            color: #1e40af;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Widget TheBestItaly - Esempi di Integrazione</h1>
+        
+        <div class="instructions">
+            <h2>📋 Istruzioni per l'uso</h2>
+            <p>I widget TheBestItaly sono facili da integrare nel tuo sito web. Basta copiare il codice HTML e incollarlo nella tua pagina.</p>
+            <ul>
+                <li><strong>Small:</strong> Perfetto per sidebar o footer</li>
+                <li><strong>Medium:</strong> Ideale per contenuti laterali o sezioni dedicate</li>
+                <li><strong>Large/Full:</strong> Perfetto per pagine dedicate o sezioni principali</li>
+            </ul>
+        </div>
+
+        <div class="widget-section">
+            <h2 class="widget-title">🏛️ Widget Destinazioni</h2>
+            <p class="widget-description">
+                Esempi di widget per destinazioni turistiche italiane (Roma, Firenze, Venezia, ecc.)
+            </p>
+            
+            <div class="widgets-grid">
+                <div class="widget-demo">
+                    <h3>Small Widget - Roma</h3>
+                    <!-- Widget Small Destinazione -->
+                    <div id="widget-roma-small" 
+                         data-slug="roma" 
+                         data-type="destination"
+                         data-size="small"
+                         data-theme="light"
+                         data-languages="it,en,fr,es,de">
+                    </div>
+                </div>
+
+                <div class="widget-demo">
+                    <h3>Medium Widget - Firenze</h3>
+                    <!-- Widget Medium Destinazione -->
+                    <div id="widget-firenze-medium" 
+                         data-slug="firenze" 
+                         data-type="destination"
+                         data-size="medium"
+                         data-theme="light"
+                         data-languages="it,en,fr,es,de,pt">
+                    </div>
+                </div>
+
+                <div class="widget-demo">
+                    <h3>Large Widget - Venezia</h3>
+                    <!-- Widget Large Destinazione -->
+                                         <div id="widget-venezia-large" 
+                         data-slug="venezia" 
+                         data-type="destination"
+                         data-size="large"
+                         data-theme="light"
+                         data-languages="it,en,fr,es,de,pt,ru,zh,ja,ar,nl,sv,pl,tr,ko,hi,th,vi,uk,ro">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="widget-section">
+            <h2 class="widget-title">🏢 Widget Aziende</h2>
+            <p class="widget-description">
+                Esempi di widget per eccellenze e aziende italiane
+            </p>
+            
+            <div class="widgets-grid">
+                <div class="widget-demo">
+                    <h3>Small Widget - Azienda</h3>
+                    <!-- Widget Small Azienda -->
+                    <div id="widget-azienda-small" 
+                         data-slug="eccellenza-italiana" 
+                         data-type="companies"
+                         data-size="small"
+                         data-theme="light"
+                         data-languages="it,en,fr">
+                    </div>
+                </div>
+
+                <div class="widget-demo">
+                    <h3>Medium Widget - Azienda</h3>
+                    <!-- Widget Medium Azienda -->
+                    <div id="widget-azienda-medium" 
+                         data-slug="made-in-italy" 
+                         data-type="companies"
+                         data-size="medium"
+                         data-theme="light"
+                         data-languages="it,en,fr,es,de">
+                    </div>
+                </div>
+
+                <div class="widget-demo">
+                    <h3>Large Widget - Azienda</h3>
+                    <!-- Widget Large Azienda -->
+                    <div id="widget-azienda-large" 
+                         data-slug="tradizione-italiana" 
+                         data-type="companies"
+                         data-size="large"
+                         data-theme="light"
+                         data-languages="it,en,fr,es,de,pt,ru">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="widget-section">
+            <h2 class="widget-title">🌙 Widget Tema Scuro</h2>
+            <p class="widget-description">
+                Esempi di widget con tema scuro per siti con background scuri
+            </p>
+            
+            <div style="background: #1f2937; padding: 2rem; border-radius: 8px;">
+                <div class="widgets-grid">
+                    <div class="widget-demo" style="background: #374151; border-color: #4b5563;">
+                        <h3 style="color: white;">Medium Widget - Tema Scuro</h3>
+                        <!-- Widget Medium Dark Theme -->
+                        <div id="widget-dark-medium" 
+                             data-slug="italia-bellezza" 
+                             data-type="destination"
+                             data-size="medium"
+                             data-theme="dark"
+                             data-languages="it,en,fr,es">
+                        </div>
+                    </div>
+
+                    <div class="widget-demo" style="background: #374151; border-color: #4b5563;">
+                        <h3 style="color: white;">Large Widget - Tema Scuro</h3>
+                        <!-- Widget Large Dark Theme -->
+                                                 <div id="widget-dark-large" 
+                             data-slug="patrimonio-unesco" 
+                             data-type="destination"
+                             data-size="large"
+                             data-theme="dark"
+                             data-languages="it,en,fr,es,de,pt,ru,zh,ja,ar,nl,sv,pl,tr,ko,hi,th,vi,uk,ro,cs,da,fi,no,el,he,hr,hu,bg,sk,sl,sr">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="widget-section">
+            <h2 class="widget-title">💻 Codice di Esempio</h2>
+            <p class="widget-description">
+                Ecco come integrare un widget nel tuo sito web:
+            </p>
+            
+            <div class="code-section">
+&lt;!-- Widget TheBestItaly --&gt;
+&lt;div id="mio-widget-thebestitaly" 
+     data-slug="roma" 
+     data-type="destination"
+     data-size="medium"
+     data-theme="light"
+     data-languages="it,en,fr,es,de"
+     style="max-width: 100%; margin: 20px 0;"&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+(function() {
+  const script = document.createElement('script');
+  script.src = 'https://thebestitaly.eu/widgets/widget.js?v=2.0';
+  script.async = true;
+  script.onload = function() {
+    if (window.TheBestItalyWidget) {
+      window.TheBestItalyWidget.init('mio-widget-thebestitaly');
+    }
+  };
+  document.head.appendChild(script);
+})();
+&lt;/script&gt;
+&lt;!-- End Widget TheBestItaly --&gt;
+            </div>
+        </div>
+    </div>
+
+    <!-- Caricamento del widget script -->
+    <script>
+    (function() {
+        const script = document.createElement('script');
+        script.src = './widget.js?v=2.0';
+        script.async = true;
+        document.head.appendChild(script);
+    })();
+    </script>
+</body>
+</html> 

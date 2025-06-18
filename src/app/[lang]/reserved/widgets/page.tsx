@@ -588,9 +588,9 @@ export default function WidgetGeneratorPage() {
                     onChange={(e) => setWidgetSize(e.target.value)}
                     className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="small">Piccolo</option>
-                    <option value="medium">Medio</option>
-                    <option value="large">Grande</option>
+                    <option value="small">Small - Logo + Nome + Lingue</option>
+                    <option value="medium">Medium - Logo + Info + Bandiere</option>
+                    <option value="large">Large/Full - Completo + Articoli</option>
                   </select>
                 </div>
                 <div>
