@@ -1,6 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ottimizzazioni per le performance
+  compress: true,
+  poweredByHeader: false,
+  
+  // Ottimizzazione bundle
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
+  // Experimental features per performance
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@headlessui/react'],
+  },
+  
+  // Configurazione immagini
   images: {
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 31536000, // 1 anno
     remotePatterns: [
       // Railway Production Directus (priorità)
       {
@@ -22,6 +40,38 @@ const nextConfig = {
         pathname: '/assets/**',
       },
     ],
+  },
+  
+  // Headers per performance
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+      {
+        source: '/images/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
 }
 

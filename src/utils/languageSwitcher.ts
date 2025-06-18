@@ -1,14 +1,24 @@
 const BASE_URL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
 
+interface Translation {
+  languages_code: string;
+  slug_permalink: string;
+}
+
+interface TranslationLink {
+  lang: string;
+  link: string;
+}
+
 // Funzione per il magazine
-export async function getMagazineLinks(articleId: number) {
+export async function getMagazineLinks(articleId: number): Promise<TranslationLink[]> {
   try {
     console.log(`[getMagazineLinks] Fetching for articleId: ${articleId}`);
     const response = await fetch(`${BASE_URL}/items/articles_translations?fields=slug_permalink,languages_code&filter[articles_id][_eq]=${articleId}`);
     const data = await response.json();
     console.log(`[getMagazineLinks] Response data:`, data);
 
-    return data.data.map((translation: any) => ({
+    return data.data.map((translation: Translation) => ({
       lang: translation.languages_code,
       link: `/${translation.languages_code}/magazine/${translation.slug_permalink}`,
     }));
@@ -19,7 +29,7 @@ export async function getMagazineLinks(articleId: number) {
 }
 
 // Funzione per le destinazioni
-export async function getDestinationLinks(destinationId: number) {
+export async function getDestinationLinks(destinationId: number): Promise<TranslationLink[]> {
   try {
     console.log(`[getDestinationLinks] Fetching for destinationId: ${destinationId}`);
     const destinationResponse = await fetch(`${BASE_URL}/items/destinations?fields=region_id,province_id,translations.slug_permalink&filter[id][_eq]=${destinationId}`);
@@ -30,7 +40,7 @@ export async function getDestinationLinks(destinationId: number) {
     const slugData = await slugResponse.json();
     console.log(`[getDestinationLinks] Slug data:`, slugData);
 
-    return slugData.data.map((translation: any) => ({
+    return slugData.data.map((translation: Translation) => ({
       lang: translation.languages_code,
       link: `/${translation.languages_code}/region/${translation.slug_permalink}`,
     }));
