@@ -3,6 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import directusClient from "@/lib/directus";
 import LanguageSwitcher from "../../components/widgets/LanguageSwitcher";
 import { useSectionTranslations } from '@/hooks/useTranslations';
 
@@ -10,6 +12,18 @@ const Footer: React.FC = () => {
  const params = useParams();
  const pathname = usePathname();
  const lang = (params?.lang as string) || "it";
+
+ // Query per ottenere le regioni
+ const { data: regions } = useQuery({
+   queryKey: ['regions-footer', lang],
+   queryFn: () => directusClient.getDestinationsByType('region', lang),
+ });
+
+ // Query per ottenere le categorie del magazine
+ const { data: categories } = useQuery({
+   queryKey: ['categories-footer', lang],
+   queryFn: () => directusClient.getCategories(lang),
+ });
 
  // Funzione per determinare se siamo in una pagina destination e il suo tipo
  const getDestinationInfo = () => {
@@ -52,22 +66,77 @@ const Footer: React.FC = () => {
    return false;
  };
 
+ // Dividi le regioni in due colonne
+ const regionsColumn1 = regions?.slice(0, Math.ceil((regions?.length || 0) / 2)) || [];
+ const regionsColumn2 = regions?.slice(Math.ceil((regions?.length || 0) / 2)) || [];
+
  return (
    <footer className="bg-gray-800 text-white py-12">
      <div className="container mx-auto px-4">
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+         {/* Prima colonna: TheBestItaly + Regioni */}
          <div>
            <p className="text-xl font-bold mb-4">TheBestItaly</p>
-           <p className="text-gray-300">
-             {footerTranslations?.description || "Default footer description"}
-           </p>
-           <p className="text-gray-300">
-             {footerTranslations?.subtitle || "Default footer description"}
-           </p>
+           
+           {/* Regioni in due colonne */}
+           <div className="grid grid-cols-2 gap-2">
+             <div>
+               {regionsColumn1.map((region) => {
+                 const translation = region.translations?.[0];
+                 if (!translation?.slug_permalink) return null;
+                 return (
+                   <Link
+                     key={region.id}
+                     href={`/${lang}/${translation.slug_permalink}`}
+                     className="block text-sm text-gray-300 hover:text-white transition-colors duration-200 mb-1"
+                   >
+                     {translation.destination_name}
+                   </Link>
+                 );
+               })}
+             </div>
+             <div>
+               {regionsColumn2.map((region) => {
+                 const translation = region.translations?.[0];
+                 if (!translation?.slug_permalink) return null;
+                 return (
+                   <Link
+                     key={region.id}
+                     href={`/${lang}/${translation.slug_permalink}`}
+                     className="block text-sm text-gray-300 hover:text-white transition-colors duration-200 mb-1"
+                   >
+                     {translation.destination_name}
+                   </Link>
+                 );
+               })}
+             </div>
+           </div>
          </div>
 
+         {/* Seconda colonna: Categorie Magazine */}
          <div>
-           <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+           <div className="text-lg font-semibold mb-4">Magazine</div>
+           <ul className="space-y-2">
+             {categories?.map((category) => {
+               const translation = category.translations?.[0];
+               if (!translation?.slug_permalink) return null;
+               return (
+                 <li key={category.id}>
+                   <Link
+                     href={`/${lang}/magazine/c/${translation.slug_permalink}`}
+                     className="text-sm text-gray-300 hover:text-white transition-colors duration-200"
+                   >
+                     {translation.nome_categoria}
+                   </Link>
+                 </li>
+               );
+             })}
+           </ul>
+         </div>
+
+         {/* Terza colonna: Quick Links */}
+         <div>
+           <div className="text-lg font-semibold mb-4">Quick Links</div>
            <ul className="space-y-2">
              <li>
                <Link
@@ -96,8 +165,9 @@ const Footer: React.FC = () => {
            </ul>
          </div>
 
+         {/* Quarta colonna: Legal */}
          <div>
-           <h4 className="text-lg font-semibold mb-4">Contact</h4>
+           <div className="text-lg font-semibold mb-4">Legal</div>
            <ul className="space-y-2 text-gray-300">
              <li>
                <Link

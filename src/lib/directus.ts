@@ -503,12 +503,7 @@ class DirectusClient {
           fields: [
             'id',
             'image',
-            'date_created',
-            'featured_status',
-            'category_id.id',
-            'category_id.translations.languages_code',
             'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink',
             'translations.languages_code',
             'translations.titolo_articolo',
             'translations.seo_summary',
@@ -574,19 +569,14 @@ class DirectusClient {
           fields: [
             'id',
             'image',
-            'date_created',
-            'featured_status',
-            'category_id.id',
-            'category_id.translations.languages_code',
             'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink',
             'translations.languages_code',
             'translations.titolo_articolo',
             'translations.seo_summary',
             'translations.slug_permalink'
           ],
           // Rimuovi il filtro deep per ottenere tutte le traduzioni
-          limit: 12,
+          limit: 10,
           sort: ['-date_created']
         }
       });
@@ -1440,7 +1430,7 @@ class DirectusClient {
         return [];
       }
 
-      // Poi ottieni gli articoli usando l'ID della categoria
+      // Poi ottieni gli articoli usando l'ID della categoria (ottimizzato)
       const response = await this.client.get('/items/articles', {
         params: {
           'filter': {
@@ -1454,19 +1444,15 @@ class DirectusClient {
           'fields': [
             'id',
             'image',
-            'category_id.id',
             'category_id.translations.nome_categoria',
             'category_id.translations.languages_code',
-            'date_created',
-            'featured_status',
             'translations.titolo_articolo',
-            'translations.description', 
             'translations.seo_summary',
             'translations.slug_permalink',
             'translations.languages_code'
           ],
           'sort': ['-date_created'],
-          'limit': limit
+          'limit': Math.min(limit, 50) // Massimo 50 articoli per performance
         }
       });
   

@@ -29,7 +29,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
 
   const { data: articles } = useQuery({
     queryKey: ["articles", category, lang],
-    queryFn: () => directusClient.getArticlesByCategory(category || "", lang || 'it', 200), // Passa il limite di 100
+    queryFn: () => directusClient.getArticlesByCategory(category || "", lang || 'it', 24), // Limite ridotto a 24 per performance
     enabled: !!category,
   });
   const { data: categoryInfo } = useQuery({

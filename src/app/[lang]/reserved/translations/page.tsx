@@ -14,12 +14,79 @@ interface TranslationFormData {
   keyName: string;
   section: string;
   description: string;
-  translations: Record<string, string>;
+  englishText: string; // Lingua principale inglese
+  translations: Record<string, string>; // Tutte le traduzioni
 }
 
-const SUPPORTED_LANGUAGES = [
-  'it', 'en', 'es', 'fr', 'de', 'pt', 'ru', 'zh', 'ja', 'ar'
+// Tutte le lingue supportate (50+ lingue) - inglese come principale
+const ALL_LANGUAGES = [
+  'en', 'it', 'es', 'fr', 'de', 'pt', 'ru', 'zh', 'ja', 'ar', 'hi', 'bn', 'ur', 'fa', 'tr', 'ko', 
+  'vi', 'th', 'id', 'ms', 'tl', 'sw', 'am', 'he', 'nl', 'sv', 'no', 'da', 'fi', 'pl', 'cs', 'sk', 
+  'hu', 'ro', 'bg', 'hr', 'sr', 'sl', 'et', 'lv', 'lt', 'el', 'mk', 'az', 'ka', 'hy', 'is', 'af', 
+  'ca', 'eu', 'gl', 'cy', 'ga', 'mt', 'sq', 'bs', 'me', 'tk'
 ];
+
+// Nomi delle lingue per display
+const LANGUAGE_NAMES: Record<string, string> = {
+  'en': 'English',
+  'it': 'Italian', 
+  'es': 'Spanish',
+  'fr': 'French',
+  'de': 'German',
+  'pt': 'Portuguese',
+  'ru': 'Russian',
+  'zh': 'Chinese',
+  'ja': 'Japanese',
+  'ar': 'Arabic',
+  'hi': 'Hindi',
+  'bn': 'Bengali',
+  'ur': 'Urdu',
+  'fa': 'Persian',
+  'tr': 'Turkish',
+  'ko': 'Korean',
+  'vi': 'Vietnamese',
+  'th': 'Thai',
+  'id': 'Indonesian',
+  'ms': 'Malay',
+  'tl': 'Filipino',
+  'sw': 'Swahili',
+  'am': 'Amharic',
+  'he': 'Hebrew',
+  'nl': 'Dutch',
+  'sv': 'Swedish',
+  'no': 'Norwegian',
+  'da': 'Danish',
+  'fi': 'Finnish',
+  'pl': 'Polish',
+  'cs': 'Czech',
+  'sk': 'Slovak',
+  'hu': 'Hungarian',
+  'ro': 'Romanian',
+  'bg': 'Bulgarian',
+  'hr': 'Croatian',
+  'sr': 'Serbian',
+  'sl': 'Slovenian',
+  'et': 'Estonian',
+  'lv': 'Latvian',
+  'lt': 'Lithuanian',
+  'el': 'Greek',
+  'mk': 'Macedonian',
+  'az': 'Azerbaijani',
+  'ka': 'Georgian',
+  'hy': 'Armenian',
+  'is': 'Icelandic',
+  'af': 'Afrikaans',
+  'ca': 'Catalan',
+  'eu': 'Basque',
+  'gl': 'Galician',
+  'cy': 'Welsh',
+  'ga': 'Irish',
+  'mt': 'Maltese',
+  'sq': 'Albanian',
+  'bs': 'Bosnian',
+  'me': 'Montenegrin',
+  'tk': 'Turkmen'
+};
 
 export default function TranslationsManagementPage() {
   const router = useRouter();
@@ -28,10 +95,12 @@ export default function TranslationsManagementPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState<string>('');
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [translatingKeys, setTranslatingKeys] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState<TranslationFormData>({
     keyName: '',
     section: '',
     description: '',
+    englishText: '',
     translations: {}
   });
 
@@ -52,8 +121,8 @@ export default function TranslationsManagementPage() {
         setKeys(keysData.keys);
       }
 
-      // Carica traduzioni
-      const translationsResponse = await fetch('/api/admin/translations?language=it');
+      // Carica traduzioni per inglese (lingua principale)
+      const translationsResponse = await fetch('/api/admin/translations?language=en');
       const translationsData = await translationsResponse.json();
       
       if (translationsData.success) {
@@ -68,6 +137,29 @@ export default function TranslationsManagementPage() {
     }
   };
 
+  // Carica traduzioni per tutte le lingue per una specifica chiave
+  const loadAllTranslationsForKey = async (keyName: string, section: string) => {
+    const allTranslations: Record<string, string> = {};
+    
+    for (const lang of ALL_LANGUAGES) {
+      try {
+        const response = await fetch(`/api/admin/translations?language=${lang}&section=${section}`);
+        const data = await response.json();
+        
+        if (data.success && data.translations[keyName]) {
+          allTranslations[lang] = data.translations[keyName];
+        } else {
+          allTranslations[lang] = ''; // Casella vuota se non c'è traduzione
+        }
+      } catch (error) {
+        console.warn(`Error loading ${lang} for ${keyName}`);
+        allTranslations[lang] = '';
+      }
+    }
+    
+    return allTranslations;
+  };
+
   // Ottieni sezioni uniche
   const sections = Array.from(new Set(keys.map(key => key.section)));
 
@@ -77,40 +169,23 @@ export default function TranslationsManagementPage() {
     : keys;
 
   // Inizia modifica
-  const startEdit = (key: TranslationKey) => {
+  const startEdit = async (key: TranslationKey) => {
     setEditingKey(key.key_name);
+    
+    // Carica tutte le traduzioni per questa chiave
+    const allTranslations = await loadAllTranslationsForKey(key.key_name, key.section);
+    
     setFormData({
       keyName: key.key_name,
       section: key.section,
       description: key.description || '',
-      translations: {}
+      englishText: allTranslations.en || '',
+      translations: allTranslations
     });
-
-    // Carica traduzioni per tutte le lingue
-    loadTranslationsForKey(key.key_name);
   };
 
-  const loadTranslationsForKey = async (keyName: string) => {
-    const translationValues: Record<string, string> = {};
-    
-    for (const lang of SUPPORTED_LANGUAGES) {
-      try {
-        const response = await fetch(`/api/admin/translations?language=${lang}&section=${formData.section}`);
-        const data = await response.json();
-        
-        if (data.success && data.translations[keyName]) {
-          translationValues[lang] = data.translations[keyName];
-        }
-      } catch (error) {
-        console.warn(`Error loading ${lang} for ${keyName}`);
-      }
-    }
-    
-    setFormData(prev => ({ ...prev, translations: translationValues }));
-  };
-
-  // Salva traduzione
-  const saveTranslation = async () => {
+  // Salva traduzione inglese
+  const saveEnglishTranslation = async () => {
     try {
       const response = await fetch('/api/admin/translations', {
         method: 'POST',
@@ -118,7 +193,7 @@ export default function TranslationsManagementPage() {
         body: JSON.stringify({
           keyName: formData.keyName,
           section: formData.section,
-          translations: formData.translations,
+          translations: { en: formData.englishText }, // Solo inglese
           description: formData.description
         })
       });
@@ -126,8 +201,12 @@ export default function TranslationsManagementPage() {
       const result = await response.json();
       
       if (result.success) {
-        alert('✅ Traduzione salvata');
-        setEditingKey(null);
+        alert('✅ Traduzione inglese salvata! Ora puoi tradurre automaticamente nelle altre lingue.');
+        // Aggiorna le traduzioni locali
+        setFormData(prev => ({
+          ...prev,
+          translations: { ...prev.translations, en: prev.englishText }
+        }));
         loadData();
       } else {
         alert(`❌ Errore: ${result.error}`);
@@ -135,6 +214,110 @@ export default function TranslationsManagementPage() {
     } catch (error) {
       console.error('Error saving translation:', error);
       alert('❌ Errore salvando traduzione');
+    }
+  };
+
+  // Traduzione automatica in tutte le lingue
+  const autoTranslateAll = async (keyName: string, section: string) => {
+    const englishText = translations[section]?.[keyName] || formData.englishText;
+    
+    if (!englishText) {
+      alert('❌ Prima devi salvare la versione inglese!');
+      return;
+    }
+
+    setTranslatingKeys(prev => new Set(prev).add(keyName));
+    
+    try {
+      const response = await fetch('/api/admin/translations/auto-translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keyName,
+          section,
+          englishText,
+          translationType: 'all'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`✅ Traduzione completata in ${result.translationsCompleted}/${result.totalLanguages} lingue!`);
+        
+        // Aggiorna le traduzioni in tempo reale se stiamo modificando questa chiave
+        if (editingKey === keyName && result.translations) {
+          setFormData(prev => ({
+            ...prev,
+            translations: result.translations
+          }));
+        }
+        
+        loadData();
+      } else {
+        alert(`❌ Errore: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error auto-translating:', error);
+      alert('❌ Errore nella traduzione automatica');
+    } finally {
+      setTranslatingKeys(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(keyName);
+        return newSet;
+      });
+    }
+  };
+
+  // Traduzione automatica solo in italiano
+  const autoTranslateItalian = async (keyName: string, section: string) => {
+    const englishText = translations[section]?.[keyName] || formData.englishText;
+    
+    if (!englishText) {
+      alert('❌ Prima devi salvare la versione inglese!');
+      return;
+    }
+
+    setTranslatingKeys(prev => new Set(prev).add(keyName));
+    
+    try {
+      const response = await fetch('/api/admin/translations/auto-translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keyName,
+          section,
+          englishText,
+          translationType: 'italian'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`✅ Traduzione in italiano completata!`);
+        
+        // Aggiorna le traduzioni in tempo reale se stiamo modificando questa chiave
+        if (editingKey === keyName && result.translations) {
+          setFormData(prev => ({
+            ...prev,
+            translations: { ...prev.translations, ...result.translations }
+          }));
+        }
+        
+        loadData();
+      } else {
+        alert(`❌ Errore: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error auto-translating to Italian:', error);
+      alert('❌ Errore nella traduzione in italiano');
+    } finally {
+      setTranslatingKeys(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(keyName);
+        return newSet;
+      });
     }
   };
 
@@ -199,7 +382,7 @@ export default function TranslationsManagementPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">🌍 Gestione Traduzioni</h1>
+          <h1 className="text-3xl font-bold">🌍 Gestione Traduzioni con AI</h1>
           <div className="flex gap-3">
             <button
               onClick={refreshCache}
@@ -228,7 +411,23 @@ export default function TranslationsManagementPage() {
           </div>
           <div className="bg-white p-4 rounded-lg border">
             <h3 className="font-semibold text-gray-700">Lingue Supportate</h3>
-            <p className="text-2xl font-bold text-purple-600">{SUPPORTED_LANGUAGES.length}</p>
+            <p className="text-2xl font-bold text-purple-600">{ALL_LANGUAGES.length}</p>
+          </div>
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start">
+            <div className="text-blue-500 mr-3">🤖</div>
+            <div>
+              <h3 className="font-semibold text-blue-800 mb-2">Come funziona la traduzione automatica</h3>
+              <p className="text-blue-700 text-sm">
+                1. Crea la traduzione in <strong>inglese</strong> (lingua principale)<br/>
+                2. Usa <strong>"🌍 Traduci Tutto"</strong> per tradurre automaticamente in tutte le {ALL_LANGUAGES.length - 1} lingue<br/>
+                3. Oppure usa <strong>"🇮🇹 Solo Italiano"</strong> per una traduzione rapida in italiano<br/>
+                4. Visualizza tutte le {ALL_LANGUAGES.length} caselle che si popolano in tempo reale
+              </p>
+            </div>
           </div>
         </div>
 
@@ -249,7 +448,7 @@ export default function TranslationsManagementPage() {
           </div>
         </div>
 
-        {/* Form di modifica */}
+        {/* Form di modifica - CON TUTTE LE CASELLE */}
         {editingKey && (
           <div className="bg-white p-6 rounded-lg border mb-6">
             <h2 className="text-xl font-bold mb-4">
@@ -290,13 +489,32 @@ export default function TranslationsManagementPage() {
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block font-medium mb-2">Traduzioni</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {SUPPORTED_LANGUAGES.map(lang => (
+            {/* Campo inglese principale */}
+            <div className="mb-6">
+              <label className="block font-medium mb-2">
+                Testo Inglese 🇬🇧 (Lingua Principale)
+                <span className="text-sm text-gray-500 ml-2">(Le altre lingue verranno tradotte da qui)</span>
+              </label>
+              <textarea
+                value={formData.englishText}
+                onChange={(e) => setFormData(prev => ({ ...prev, englishText: e.target.value }))}
+                className="w-full border rounded px-3 py-2 h-24 bg-blue-50"
+                placeholder="Inserisci il testo in inglese..."
+              />
+            </div>
+
+            {/* Tutte le caselle di traduzione */}
+            <div className="mb-6">
+              <label className="block font-medium mb-4">
+                Tutte le Traduzioni ({ALL_LANGUAGES.length} lingue)
+                <span className="text-sm text-gray-500 ml-2">(Si popolano automaticamente durante la traduzione)</span>
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto border rounded p-4">
+                {ALL_LANGUAGES.map(lang => (
                   <div key={lang}>
                     <label className="block text-sm font-medium mb-1">
-                      {lang.toUpperCase()}
+                      {LANGUAGE_NAMES[lang]} ({lang.toUpperCase()})
+                      {lang === 'en' && <span className="text-blue-600 ml-1">👑</span>}
                     </label>
                     <input
                       type="text"
@@ -305,26 +523,51 @@ export default function TranslationsManagementPage() {
                         ...prev,
                         translations: { ...prev.translations, [lang]: e.target.value }
                       }))}
-                      className="w-full border rounded px-3 py-2"
-                      placeholder={`Traduzione in ${lang}`}
+                      className={`w-full border rounded px-3 py-2 text-sm ${
+                        lang === 'en' ? 'bg-blue-50 border-blue-300' : 
+                        formData.translations[lang] ? 'bg-green-50 border-green-300' : 
+                        'bg-gray-50'
+                      }`}
+                      placeholder={`Traduzione in ${LANGUAGE_NAMES[lang]}`}
+                      readOnly={lang === 'en'} // Inglese modificabile solo nel campo principale
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <button
-                onClick={saveTranslation}
+                onClick={saveEnglishTranslation}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
               >
-                💾 Salva
+                💾 Salva Inglese
               </button>
+              
+              {formData.englishText && (
+                <>
+                  <button
+                    onClick={() => autoTranslateAll(formData.keyName, formData.section)}
+                    disabled={translatingKeys.has(formData.keyName)}
+                    className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
+                  >
+                    {translatingKeys.has(formData.keyName) ? '⏳ Traducendo...' : '🌍 Traduci Tutto'}
+                  </button>
+                  <button
+                    onClick={() => autoTranslateItalian(formData.keyName, formData.section)}
+                    disabled={translatingKeys.has(formData.keyName)}
+                    className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded"
+                  >
+                    {translatingKeys.has(formData.keyName) ? '⏳' : '🇮🇹'} Solo Italiano
+                  </button>
+                </>
+              )}
+              
               <button
                 onClick={() => setEditingKey(null)}
                 className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
               >
-                ❌ Annulla
+                ❌ Chiudi
               </button>
             </div>
           </div>
@@ -343,6 +586,7 @@ export default function TranslationsManagementPage() {
                   keyName: '',
                   section: selectedSection || '',
                   description: '',
+                  englishText: '',
                   translations: {}
                 });
               }}
@@ -359,7 +603,7 @@ export default function TranslationsManagementPage() {
                   <th className="px-4 py-3 text-left">Chiave</th>
                   <th className="px-4 py-3 text-left">Sezione</th>
                   <th className="px-4 py-3 text-left">Descrizione</th>
-                  <th className="px-4 py-3 text-left">Valore (IT)</th>
+                  <th className="px-4 py-3 text-left">Valore (EN)</th>
                   <th className="px-4 py-3 text-left">Azioni</th>
                 </tr>
               </thead>
@@ -379,13 +623,33 @@ export default function TranslationsManagementPage() {
                       {translations[key.section]?.[key.key_name] || '-'}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <button
                           onClick={() => startEdit(key)}
                           className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
                         >
                           ✏️ Modifica
                         </button>
+                        
+                        {translations[key.section]?.[key.key_name] && (
+                          <>
+                            <button
+                              onClick={() => autoTranslateAll(key.key_name, key.section)}
+                              disabled={translatingKeys.has(key.key_name)}
+                              className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                            >
+                              {translatingKeys.has(key.key_name) ? '⏳' : '🌍'} Traduci Tutto
+                            </button>
+                            <button
+                              onClick={() => autoTranslateItalian(key.key_name, key.section)}
+                              disabled={translatingKeys.has(key.key_name)}
+                              className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                            >
+                              {translatingKeys.has(key.key_name) ? '⏳' : '🇮🇹'} Solo Italiano
+                            </button>
+                          </>
+                        )}
+                        
                         <button
                           onClick={() => deleteTranslation(key.key_name)}
                           className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"

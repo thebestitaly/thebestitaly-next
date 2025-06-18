@@ -13,6 +13,7 @@ import GoogleMaps from '@/components/widgets/GoogleMaps';
 import VideoEmbed from '@/components/widgets/VideoEmbed';
 import ImageGallery from '@/components/companies/ImageGallery';
 import RelatedPOI from '@/components/companies/RelatedPOI';
+import { getTranslation } from '@/lib/translations-server';
 
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
@@ -423,7 +424,9 @@ export default async function CompanyPage({ params }: PageProps) {
           <div className="mt-8 md:mt-16">
             <div className="container mx-auto px-4">
               <div className="text-center mb-8 md:mb-12">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4">Articoli Correlati</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 md:mb-4">
+                  {await getTranslation('featured_articles', 'general', lang)}
+                </h2>
                 <p className="text-gray-600 max-w-2xl mx-auto text-sm md:text-base">
                   Scopri gli ultimi articoli e consigli di viaggio
                 </p>

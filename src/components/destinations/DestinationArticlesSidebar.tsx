@@ -3,6 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import directusClient from '../../lib/directus';
 import ArticleCardSidebar from '../magazine/ArticleCardSidebar';
+import { useTranslation } from '@/hooks/useTranslations';
 
 interface DestinationArticlesSidebarProps {
   lang: string;
@@ -11,6 +12,7 @@ interface DestinationArticlesSidebarProps {
 
 const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({ lang, destinationId }) => {
   const [isClient, setIsClient] = React.useState(false);
+  const { translation: featuredArticlesText } = useTranslation('featured_articles', lang, 'general');
 
   React.useEffect(() => {
     setIsClient(true);
@@ -90,7 +92,7 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4 text-gray-800">Articoli Correlati</h3>
+      <h3 className="text-lg font-bold mb-4 text-gray-800">{featuredArticlesText}</h3>
       
       {/* Mostra prima gli articoli della stessa destinazione */}
       {destinationArticlesList.length > 0 && (

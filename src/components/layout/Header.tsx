@@ -261,7 +261,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 href={`/${lang}/poi`}
                 className={`h-full flex items-center px-6 text-gray-700 hover:text-blue-600 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}
               >
-                Eccellenze
+                {menuTranslations?.excellence_menu || 'Excellence'}
               </Link>
 
               {/* Experience Link */}
@@ -280,17 +280,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 {menuTranslations?.useful_informations || 'Informazioni'}
               </Link>
 
-              {/* Search Button */}
-              <div className="h-full flex items-center px-6">
-                <button
-                  className="p-2"
-                  onClick={() => setIsSearchOpen(true)}
-                  aria-label="Open search"
-                >
-                  <Search size={24} />
-                </button>
-              </div>
-
               
               {/* Language Selector - Desktop: Link to footer */}
               <div className="h-full flex items-center px-6">
@@ -300,7 +289,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 >
                   <Image
                     src={`/images/flags/${lang}.svg`}
-                    alt={lang.toUpperCase()}
+                    alt={`${menuTranslations?.menu_language || lang.toUpperCase()} - ${lang.toUpperCase()}`}
                     width={24}
                     height={18}
                     className="rounded w-6 h-[18px] object-cover"
@@ -333,13 +322,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   />
                   </Link>
                   <div className="flex items-center space-x-4">
-                    <button
-                      className="p-2"
-                      onClick={() => setIsSearchOpen(true)}
-                      aria-label="Open search"
-                    >
-                      <Search size={24} />
-                    </button>
                     <button
                       className="p-2"
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -456,12 +438,12 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   >
                       <Image
                         src={`/images/flags/${lang}.svg`}
-                        alt={lang.toUpperCase()}
+                        alt={menuTranslations?.menu_language || lang.toUpperCase()}
                         width={24}
                         height={18}
                         className="rounded mr-2 w-6 h-[18px] object-cover"
                       />
-                      {lang.toUpperCase()}
+                      {menuTranslations?.menu_language || lang.toUpperCase()}
                     </button>
                   </div>
                 </div>

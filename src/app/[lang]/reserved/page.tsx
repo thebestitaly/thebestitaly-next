@@ -138,8 +138,7 @@ function ArticlesList() {
       setIsLoading(true);
       setError(null);
 
-      console.log("Iniziando fetch destinazioni...");
-
+      
       const destinationsResponse = await directusClient.getDestinationsByType("region", LANG_IT);
 
      
@@ -155,11 +154,9 @@ function ArticlesList() {
         };
       });
 
-      console.log("Destinazioni mappate:", mappedDestinations);
       setDestinations(mappedDestinations);
 
     } catch (err) {
-      console.error("Errore nel caricamento destinazioni:", err);
       setError(err instanceof Error ? err.message : "Errore sconosciuto");
     } finally {
       setIsLoading(false);
