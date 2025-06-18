@@ -134,7 +134,7 @@ article ul li {
 }
 
 article ul li::marker {
-  color: #007bff;
+  color: #004DA3;
 }
 
 article ol {
@@ -148,7 +148,7 @@ article ol li {
 }
 
 article ol li::marker {
-  color: #007bff;
+  color: #004DA3;
   font-weight: 600;
 }
 
@@ -163,7 +163,7 @@ article blockquote {
   margin: 2rem 0;
   padding: 1.5rem 2rem;
   background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #004DA3;
   border-radius: 0 8px 8px 0;
   font-style: italic;
   position: relative;
@@ -173,7 +173,7 @@ article blockquote {
 article blockquote::before {
   content: '"';
   font-size: 4rem;
-  color: #007bff;
+  color: #004DA3;
   opacity: 0.3;
   position: absolute;
   top: -10px;
@@ -198,7 +198,7 @@ article blockquote cite {
 /* Emphasis and strong */
 article em, article i {
   font-style: italic;
-  color: #007bff;
+  color: #004DA3;
   font-weight: 500;
 }
 
@@ -247,7 +247,7 @@ article table {
 }
 
 article table th {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, #004DA3 0%, #0056b3 100%);
   color: white;
   padding: 1rem;
   text-align: left;
@@ -273,13 +273,13 @@ article table tr:hover {
 article hr {
   border: none;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #007bff, transparent);
+  background: linear-gradient(90deg, transparent, #004DA3, transparent);
   margin: 3rem 0;
 }
 
 /* Links */
 article a {
-  color: #007bff;
+  color: #004DA3;
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: all 0.3s ease;
@@ -402,7 +402,7 @@ article abbr {
 }
 
 .share-icons button:hover {
-  background-color: #007bff;
+  background-color: #004DA3;
   color: white;
 }
 

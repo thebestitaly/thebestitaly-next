@@ -198,7 +198,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
       {/* Header Section - Responsive */}
       <div className="container mx-auto px-4 pt-4 pb-0 ">
         {/* Responsive title */}
-        <h1 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 mt-3">
+        <h1 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 mt-3 tracking-tighter">
           {translation?.destination_name}
         </h1>
         

@@ -251,7 +251,7 @@ export default async function CompanyPage({ params }: PageProps) {
         {/* Header Section - Responsive */}
         <div className="container mx-auto px-4 pt-4 pb-0 ">
           {/* Company Name - Responsive */}
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 tracking-tighter">
             {company.company_name}
           </h1>
           

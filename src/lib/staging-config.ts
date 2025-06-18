@@ -1,12 +1,12 @@
 // Configurazione database staging e produzione
 export const DATABASE_CONFIG = {
   production: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL!,
     directusUrl: process.env.DIRECTUS_URL!,
     directusToken: process.env.DIRECTUS_TOKEN!,
   },
   staging: {
-    url: 'postgresql://postgres:FowPRDivdnyNlQYEukgNUaSMSsrMKNBA@crossover.proxy.rlwy.net:36794/railway',
+    url: process.env.STAGING_DATABASE_URL || 'postgresql://postgres:FowPRDivdnyNlQYEukgNUaSMSsrMKNBA@crossover.proxy.rlwy.net:36794/railway',
     directusUrl: process.env.DIRECTUS_URL!, // Usa stesso Directus ma con database diverso
     directusToken: process.env.DIRECTUS_TOKEN!,
   }

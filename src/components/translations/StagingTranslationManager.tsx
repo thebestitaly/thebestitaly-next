@@ -41,10 +41,32 @@ export default function StagingTranslationManager({
       const response = await fetch(`/api/translations/staging/sync?itemType=${itemType}&itemId=${itemId}`);
       
       if (!response.ok) {
+        console.error(`HTTP Error ${response.status}: ${response.statusText}`);
         throw new Error(`HTTP ${response.status}`);
       }
       
-      const data = await response.json();
+      // Controlla che la risposta abbia contenuto
+      const responseText = await response.text();
+      if (!responseText || responseText.trim() === '') {
+        console.error('Empty response from server');
+        throw new Error('Empty response');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('JSON parse error:', jsonError);
+        console.error('Response text:', responseText);
+        throw new Error('Invalid JSON response');
+      }
+      
+      // Verifica che i dati abbiano la struttura corretta
+      if (!data || typeof data !== 'object') {
+        console.error('Invalid data structure:', data);
+        throw new Error('Invalid data structure');
+      }
+      
       setStatus(data);
     } catch (error) {
       console.error('Error loading status:', error);

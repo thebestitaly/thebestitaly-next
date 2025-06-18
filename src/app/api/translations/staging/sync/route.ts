@@ -2,9 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 import { getDatabaseConfig } from '@/lib/staging-config';
 
-// Configurazioni database
-const STAGING_DB_URL = getDatabaseConfig(true).url;
-const PRODUCTION_DB_URL = getDatabaseConfig(false).url;
+// Configurazioni database con controllo errori
+let STAGING_DB_URL: string;
+let PRODUCTION_DB_URL: string;
+
+try {
+  const stagingConfig = getDatabaseConfig(true);
+  const productionConfig = getDatabaseConfig(false);
+  
+  STAGING_DB_URL = stagingConfig.url;
+  PRODUCTION_DB_URL = productionConfig.url;
+  
+  console.log('🔧 Database config loaded:', {
+    staging: !!STAGING_DB_URL,
+    production: !!PRODUCTION_DB_URL,
+    stagingLength: STAGING_DB_URL?.length || 0,
+    productionLength: PRODUCTION_DB_URL?.length || 0
+  });
+} catch (configError) {
+  console.error('❌ Error loading database config:', configError);
+  STAGING_DB_URL = '';
+  PRODUCTION_DB_URL = '';
+}
 
 interface SyncRequest {
   itemType: 'article' | 'company' | 'destination';
@@ -173,19 +192,47 @@ export async function GET(request: NextRequest) {
   const itemType = searchParams.get('itemType');
   const itemId = searchParams.get('itemId');
 
+  console.log(`🔍 Translation status check: itemType=${itemType}, itemId=${itemId}`);
+
   if (!itemType || !itemId) {
+    console.error('❌ Missing parameters:', { itemType, itemId });
     return NextResponse.json(
       { error: 'Missing itemType or itemId parameters' },
       { status: 400 }
     );
   }
 
-  const stagingClient = new Client({ connectionString: STAGING_DB_URL });
-  const productionClient = new Client({ connectionString: PRODUCTION_DB_URL });
+  // Verifica configurazione database
+  if (!STAGING_DB_URL || !PRODUCTION_DB_URL) {
+    console.error('❌ Database URLs not configured:', {
+      staging: !!STAGING_DB_URL,
+      production: !!PRODUCTION_DB_URL
+    });
+    return NextResponse.json(
+      { error: 'Database configuration missing' },
+      { status: 500 }
+    );
+  }
+
+  const stagingClient = new Client({ 
+    connectionString: STAGING_DB_URL,
+    connectionTimeoutMillis: 5000, // 5 secondi timeout
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  const productionClient = new Client({ 
+    connectionString: PRODUCTION_DB_URL,
+    connectionTimeoutMillis: 5000, // 5 secondi timeout
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
 
   try {
-    await stagingClient.connect();
-    await productionClient.connect();
+    console.log('🔌 Connecting to databases...');
+    await Promise.all([
+      stagingClient.connect(),
+      productionClient.connect()
+    ]);
+    console.log('✅ Connected to both databases');
 
     // Gestisci plurali irregolari per le tabelle di traduzione
     const getTranslationTableName = (type: string): string => {
@@ -217,16 +264,73 @@ export async function GET(request: NextRequest) {
     const translationTable = getTranslationTableName(itemType);
     const foreignKeyField = getForeignKeyField(itemType);
 
+    console.log(`📋 Using table: ${translationTable}, field: ${foreignKeyField}`);
+
+    // Prima verifica se la tabella esiste
+    const tableExistsQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = $1
+      );
+    `;
+
+    try {
+      const [stagingTableCheck, productionTableCheck] = await Promise.all([
+        stagingClient.query(tableExistsQuery, [translationTable]),
+        productionClient.query(tableExistsQuery, [translationTable])
+      ]);
+
+      const stagingTableExists = stagingTableCheck.rows[0]?.exists;
+      const productionTableExists = productionTableCheck.rows[0]?.exists;
+
+      console.log(`📊 Table existence: staging=${stagingTableExists}, production=${productionTableExists}`);
+
+      if (!stagingTableExists) {
+        return NextResponse.json({
+          error: `Table ${translationTable} does not exist in staging database`,
+          itemType,
+          itemId,
+          staging: { count: 0, languages: [] },
+          production: { count: 0, languages: [] },
+          canSync: false
+        });
+      }
+
+      if (!productionTableExists) {
+        return NextResponse.json({
+          error: `Table ${translationTable} does not exist in production database`,
+          itemType,
+          itemId,
+          staging: { count: 0, languages: [] },
+          production: { count: 0, languages: [] },
+          canSync: false
+        });
+      }
+    } catch (tableCheckError) {
+      console.error('❌ Error checking table existence:', tableCheckError);
+      return NextResponse.json({
+        error: 'Failed to verify table existence',
+        details: tableCheckError instanceof Error ? tableCheckError.message : 'Unknown error',
+        itemType,
+        itemId
+      }, { status: 500 });
+    }
+
     const query = `
       SELECT languages_code 
       FROM ${translationTable} 
       WHERE ${foreignKeyField} = $1
     `;
 
+    console.log(`🔍 Executing query: ${query} with itemId=${itemId}`);
+
     const [stagingResult, productionResult] = await Promise.all([
       stagingClient.query(query, [parseInt(itemId)]),
       productionClient.query(query, [parseInt(itemId)])
     ]);
+
+    console.log(`📊 Results: staging=${stagingResult.rows.length}, production=${productionResult.rows.length}`);
 
     const stagingLanguages = stagingResult.rows.map((row: any) => ({
       code: row.languages_code
@@ -236,7 +340,7 @@ export async function GET(request: NextRequest) {
       code: row.languages_code
     }));
 
-    return NextResponse.json({
+    const result = {
       itemType,
       itemId: parseInt(itemId),
       staging: {
@@ -248,16 +352,36 @@ export async function GET(request: NextRequest) {
         languages: productionLanguages
       },
       canSync: stagingLanguages.length > 0
-    });
+    };
+
+    console.log('✅ Status check successful:', result);
+    return NextResponse.json(result);
 
   } catch (error) {
-    console.error('Status check error:', error);
+    console.error('❌ Status check error:', error);
+    
+    // Log dettagliato dell'errore
+    if (error instanceof Error) {
+      console.error(`Error message: ${error.message}`);
+      console.error(`Error stack: ${error.stack}`);
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to check translation status' },
+      { 
+        error: 'Failed to check translation status',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        itemType,
+        itemId
+      },
       { status: 500 }
     );
   } finally {
-    await stagingClient.end();
-    await productionClient.end();
+    try {
+      await stagingClient.end();
+      await productionClient.end();
+      console.log('🔌 Database connections closed');
+    } catch (closeError) {
+      console.error('Error closing connections:', closeError);
+    }
   }
 } 
