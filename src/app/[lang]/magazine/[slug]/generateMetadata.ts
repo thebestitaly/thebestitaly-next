@@ -16,11 +16,15 @@ export async function generateMetadata({
     };
   }
 
+  const plainTextDescription = translation.description?.replace(/<[^>]*>?/gm, '') || '';
+  const description = translation.seo_summary || 
+                      (plainTextDescription ? plainTextDescription.substring(0, 155) + '...' : `Leggi di più su ${translation.titolo_articolo} su TheBestItaly, la tua guida alle eccellenze italiane.`);
+
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     "headline": translation.titolo_articolo,
-    "description": translation.seo_summary,
+    "description": description,
     "image": article.image ? 
       `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}` : 
       undefined
@@ -28,10 +32,10 @@ export async function generateMetadata({
 
   return {
     title: `${translation.titolo_articolo} | TheBestItaly`,
-    description: translation.seo_summary,
+    description: description,
     openGraph: {
       title: translation.titolo_articolo,
-      description: translation.seo_summary,
+      description: description,
       type: 'article',
       images: article.image ? 
         [`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`] : 

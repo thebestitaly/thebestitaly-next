@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const translation = titleData?.translations?.[0];
     if (translation) {
       pageTitle = translation.seo_title || translation.title || pageTitle;
-      pageDescription = translation.seo_summary || pageDescription;
+      pageDescription = translation.seo_summary ? translation.seo_summary : pageDescription;
     }
   } catch (error) {
     console.warn('Could not fetch homepage titles from database, using defaults:', error);
@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       const homeTranslations = await getTranslationsForSection('homepage', lang);
       if (homeTranslations) {
         pageTitle = homeTranslations.seo_title || homeTranslations.title || pageTitle;
-        pageDescription = homeTranslations.seo_summary || pageDescription;
+        pageDescription = homeTranslations.seo_summary ? homeTranslations.seo_summary : pageDescription;
       }
     } catch (translationError) {
       console.warn('Could not fetch translations either, using language-specific defaults:', translationError);
