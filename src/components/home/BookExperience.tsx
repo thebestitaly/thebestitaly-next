@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useSectionTranslations } from '@/hooks/useTranslations';
 
@@ -15,15 +16,15 @@ const BookExperience: React.FC = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <section className="relative">
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <img
-          src={BookExperienceImage}
-          alt="Book Experience"
-          loading="lazy"
-          className="w-full object-cover h-[500px]"
-        />
-      </React.Suspense>
+    <section className="relative h-[500px]">
+      <Image
+        src={BookExperienceImage}
+        alt="Book Experience - Italian scenic landscape"
+        fill
+        sizes="100vw"
+        className="object-cover"
+        quality={85}
+      />
 
       <div className="absolute inset-0 bg-black/40" />
 

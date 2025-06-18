@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useSectionTranslations } from '@/hooks/useTranslations';
 
@@ -21,20 +22,22 @@ const ProjectIntro: React.FC = () => {
         <div className="relative md:w-1/2 mb-8 md:mb-0 h-[600px]">
           {/* Immagine posteriore (Firenze) */}
           <div className="absolute right-0 bottom-0 w-[50%] h-[80%] z-10">
-            <img 
+            <Image 
               src={FlorenceImage} 
-              alt="Florence" 
-              className="w-half h-full object-cover rounded-3xl shadow-lg" 
-              loading="lazy"
+              alt="Florence scenic cityscape with Duomo" 
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover rounded-3xl shadow-lg" 
             />
           </div>
           {/* Immagine anteriore (San Pietro) */}
           <div className="absolute left-0 top-0 w-[80%] h-[80%] z-20">
-            <img 
+            <Image 
               src={SanPietroImage} 
-              alt="San Pietro" 
-              className="w-half h-full object-cover rounded-3xl shadow-2xl" 
-              loading="lazy"
+              alt="St. Peter's Basilica in Vatican City" 
+              fill
+              sizes="(max-width: 768px) 80vw, 40vw"
+              className="object-cover rounded-3xl shadow-2xl" 
             />
           </div>
         </div>
@@ -54,7 +57,7 @@ const ProjectIntro: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Layout - Text first, then images */}
+      {/* Mobile Layout */}
       <div className="block md:hidden">
         {/* Mobile Text */}
         <div className="mb-8">
@@ -72,18 +75,24 @@ const ProjectIntro: React.FC = () => {
 
         {/* Mobile Images - Vertical */}
         <div className="grid grid-cols-2 gap-4">
-          <img 
-            src={SanPietroImage} 
-            alt="San Pietro" 
-            className="w-full h-64 object-cover rounded-xl" 
-            loading="lazy"
-          />
-          <img 
-            src={FlorenceImage} 
-            alt="Florence" 
-            className="w-full h-64 object-cover rounded-xl" 
-            loading="lazy"
-          />
+          <div className="relative h-64 rounded-xl overflow-hidden">
+            <Image 
+              src={SanPietroImage} 
+              alt="St. Peter's Basilica in Vatican City" 
+              fill
+              sizes="50vw"
+              className="object-cover" 
+            />
+          </div>
+          <div className="relative h-64 rounded-xl overflow-hidden">
+            <Image 
+              src={FlorenceImage} 
+              alt="Florence scenic cityscape with Duomo" 
+              fill
+              sizes="50vw"
+              className="object-cover" 
+            />
+          </div>
         </div>
       </div>
     </section>

@@ -2,88 +2,97 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'pg';
 
 export async function GET(request: NextRequest) {
-  try {
-    console.log('🔍 Debug traduzioni esistenti...');
-    
-    const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-    
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL o POSTGRES_URL non trovate nelle variabili d\'ambiente');
-    }
-    
-    const client = new Client({
-      connectionString: databaseUrl,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-
-    await client.connect();
-
-    // Verifica struttura tabella translations
-    const tableStructure = await client.query(`
-      SELECT column_name, data_type, is_nullable 
-      FROM information_schema.columns 
-      WHERE table_name = 'translations' 
-      ORDER BY ordinal_position
-    `);
-
-    // Preleva alcuni esempi di traduzioni
-    const sampleTranslations = await client.query(`
-      SELECT language, section, translations::text as translations_text
-      FROM translations 
-      LIMIT 10
-    `);
-
-    // Conta per sezione e lingua
-    const sectionCounts = await client.query(`
-      SELECT section, language, 
-             CASE 
-               WHEN translations IS NULL THEN 'NULL'
-               WHEN translations::text = '' THEN 'EMPTY'
-               WHEN translations::text = '{}' THEN 'EMPTY_JSON'
-               ELSE 'HAS_DATA'
-             END as data_status,
-             LENGTH(translations::text) as data_length
-      FROM translations 
-      ORDER BY section, language
-    `);
-
-    // Prova a parsare uno specifico JSON
-    let parsedExample = null;
-    if (sampleTranslations.rows.length > 0) {
-      const firstRow = sampleTranslations.rows[0];
-      if (firstRow.translations_text) {
-        try {
-          parsedExample = {
-            section: firstRow.section,
-            language: firstRow.language,
-            parsed: JSON.parse(firstRow.translations_text)
-          };
-        } catch (error) {
-          parsedExample = {
-            section: firstRow.section,
-            language: firstRow.language,
-            error: error instanceof Error ? error.message : 'Parse error',
-            raw: firstRow.translations_text
-          };
-        }
+  const debug = {
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+    variables: {
+      DATABASE_URL: {
+        exists: !!process.env.DATABASE_URL,
+        length: process.env.DATABASE_URL?.length || 0,
+        preview: process.env.DATABASE_URL?.substring(0, 50) + '...' || 'NOT_SET'
+      },
+      STAGING_DATABASE_URL: {
+        exists: !!process.env.STAGING_DATABASE_URL,
+        length: process.env.STAGING_DATABASE_URL?.length || 0,
+        preview: process.env.STAGING_DATABASE_URL?.substring(0, 50) + '...' || 'NOT_SET'
+      },
+      PRODUCTION_DATABASE_URL: {
+        exists: !!process.env.PRODUCTION_DATABASE_URL,
+        length: process.env.PRODUCTION_DATABASE_URL?.length || 0,
+        preview: process.env.PRODUCTION_DATABASE_URL?.substring(0, 50) + '...' || 'NOT_SET'
       }
+    },
+    connections: {
+      staging: null as any,
+      production: null as any
     }
+  };
 
-    await client.end();
+  // Test connessioni database
+  const stagingUrl = process.env.STAGING_DATABASE_URL;
+  const productionUrl = process.env.DATABASE_URL || process.env.PRODUCTION_DATABASE_URL;
 
-    return NextResponse.json({
-      tableStructure: tableStructure.rows,
-      sampleTranslations: sampleTranslations.rows,
-      sectionCounts: sectionCounts.rows,
-      parsedExample,
-      totalRows: sampleTranslations.rows.length
-    });
-
-  } catch (error) {
-    console.error('❌ Errore nel debug:', error);
-    return NextResponse.json({
-      error: 'Errore nel debug delle traduzioni',
-      message: error instanceof Error ? error.message : 'Errore sconosciuto'
-    }, { status: 500 });
+  // Test connessione staging
+  if (stagingUrl) {
+    try {
+      const stagingClient = new Client({ 
+        connectionString: stagingUrl,
+        connectionTimeoutMillis: 5000,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      });
+      await stagingClient.connect();
+      
+      const result = await stagingClient.query('SELECT current_database(), version()');
+      debug.connections.staging = {
+        status: 'SUCCESS',
+        database: result.rows[0]?.current_database,
+        version: result.rows[0]?.version?.substring(0, 50) + '...'
+      };
+      
+      await stagingClient.end();
+    } catch (error) {
+      debug.connections.staging = {
+        status: 'ERROR',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  } else {
+    debug.connections.staging = {
+      status: 'NO_URL',
+      error: 'STAGING_DATABASE_URL not set'
+    };
   }
+
+  // Test connessione production
+  if (productionUrl) {
+    try {
+      const productionClient = new Client({ 
+        connectionString: productionUrl,
+        connectionTimeoutMillis: 5000,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      });
+      await productionClient.connect();
+      
+      const result = await productionClient.query('SELECT current_database(), version()');
+      debug.connections.production = {
+        status: 'SUCCESS',
+        database: result.rows[0]?.current_database,
+        version: result.rows[0]?.version?.substring(0, 50) + '...'
+      };
+      
+      await productionClient.end();
+    } catch (error) {
+      debug.connections.production = {
+        status: 'ERROR',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  } else {
+    debug.connections.production = {
+      status: 'NO_URL',
+      error: 'DATABASE_URL not set'
+    };
+  }
+
+  return NextResponse.json(debug, { status: 200 });
 } 

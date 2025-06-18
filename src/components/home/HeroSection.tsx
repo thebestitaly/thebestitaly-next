@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSectionTranslations } from '@/hooks/useTranslations';
 
 const backgroundImages = [
@@ -37,11 +38,14 @@ const HeroSection: React.FC = () => {
             index === currentImageIndex ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <img
+          <Image
             src={img}
-            alt={`Italy ${index + 1}`}
-            loading="lazy"
-            className="w-full h-full object-cover"
+            alt={`Italy scenic view ${index + 1}`}
+            fill
+            priority={index === 0}
+            sizes="100vw"
+            className="object-cover"
+            quality={90}
           />
           <div className="absolute inset-0 bg-black/40" />
         </div>

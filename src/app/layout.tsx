@@ -67,6 +67,12 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1e40af" />
         
+        {/* Performance optimizations */}
+        <link rel="preconnect" href="https://directus-production-93f0.up.railway.app" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        
         {/* Google Tag Manager - Lazy Load */}
         <script
           dangerouslySetInnerHTML={{
