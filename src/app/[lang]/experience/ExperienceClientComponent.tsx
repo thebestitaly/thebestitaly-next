@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useSectionTranslations } from '@/hooks/useTranslations';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import Image from 'next/image';
@@ -27,18 +26,7 @@ interface ExperienceClientComponentProps {
 const ExperienceClientComponent: React.FC<ExperienceClientComponentProps> = ({ lang }) => {
   const langDisplay = lang?.toUpperCase();
 
-  const { data: menuTranslations } = useQuery({
-    queryKey: ['translations', lang, 'menu'],
-    queryFn: async () => {
-      try {
-        const response = await getTranslations(lang, 'menu');
-        return response;
-      } catch (error) {
-        console.error('Error fetching translations:', error);
-        return null;
-      }
-    },
-  });
+  const { translations: menuTranslations } = useSectionTranslations('menu', lang);
 
   useEffect(() => {
     // Lazy load GetYourGuide script on user interaction
