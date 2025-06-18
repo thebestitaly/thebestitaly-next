@@ -1,4 +1,5 @@
 import { Client } from 'pg';
+import { getFallbackTranslation, getFallbackTranslationsForSection } from './translations-fallback';
 
 // Cache per le traduzioni (evita query ripetute)
 const translationCache = new Map<string, Map<string, string>>();
@@ -26,10 +27,25 @@ export interface Translation {
   values: Record<string, string>; // { 'it': 'Ciao', 'en': 'Hello' }
 }
 
-// Client database
+// Client database con gestione errori migliorata
 function getDbClient() {
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  
+  if (!connectionString) {
+    console.warn('⚠️ DATABASE_URL non configurato, usando fallback');
+    // Fallback per sviluppo locale
+    return new Client({
+      host: 'localhost',
+      port: 5432,
+      database: 'postgres',
+      user: 'postgres',
+      password: 'password'
+    });
+  }
+  
   return new Client({
-    connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL
+    connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
   });
 }
 
@@ -41,6 +57,20 @@ async function loadTranslationsToCache(): Promise<void> {
   
   try {
     await client.connect();
+    
+    // Verifica se le tabelle esistono
+    const tableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'translation_keys'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.warn('⚠️ Tabelle traduzioni non esistono, usando cache vuota');
+      lastCacheUpdate = Date.now();
+      return;
+    }
     
     const query = `
       SELECT 
@@ -75,9 +105,15 @@ async function loadTranslationsToCache(): Promise<void> {
     
   } catch (error) {
     console.error('❌ Errore caricando traduzioni:', error);
-    throw error;
+    console.warn('⚠️ Usando cache vuota come fallback');
+    // Non fare throw dell'errore, usa cache vuota
+    lastCacheUpdate = Date.now();
   } finally {
-    await client.end();
+    try {
+      await client.end();
+    } catch (e) {
+      console.error('❌ Errore chiudendo connessione DB:', e);
+    }
   }
 }
 
@@ -123,7 +159,13 @@ export async function getTranslation(
     }
   }
   
-  // Fallback: ritorna la chiave stessa
+  // Fallback: cerca nelle traduzioni di fallback
+  const fallbackTranslation = getFallbackTranslation(section || 'common', keyName, languageCode, fallbackLanguage);
+  if (fallbackTranslation !== keyName) {
+    return fallbackTranslation;
+  }
+  
+  // Ultimo fallback: ritorna la chiave stessa
   console.warn(`⚠️ Traduzione non trovata: ${keyName} (${languageCode})`);
   return keyName;
 }
@@ -151,6 +193,11 @@ export async function getTranslationsForSection(
                        translations.get(fallbackLanguage) || 
                        keyName;
     }
+  }
+  
+  // Se non ci sono traduzioni dal database, usa fallback
+  if (Object.keys(result).length === 0) {
+    return getFallbackTranslationsForSection(section, languageCode, fallbackLanguage);
   }
   
   return result;
