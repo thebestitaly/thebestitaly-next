@@ -104,9 +104,8 @@ function ArticlesList() {
 
       console.log("Iniziando fetch articoli...");
 
-      const { articles } = await directusClient.getArticles(LANG_IT, 0, 20, {
-        // Mostra tutti gli articoli (draft + published) limitati a 20
-      });
+      // Per la sezione riservata, recuperiamo tutti gli articoli (draft + published)
+      const { articles } = await directusClient.getArticlesForReserved(LANG_IT, 0, 50);
 
       // Mappa gli articoli recuperati al formato ArticleSummary
       const mappedArticles: ArticleSummary[] = articles.map((article: any) => {
@@ -234,6 +233,33 @@ function ArticlesList() {
     }
   }
 
+  // Funzione per tradurre articoli solo in inglese
+  async function triggerTranslateEnglish(articleId: number | string) {
+    setTranslatingItems(prev => new Set(prev).add(articleId));
+    try {
+      const res = await fetch(`/it/api/translate-articles/${articleId}`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type: 'english' })
+      });
+      if (!res.ok) throw new Error(`Errore traduzione: ${res.status}`);
+      const payload = await res.json();
+      console.log("Traduzione inglese avviata:", payload);
+      alert(`✅ Traduzione in inglese completata per articolo ${articleId}!`);
+    } catch (err) {
+      console.error("triggerTranslateEnglish error:", err);
+      alert(`❌ Errore nel tradurre in inglese articolo ${articleId}`);
+    } finally {
+      setTranslatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(articleId);
+        return newSet;
+      });
+    }
+  }
+
   // Funzione per tradurre destinazioni
   async function triggerTranslateDestination(destinationId: number | string) {
     setTranslatingItems(prev => new Set(prev).add(destinationId));
@@ -280,6 +306,33 @@ function ArticlesList() {
     }
   }
 
+  // Funzione per tradurre companies solo in inglese
+  async function triggerTranslateCompanyEnglish(companyId: number | string) {
+    setTranslatingItems(prev => new Set(prev).add(companyId));
+    try {
+      const res = await fetch(`/it/api/translate-companies/${companyId}`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type: 'english' })
+      });
+      if (!res.ok) throw new Error(`Errore traduzione: ${res.status}`);
+      const payload = await res.json();
+      console.log("Traduzione inglese company avviata:", payload);
+      alert(`✅ Traduzione in inglese completata per company ${companyId}!`);
+    } catch (err) {
+      console.error("triggerTranslateCompanyEnglish error:", err);
+      alert(`❌ Errore nel tradurre in inglese company ${companyId}`);
+    } finally {
+      setTranslatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(companyId);
+        return newSet;
+      });
+    }
+  }
+
   // Funzione per eliminare tutte le traduzioni di un articolo
   async function deleteAllTranslations(articleId: number | string) {
     const confirm = window.confirm('⚠️ Sei sicuro di voler eliminare TUTTE le traduzioni di questo articolo? (Verrà mantenuta solo la versione italiana)');
@@ -307,6 +360,19 @@ function ArticlesList() {
   }
 
   // Funzione per eliminare tutte le traduzioni di una company
+  // Funzione per generare URL delle destinazioni
+  const getDestinationUrl = (destination: DestinationSummary): string => {
+    if (!destination.slug_permalink) return '#';
+    
+    // Per ora gestiamo solo le regioni dato che fetchDestinations carica solo quelle
+    if (destination.type === 'region') {
+      return `/it/${destination.slug_permalink}`;
+    }
+    
+    // Per altri tipi, usa lo slug semplice come fallback
+    return `/it/${destination.slug_permalink}`;
+  };
+
   async function deleteAllCompanyTranslations(companyId: number | string) {
     const confirm = window.confirm('⚠️ Sei sicuro di voler eliminare TUTTE le traduzioni di questa company? (Verrà mantenuta solo la versione italiana)');
     if (!confirm) return;
@@ -591,7 +657,14 @@ function ArticlesList() {
 
                               {article.slug_permalink && (
                                 <div className="text-sm text-blue-600 font-medium">
-                                  🔗 /{article.slug_permalink}
+                                  <a 
+                                    href={`/it/magazine/${article.slug_permalink}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                  >
+                                    🔗 /it/magazine/{article.slug_permalink}
+                                  </a>
                                 </div>
                               )}
 
@@ -623,7 +696,29 @@ function ArticlesList() {
                                   Traducendo...
                                 </>
                               ) : (
-                                <>🚀 Traduci</>
+                                <>🌍 Traduci 49 lingue</>
+                              )}
+                            </button>
+                            
+                            <button
+                              onClick={() => triggerTranslateEnglish(article.id)}
+                              disabled={translatingItems.has(article.id)}
+                              className={`inline-flex items-center px-4 py-2 text-white font-semibold text-sm rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md ${
+                                translatingItems.has(article.id)
+                                  ? 'bg-orange-500 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                              }`}
+                            >
+                              {translatingItems.has(article.id) ? (
+                                <>
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Traducendo...
+                                </>
+                              ) : (
+                                <>🇬🇧 Solo inglese</>
                               )}
                             </button>
                             
@@ -640,7 +735,7 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Eliminando...
                                 </>
@@ -734,7 +829,14 @@ function ArticlesList() {
 
                               {destination.slug_permalink && (
                                 <div className="text-sm text-green-600 font-medium">
-                                  🔗 /{destination.slug_permalink}
+                                  🔗 <a 
+                                    href={getDestinationUrl(destination)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                  >
+                                    {getDestinationUrl(destination)}
+                                  </a>
                                 </div>
                               )}
 
@@ -904,7 +1006,14 @@ function ArticlesList() {
 
                               {company.slug_permalink && (
                                 <div className="text-sm text-blue-600 font-medium">
-                                  🔗 /{company.slug_permalink}
+                                  <a 
+                                    href={`/it/poi/${company.slug_permalink}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                  >
+                                    🔗 /it/poi/{company.slug_permalink}
+                                  </a>
                                 </div>
                               )}
 
@@ -931,12 +1040,34 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Traducendo...
                                 </>
                               ) : (
-                                <>🚀 Traduci</>
+                                <>🌍 Traduci 49 lingue</>
+                              )}
+                            </button>
+                            
+                            <button
+                              onClick={() => triggerTranslateCompanyEnglish(company.id)}
+                              disabled={translatingItems.has(company.id)}
+                              className={`inline-flex items-center px-4 py-2 text-white font-semibold text-sm rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md ${
+                                translatingItems.has(company.id)
+                                  ? 'bg-orange-500 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                              }`}
+                            >
+                              {translatingItems.has(company.id) ? (
+                                <>
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Traducendo...
+                                </>
+                              ) : (
+                                <>🇬🇧 Solo inglese</>
                               )}
                             </button>
                             
@@ -953,7 +1084,7 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Eliminando...
                                 </>

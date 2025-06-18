@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const companyPayload: any = {
       date_created: new Date().toISOString(),
       featured_status: body.featured_status || 'none',
-      category_id: body.category ? parseInt(body.category) : null,
+      category_id: body.category || null,
       company_name: body.nome_azienda, // Campo base nella tabella companies
       slug_permalink: body.slug_permalink, // Campo base nella tabella companies
       active: body.active !== undefined ? body.active : true,
@@ -51,13 +51,13 @@ export async function POST(request: NextRequest) {
       companyPayload.phone = body.phone;
     }
     if (body.destination_id) {
-      companyPayload.destination_id = parseInt(body.destination_id);
+      companyPayload.destination_id = body.destination_id;
     }
     if (body.lat) {
-      companyPayload.lat = parseFloat(body.lat);
+      companyPayload.lat = parseFloat(body.lat.toString().replace(',', '.'));
     }
     if (body.long) {
-      companyPayload.long = parseFloat(body.long);
+      companyPayload.long = parseFloat(body.long.toString().replace(',', '.'));
     }
 
     console.log('Creating company with payload:', companyPayload);

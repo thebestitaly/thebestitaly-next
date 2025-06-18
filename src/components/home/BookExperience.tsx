@@ -2,8 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { getTranslations } from "../../lib/directus";
+import { useSectionTranslations } from '@/hooks/useTranslations';
 
 const BookExperienceImage = "/images/book-experience.webp";
 
@@ -11,13 +10,9 @@ const BookExperience: React.FC = () => {
   const params = useParams<{ lang: string }>();
   const lang = params?.lang || "en";
 
-  const { data: menuTranslations, isLoading, isError } = useQuery({
-    queryKey: ["translations", lang, "menu"],
-    queryFn: () => getTranslations(lang, "menu"),
-  });
+  const { translations: menuTranslations, loading } = useSectionTranslations('menu', lang);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error loading translations</div>;
+  if (loading) return <div>Loading...</div>;
 
   return (
     <section className="relative">

@@ -2,7 +2,7 @@
 
 import { Metadata } from 'next';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from "@/components/widgets/seo-utils";
-import { getTranslations } from "@/lib/directus";
+import { getTranslationsForSection } from '@/lib/translations-server';
 import DestinationLayout from "@/components/destinations/DestinationLayout";
 import directusClient, { getDestinationHreflang } from '@/lib/directus';
 

@@ -212,9 +212,9 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                 className="lg:hidden text-left block"
                 aria-label={`Explore ${currentTranslation?.destination_name || 'this destination'} - ${currentTranslation?.seo_summary || 'Discover more'}`}
               >
-                <h1 className="text-4xl sm:text-5xl font-black text-white leading-none mb-2">
+                <h2 className="text-4xl sm:text-5xl font-black text-white leading-none mb-2 tracking-tighter">
                   {currentTranslation?.destination_name || 'Italy'}
-                </h1>
+                </h2>
                 {currentTranslation?.seo_summary && (
                   <p className="text-white/80 text-base font-light max-w-sm leading-relaxed mb-16">
                     {currentTranslation.seo_summary}
@@ -228,9 +228,9 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                 className="hidden lg:block text-left"
                 aria-label={`Explore ${currentTranslation?.destination_name || 'this destination'} - ${currentTranslation?.seo_summary || 'Discover more'}`}
               >
-                <h1 className="text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-none mb-8">
+                <h2 className="text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-none mb-8">
                   {currentTranslation?.destination_name || 'Italy'}
-                </h1>
+                </h2>
                 
                 {/* SEO Summary under title */}
                 {currentTranslation?.seo_summary && (

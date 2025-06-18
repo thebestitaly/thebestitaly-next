@@ -1,7 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { extractLanguageFromPath, isRTLLanguage } from '@/lib/i18n';
 
 export function middleware(request: NextRequest) {
+  // Extract language from pathname
+  const lang = extractLanguageFromPath(request.nextUrl.pathname);
+  const isRTL = isRTLLanguage(lang);
+
+  // Create response
+  const response = NextResponse.next();
+  
+  // Set custom headers for language and direction
+  response.headers.set('x-pathname', request.nextUrl.pathname);
+  response.headers.set('x-language', lang);
+  response.headers.set('x-direction', isRTL ? 'rtl' : 'ltr');
+  
+  // For companies/POI pages, if language is not Italian or English, 
+  // we should still use the correct lang/dir for the HTML tag
+  // The content fallback is handled in the page components
   // Check if this is a reserved area route (excluding login and api)
   const isReservedRoute = request.nextUrl.pathname.includes('/reserved') && 
                          !request.nextUrl.pathname.includes('/reserved/login') &&
@@ -13,10 +29,6 @@ export function middleware(request: NextRequest) {
     
     // Check if token exists and is not empty
     if (!sessionToken || sessionToken.trim() === '') {
-      // Get the language from the path (e.g., /it/reserved -> it)
-      const pathParts = request.nextUrl.pathname.split('/');
-      const lang = pathParts[1] || 'it';
-      
       // Redirect to login page if not authenticated
       const loginUrl = new URL(`/${lang}/reserved/login`, request.url);
       return NextResponse.redirect(loginUrl);
@@ -28,14 +40,12 @@ export function middleware(request: NextRequest) {
     const sessionToken = request.cookies.get('directus_session_token')?.value;
     
     if (sessionToken) {
-      const pathParts = request.nextUrl.pathname.split('/');
-      const lang = pathParts[1] || 'it';
       const reservedUrl = new URL(`/${lang}/reserved`, request.url);
       return NextResponse.redirect(reservedUrl);
     }
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

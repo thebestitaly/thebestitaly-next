@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import directusClient, { getTranslations } from '@/lib/directus';
+import directusClient from '@/lib/directus';
+import { getTranslationsForSection } from '@/lib/translations-server';
 import ExperienceClientComponent from './ExperienceClientComponent';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     console.warn('Could not fetch experience titles from database, using defaults:', error);
     // Fallback to translations
     try {
-      const menuTranslations = await getTranslations(lang, 'menu');
+      const menuTranslations = await getTranslationsForSection('menu', lang);
       if (menuTranslations) {
         pageTitle = menuTranslations.experience || pageTitle;
         pageDescription = menuTranslations.experience_sub || pageDescription;

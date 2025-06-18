@@ -3,9 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import LanguageSwitcher from "../../components/widgets/LanguageSwitcher";
-import { getTranslations } from "../../lib/directus";
+import { useSectionTranslations } from '@/hooks/useTranslations';
 
 const Footer: React.FC = () => {
  const params = useParams();
@@ -31,24 +30,11 @@ const Footer: React.FC = () => {
 
  const { isDestination, type } = getDestinationInfo();
 
- // Query per ottenere le traduzioni del footer
- const { data: footerTranslations, isLoading: isLoadingFooter, error: footerError } = useQuery({
-   queryKey: ["footer-translations", lang],
-   queryFn: () => getTranslations(lang, "footer"),
- });
-
- // Query per ottenere le traduzioni del menu
- const { data: menuTranslations, isLoading: isLoadingMenu, error: menuError } = useQuery({
-   queryKey: ["menu-translations", lang],
-   queryFn: () => getTranslations(lang, "menu"),
- });
+ // Hook per le traduzioni con il nuovo sistema
+ const { translations: footerTranslations, loading: isLoadingFooter } = useSectionTranslations('footer', lang);
+ const { translations: menuTranslations, loading: isLoadingMenu } = useSectionTranslations('menu', lang);
 
  if (isLoadingFooter || isLoadingMenu) return <div>Loading...</div>;
- if (footerError || menuError) {
-   console.error("Footer Error:", footerError);
-   console.error("Menu Error:", menuError);
-   return <div>Error loading translations</div>;
- }
 
  // Funzione per determinare se mostrare il language switcher
  const shouldShowLanguageSwitcher = () => {

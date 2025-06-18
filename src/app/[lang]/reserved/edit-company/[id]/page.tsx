@@ -3,72 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
+import StagingTranslationManager from "@/components/translations/StagingTranslationManager";
 
-// Lista delle 50 lingue supportate
-const ALL_LANGS = [
-  'en','fr','es','pt','de','nl','ro','sv','pl','vi','id','el','uk','ru',
-  'bn','zh','hi','ar','fa','ur','ja','ko','am','cs','da','fi','af','hr',
-  'bg','sk','sl','sr','th','ms','tl','he','ca','et','lv','lt','mk','az',
-  'ka','hy','is','sw','zh-tw'
-];
 
-// Mapping nomi lingue per visualizzazione
-const LANG_NAMES: { [key: string]: string } = {
-  'en': 'English',
-  'fr': 'French', 
-  'es': 'Spanish',
-  'pt': 'Portuguese',
-  'de': 'German',
-  'nl': 'Dutch',
-  'ro': 'Romanian',
-  'sv': 'Swedish',
-  'pl': 'Polish',
-  'vi': 'Vietnamese',
-  'id': 'Indonesian',
-  'el': 'Greek',
-  'uk': 'Ukrainian',
-  'ru': 'Russian',
-  'bn': 'Bengali',
-  'zh': 'Chinese (Simplified)',
-  'hi': 'Hindi',
-  'ar': 'Arabic',
-  'fa': 'Persian',
-  'ur': 'Urdu',
-  'ja': 'Japanese',
-  'ko': 'Korean',
-  'am': 'Amharic',
-  'cs': 'Czech',
-  'da': 'Danish',
-  'fi': 'Finnish',
-  'af': 'Afrikaans',
-  'hr': 'Croatian',
-  'bg': 'Bulgarian',
-  'sk': 'Slovak',
-  'sl': 'Slovenian',
-  'sr': 'Serbian',
-  'th': 'Thai',
-  'ms': 'Malay',
-  'tl': 'Filipino',
-  'he': 'Hebrew',
-  'ca': 'Catalan',
-  'et': 'Estonian',
-  'lv': 'Latvian',
-  'lt': 'Lithuanian',
-  'mk': 'Macedonian',
-  'az': 'Azerbaijani',
-  'ka': 'Georgian',
-  'hy': 'Armenian',
-  'is': 'Icelandic',
-  'sw': 'Swahili',
-  'zh-tw': 'Chinese (Traditional)'
-};
 
-// Stato di traduzione per ogni lingua
-interface TranslationStatus {
-  language: string;
-  status: 'idle' | 'translating' | 'completed' | 'error';
-  progress?: number;
-}
+
 
 export default function EditCompanyPage() {
   const params = useParams<{ id: string }>();
@@ -76,9 +15,7 @@ export default function EditCompanyPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [isDeletingTranslations, setIsDeletingTranslations] = useState(false);
-  const [translationProgress, setTranslationProgress] = useState<TranslationStatus[]>([]);
+
   const [company, setCompany] = useState<any>(null);
   const [formData, setFormData] = useState({
     company_name: '',
@@ -240,98 +177,7 @@ export default function EditCompanyPage() {
     }
   };
 
-  // Funzione per tradurre tutti i campi nelle 50 lingue
-  const handleTranslateAll = async () => {
-    if (!company || isTranslating) return;
-    
-    setIsTranslating(true);
-    
-    // Inizializza stato di traduzione per tutte le lingue
-    const initialProgress = ALL_LANGS.map(lang => ({
-      language: lang,
-      status: 'idle' as const,
-      progress: 0
-    }));
-    setTranslationProgress(initialProgress);
 
-    try {
-      // Simula aggiornamento progressivo dello stato
-      for (let i = 0; i < ALL_LANGS.length; i++) {
-        const lang = ALL_LANGS[i];
-        
-        // Aggiorna stato a "traducendo"
-        setTranslationProgress(prev => prev.map(item => 
-          item.language === lang 
-            ? { ...item, status: 'translating', progress: 50 }
-            : item
-        ));
-
-        // Simula delay per effetto visivo
-        await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
-        
-        // Aggiorna stato a "completato"
-        setTranslationProgress(prev => prev.map(item => 
-          item.language === lang 
-            ? { ...item, status: 'completed', progress: 100 }
-            : item
-        ));
-      }
-
-      // Chiamata API effettiva
-      const response = await fetch(`/api/translate-companies/${id}`, {
-        method: "POST",
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Errore traduzione: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('✅ Traduzioni completate:', result);
-      
-      alert('🌍 ✅ Traduzioni completate con successo in tutte le 50 lingue!');
-      
-    } catch (error) {
-      console.error('❌ Errore durante la traduzione:', error);
-      alert(`❌ Errore durante la traduzione: ${error}`);
-      
-      // Segna tutte le traduzioni come errore
-      setTranslationProgress(prev => prev.map(item => ({
-        ...item,
-        status: 'error' as const
-      })));
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
-  // Funzione per eliminare tutte le traduzioni
-  const handleDeleteAllTranslations = async () => {
-    if (!company || isDeletingTranslations) return;
-    
-    const confirm = window.confirm('⚠️ Sei sicuro di voler eliminare TUTTE le traduzioni di questa company? (Verrà mantenuta solo la versione italiana)');
-    if (!confirm) return;
-    
-    setIsDeletingTranslations(true);
-    try {
-      const response = await fetch(`/api/translate-companies/${id}/delete-all`, {
-        method: "DELETE",
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Errore eliminazione: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("Eliminazione traduzioni company:", result);
-      alert(`✅ ${result.message}`);
-    } catch (err) {
-      console.error("Errore eliminazione traduzioni company:", err);
-      alert(`❌ Errore nell'eliminare le traduzioni`);
-    } finally {
-      setIsDeletingTranslations(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -404,36 +250,7 @@ export default function EditCompanyPage() {
             </div>
           )}
 
-          {/* Indicatori stato traduzione */}
-          {translationProgress.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold mb-3">🌍 Stato Traduzioni</h3>
-              <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
-                {translationProgress.map((progress) => (
-                  <div key={progress.language} className="text-center">
-                    <div 
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold mb-1 ${
-                        progress.status === 'idle' ? 'bg-gray-200 text-gray-600' :
-                        progress.status === 'translating' ? 'bg-yellow-400 animate-pulse text-white' :
-                        progress.status === 'completed' ? 'bg-green-500 text-white' :
-                        'bg-red-500 text-white'
-                      }`}
-                    >
-                      {progress.status === 'idle' ? '⏳' :
-                       progress.status === 'translating' ? '🔄' :
-                       progress.status === 'completed' ? '✅' : '❌'}
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      {progress.language.toUpperCase()}
-                    </div>
-                    <div className="text-xs text-gray-900">
-                      {LANG_NAMES[progress.language]?.slice(0, 6) || progress.language}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
 
           {/* Form */}
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -613,50 +430,12 @@ export default function EditCompanyPage() {
                     <>
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Salvando...
                     </>
                   ) : (
                     '💾 Salva Modifiche'
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleTranslateAll}
-                  disabled={isTranslating || isSaving}
-                  className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  {isTranslating ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Traducendo in {ALL_LANGS.length} lingue...
-                    </>
-                  ) : (
-                    `🌍 Traduci in ${ALL_LANGS.length} lingue`
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDeleteAllTranslations}
-                  disabled={isDeletingTranslations}
-                  className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-xl hover:from-red-600 hover:to-red-700 disabled:opacity-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  {isDeletingTranslations ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Eliminando...
-                    </>
-                  ) : (
-                    '🗑️ Elimina tutte le traduzioni'
                   )}
                 </button>
 
@@ -668,23 +447,19 @@ export default function EditCompanyPage() {
                   Annulla
                 </button>
               </div>
-
-              {/* Info box */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <div className="text-blue-500 mr-3 mt-1">💡</div>
-                  <div className="text-sm text-blue-700">
-                    <strong>Funzionalità disponibili:</strong><br/>
-                    • <strong>Aggiorna immagine:</strong> Seleziona una nuova immagine per sostituire quella corrente<br/>
-                    • <strong>Traduci in {ALL_LANGS.length} lingue:</strong> Traduce automaticamente tutti i campi testuali<br/>
-                    • <strong>Elimina traduzioni:</strong> Rimuove tutte le traduzioni in altre lingue mantenendo solo l'italiano<br/>
-                    • <strong>Auto-slug:</strong> Il permalink viene generato automaticamente dal nome della company<br/>
-                    • <strong>Lingue supportate:</strong> {ALL_LANGS.length} lingue ({ALL_LANGS.slice(0, 10).join(', ')}...)
-                  </div>
-                </div>
-              </div>
             </form>
           </div>
+
+          {/* Staging Translation Manager */}
+          {company && (
+            <div className="mt-8">
+              <StagingTranslationManager
+                itemId={company.id}
+                itemType="company"
+                itemTitle={formData.company_name || `Company ${company.id}`}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

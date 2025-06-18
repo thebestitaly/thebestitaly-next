@@ -12,12 +12,15 @@ export interface Translation {
 
 export interface Destination {
   id: string;
+  uuid_id: string; // Nuovo UUID
   region_id?: {
     id: string;
+    uuid_id?: string;
     translations: Translation[];
   } | null;
   province_id?: {
     id: string;
+    uuid_id?: string;
     translations: Translation[];
   } | null;
   type: 'region' | 'province' | 'municipality';
@@ -62,7 +65,7 @@ export const getTranslations = async (lang: string, section: string) => {
 };
 
 export interface CategoryTranslation {
-  id: number;
+  id: string;
   languages_code: string;
   nome_categoria: string;
   seo_title: string;
@@ -71,7 +74,8 @@ export interface CategoryTranslation {
 }
 
 export interface Category {
-  id: number;
+  id: string;
+  uuid_id: string; // Nuovo UUID
   nome_categoria: string;
   image: string;
   visible: boolean;
@@ -87,18 +91,21 @@ export interface ArticleTranslation {
 
 export interface Article {
   id: string;
+  uuid_id: string; // Nuovo UUID
   image?: string;
   video_url?: string; // YouTube, Vimeo, or direct video URL
   date_created: string;
   featured_status: 'none' | 'homepage' | 'top' | 'editor' | 'trending';
   category_id?: {
-    id: number;
+    id: string;
+    uuid_id?: string;
     translations: {
       nome_categoria: string;
       slug_permalink: string;
     }[];
   };
   destination_id?: string | number;
+  destination_uuid?: string; // UUID della destinazione
   translations: {
     languages_code: string;
     titolo_articolo: string;
@@ -116,7 +123,8 @@ interface SlugData {
 }
 // Aggiungi queste interfacce
 export interface Company {
-  id: number;
+  id: string;
+  uuid_id: string; // Nuovo UUID
   logo: string;
   website: string;
   company_name: string;
@@ -124,8 +132,10 @@ export interface Company {
   phone: string;
   lat?: number;
   long?: number;
-  category_id: number;
-  destination_id: number;
+  category_id: string;
+  category_uuid?: string; // UUID della categoria
+  destination_id: string;
+  destination_uuid?: string; // UUID della destinazione
   active: boolean;
   images: CompanyImage[];
   featured: boolean;
@@ -140,7 +150,7 @@ export interface CompanyTranslation {
   seo_summary: string;
 }
 export interface CompanyImage {
-  id: number;
+  id: string;
   directus_files_id: string;
 }
 
@@ -257,7 +267,7 @@ class DirectusClient {
       
     this.client = axios.create({
       baseURL,
-      timeout: 10000,
+      timeout: 30000, // Aumentato a 30 secondi per evitare timeout
     });
   
     this.setupInterceptors();
@@ -354,6 +364,7 @@ class DirectusClient {
             'featured',
             'active',
             'featured_status',
+            'translations.description',
             'translations.seo_title',
             'translations.seo_summary'
           ],
@@ -476,6 +487,13 @@ class DirectusClient {
 
   async getHomepageArticles(lang: string) {
     try {
+      // Controllo autenticazione
+      const isAuth = await this.testAuth();
+      if (!isAuth) {
+        console.error("[getHomepageArticles] Authentication failed");
+        return [];
+      }
+
       const response = await this.client.get('/items/articles', {
         params: {
           filter: {
@@ -488,6 +506,7 @@ class DirectusClient {
             'date_created',
             'featured_status',
             'category_id.id',
+            'category_id.translations.languages_code',
             'category_id.translations.nome_categoria',
             'category_id.translations.slug_permalink',
             'translations.languages_code',
@@ -495,28 +514,41 @@ class DirectusClient {
             'translations.seo_summary',
             'translations.slug_permalink'
           ],
-          deep: {
-            translations: {
-              _filter: {
-                languages_code: {
-                  _eq: lang
-                }
-              }
-            },
-            'category_id.translations': {
-              _filter: {
-                languages_code: {
-                  _eq: lang
-                }
-              }
-            }
-          },
+          // Rimuovi il filtro deep per ottenere tutte le traduzioni
           limit: 4,
           sort: ['-date_created']
         }
       });
 
-      return response.data?.data || [];
+      const articles = response.data?.data || [];
+      
+      // Implementa fallback in italiano per ogni articolo
+      return articles.map((article: any) => {
+        // Trova la traduzione nella lingua richiesta
+        let translation = article.translations?.find((t: any) => t.languages_code === lang);
+        
+        // Se non esiste, usa il fallback italiano
+        if (!translation) {
+          translation = article.translations?.find((t: any) => t.languages_code === 'it');
+        }
+        
+        // Trova la traduzione della categoria nella lingua richiesta
+        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === lang);
+        
+        // Se non esiste, usa il fallback italiano per la categoria
+        if (!categoryTranslation) {
+          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+        }
+
+        return {
+          ...article,
+          translations: translation ? [translation] : [],
+          category_id: article.category_id ? {
+            ...article.category_id,
+            translations: categoryTranslation ? [categoryTranslation] : []
+          } : undefined
+        };
+      });
     } catch (error) {
       console.error('Error fetching homepage articles:', error);
       return [];
@@ -525,6 +557,13 @@ class DirectusClient {
 
   async getLatestArticlesForHomepage(lang: string) {
     try {
+      // Controllo autenticazione
+      const isAuth = await this.testAuth();
+      if (!isAuth) {
+        console.error("[getLatestArticlesForHomepage] Authentication failed");
+        return [];
+      }
+
       const response = await this.client.get('/items/articles', {
         params: {
           filter: {
@@ -538,6 +577,7 @@ class DirectusClient {
             'date_created',
             'featured_status',
             'category_id.id',
+            'category_id.translations.languages_code',
             'category_id.translations.nome_categoria',
             'category_id.translations.slug_permalink',
             'translations.languages_code',
@@ -545,28 +585,41 @@ class DirectusClient {
             'translations.seo_summary',
             'translations.slug_permalink'
           ],
-          deep: {
-            translations: {
-              _filter: {
-                languages_code: {
-                  _eq: lang
-                }
-              }
-            },
-            'category_id.translations': {
-              _filter: {
-                languages_code: {
-                  _eq: lang
-                }
-              }
-            }
-          },
+          // Rimuovi il filtro deep per ottenere tutte le traduzioni
           limit: 12,
           sort: ['-date_created']
         }
       });
 
-      return response.data?.data || [];
+      const articles = response.data?.data || [];
+      
+      // Implementa fallback in italiano per ogni articolo
+      return articles.map((article: any) => {
+        // Trova la traduzione nella lingua richiesta
+        let translation = article.translations?.find((t: any) => t.languages_code === lang);
+        
+        // Se non esiste, usa il fallback italiano
+        if (!translation) {
+          translation = article.translations?.find((t: any) => t.languages_code === 'it');
+        }
+        
+        // Trova la traduzione della categoria nella lingua richiesta
+        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === lang);
+        
+        // Se non esiste, usa il fallback italiano per la categoria
+        if (!categoryTranslation) {
+          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+        }
+
+        return {
+          ...article,
+          translations: translation ? [translation] : [],
+          category_id: article.category_id ? {
+            ...article.category_id,
+            translations: categoryTranslation ? [categoryTranslation] : []
+          } : undefined
+        };
+      });
     } catch (error) {
       console.error('Error fetching latest articles for homepage:', error);
       return [];
@@ -643,6 +696,13 @@ class DirectusClient {
   }
   public async getArticleBySlug(slug: string, languageCode: string): Promise<Article | null> {
     try {
+      // Controllo autenticazione
+      const isAuth = await this.testAuth();
+      if (!isAuth) {
+        console.error("[getArticleBySlug] Authentication failed");
+        return null;
+      }
+
       const response = await this.client.get('/items/articles', {
         params: {
           'filter': {
@@ -654,31 +714,117 @@ class DirectusClient {
           },
           'fields': [
             'id',
+            'uuid_id', // UUID dell'articolo
             'image',
             'category_id.id',
+            'category_id.uuid_id', // UUID della categoria
             'category_id.translations.nome_categoria',
             'category_id.translations.slug_permalink',
             'destination_id',
             'date_created',
+            'translations.languages_code',
             'translations.titolo_articolo',
             'translations.description',
-            'translations.seo_summary'
-          ],
-          'deep': {
-            'translations': {
-              '_filter': {
-                'languages_code': {
-                  '_eq': languageCode
-                }
-              }
-            }
-          }
+            'translations.seo_summary',
+            'translations.slug_permalink'
+          ]
+          // Rimuovi il filtro deep per ottenere tutte le traduzioni
         }
       });
 
-      return response.data?.data?.[0] || null;
+      const article = response.data?.data?.[0];
+      if (!article) return null;
+
+      // Implementa fallback in italiano
+      // Trova la traduzione nella lingua richiesta
+      let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
+      
+      // Se non esiste, usa il fallback italiano
+      if (!translation) {
+        translation = article.translations?.find((t: any) => t.languages_code === 'it');
+      }
+      
+      // Trova la traduzione della categoria nella lingua richiesta
+      let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
+      
+      // Se non esiste, usa il fallback italiano per la categoria
+      if (!categoryTranslation) {
+        categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+      }
+
+      return {
+        ...article,
+        translations: translation ? [translation] : [],
+        category_id: article.category_id ? {
+          ...article.category_id,
+          translations: categoryTranslation ? [categoryTranslation] : []
+        } : undefined
+      };
     } catch (error) {
       console.error('Error fetching article:', error);
+      return null;
+    }
+  }
+
+  // NUOVA FUNZIONE: Ottieni articolo tramite UUID (uso pubblico)
+  public async getArticleByUUID(uuid: string, languageCode: string): Promise<Article | null> {
+    try {
+      const isAuth = await this.testAuth();
+      if (!isAuth) {
+        console.error("[getArticleByUUID] Authentication failed");
+        return null;
+      }
+
+      const response = await this.client.get('/items/articles', {
+        params: {
+          'filter': {
+            'uuid_id': {
+              '_eq': uuid // Usa UUID invece di slug
+            }
+          },
+          'fields': [
+            'id',
+            'uuid_id',
+            'image',
+            'category_id.id',
+            'category_id.uuid_id',
+            'category_id.translations.nome_categoria',
+            'category_id.translations.slug_permalink',
+            'destination_id',
+            'date_created',
+            'translations.languages_code',
+            'translations.titolo_articolo',
+            'translations.description',
+            'translations.seo_summary',
+            'translations.slug_permalink'
+          ]
+        }
+      });
+
+      const article = response.data?.data?.[0];
+      if (!article) return null;
+
+      // Applica fallback in italiano (stesso codice)
+      let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
+      if (!translation) {
+        translation = article.translations?.find((t: any) => t.languages_code === 'it');
+      }
+      
+      let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
+      if (!categoryTranslation) {
+        categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+      }
+
+      return {
+        ...article,
+        translations: translation ? [translation] : [],
+        category_id: article.category_id ? {
+          ...article.category_id,
+          translations: categoryTranslation ? [categoryTranslation] : []
+        } : undefined
+      };
+    } catch (error) {
+      console.error('Error fetching article by UUID:', error);
       return null;
     }
   }
@@ -782,6 +928,7 @@ class DirectusClient {
           "id",
           "image",
           "category_id.id",
+          "category_id.translations.languages_code",
           "category_id.translations.nome_categoria",
           "category_id.translations.slug_permalink",
           "destination_id",
@@ -792,8 +939,7 @@ class DirectusClient {
           "translations.seo_summary",
           "translations.slug_permalink",
         ],
-        'deep[translations][_filter][languages_code][_eq]': languageCode,
-        'deep[category_id.translations][_filter][languages_code][_eq]': languageCode,
+        // Rimuovi il filtro deep per ottenere tutte le traduzioni
         offset: Math.max(offset, 0),
         limit: Math.max(limit, 1),
         meta: 'total_count',
@@ -820,8 +966,36 @@ class DirectusClient {
       const response = await this.client.get('/items/articles', { params });
 
       // Estrai articoli e totale dal meta
-      const articles = response.data.data || [];
+      const rawArticles = response.data.data || [];
       const total = response.data.meta?.total_count || 0;
+
+      // Implementa fallback in italiano per ogni articolo
+      const articles = rawArticles.map((article: any) => {
+        // Trova la traduzione nella lingua richiesta
+        let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
+        
+        // Se non esiste, usa il fallback italiano
+        if (!translation) {
+          translation = article.translations?.find((t: any) => t.languages_code === 'it');
+        }
+        
+        // Trova la traduzione della categoria nella lingua richiesta
+        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
+        
+        // Se non esiste, usa il fallback italiano per la categoria
+        if (!categoryTranslation) {
+          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+        }
+
+        return {
+          ...article,
+          translations: translation ? [translation] : [],
+          category_id: article.category_id ? {
+            ...article.category_id,
+            translations: categoryTranslation ? [categoryTranslation] : []
+          } : undefined
+        };
+      });
 
       return { articles, total };
     } catch (error: any) {
@@ -829,6 +1003,88 @@ class DirectusClient {
       return { articles: [], total: 0 };
     }
   }
+
+  // Metodo specifico per la sezione riservata che include tutti gli articoli (draft + published)
+  public async getArticlesForReserved(
+    languageCode: string,
+    offset: number = 0,
+    limit: number = 50
+  ): Promise<{ articles: Article[]; total: number }> {
+    try {
+      // Controllo autenticazione
+      const isAuth = await this.testAuth();
+      if (!isAuth) {
+        console.error("Authentication failed");
+        return { articles: [], total: 0 };
+      }
+  
+      // Parametri base per la richiesta (senza filtro status per includere draft)
+      const params: Record<string, any> = {
+        sort: "-date_created",
+        fields: [
+          "id",
+          "status", // Includiamo il campo status
+          "image",
+          "category_id.id",
+          "category_id.translations.languages_code",
+          "category_id.translations.nome_categoria",
+          "category_id.translations.slug_permalink",
+          "destination_id",
+          "date_created",
+          "date_updated",
+          "featured_status",
+          "translations.languages_code",
+          "translations.titolo_articolo",
+          "translations.seo_summary",
+          "translations.slug_permalink",
+        ],
+        offset: Math.max(offset, 0),
+        limit: Math.max(limit, 1),
+        meta: 'total_count',
+      };
+
+      // Effettua la chiamata API senza filtro status per includere tutti gli articoli
+      const response = await this.client.get('/items/articles', { params });
+
+      // Estrai articoli e totale dal meta
+      const rawArticles = response.data.data || [];
+      const total = response.data.meta?.total_count || 0;
+
+      // Implementa fallback in italiano per ogni articolo
+      const articles = rawArticles.map((article: any) => {
+        // Trova la traduzione nella lingua richiesta
+        let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
+        
+        // Se non esiste, usa il fallback italiano
+        if (!translation) {
+          translation = article.translations?.find((t: any) => t.languages_code === 'it');
+        }
+        
+        // Trova la traduzione della categoria nella lingua richiesta
+        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
+        
+        // Se non esiste, usa il fallback italiano per la categoria
+        if (!categoryTranslation) {
+          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+        }
+
+        return {
+          ...article,
+          translations: translation ? [translation] : [],
+          category_id: article.category_id ? {
+            ...article.category_id,
+            translations: categoryTranslation ? [categoryTranslation] : []
+          } : undefined
+        };
+      });
+
+      return { articles, total };
+    } catch (error: any) {
+      console.error("Error fetching articles for reserved:", error.message || error);
+      return { articles: [], total: 0 };
+    }
+  }
+
   public async getDestinationBySlug(slug: string, languageCode: string): Promise<Destination | null> {
     try {
       const response = await this.client.get('/items/destinations', {
@@ -972,35 +1228,181 @@ class DirectusClient {
   }
   public async getDestinationById(id: string, languageCode: string): Promise<Destination | null> {
     try {
+      // Query ottimizzata: solo campi essenziali e filtrata per lingua
       const response = await this.client.get('/items/destinations', {
         params: {
           'filter[id][_eq]': id,
           'fields[]': [
             'id',
+            'uuid_id',
             'type',
             'image',
             'region_id',
-            'region_id.translations.slug_permalink',
-            'region_id.translations.destination_name',
-            'region_id.image',
             'province_id',
-            'province_id.translations.slug_permalink',
-            'province_id.translations.destination_name',
-            'province_id.image',
-            'translations.slug_permalink',
             'translations.destination_name',
+            'translations.slug_permalink',
+            'translations.seo_title',
             'translations.seo_summary',
-            'translations.description'
+            'translations.languages_code'
           ],
-          'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
-          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
+          'deep[translations][_filter][languages_code][_in]': `${languageCode},it`
         },
       });
 
-      return response.data?.data[0] || null;
+      const destination = response.data?.data[0];
+      if (!destination) return null;
+
+      // Applica fallback in italiano per le traduzioni principali
+      let translation = destination.translations?.find((t: any) => t.languages_code === languageCode);
+      if (!translation) {
+        translation = destination.translations?.find((t: any) => t.languages_code === 'it');
+      }
+
+      // Applica fallback per la traduzione principale
+      destination.translations = translation ? [translation] : [];
+
+      // Se abbiamo region_id o province_id, proviamo a caricarli separatamente con query ottimizzata
+      if (destination.region_id && typeof destination.region_id === 'string') {
+        try {
+          const regionResponse = await this.client.get('/items/destinations', {
+            params: {
+              'filter[id][_eq]': destination.region_id,
+              'fields[]': [
+                'id', 
+                'uuid_id', 
+                'image', 
+                'translations.destination_name',
+                'translations.slug_permalink',
+                'translations.languages_code'
+              ],
+              'deep[translations][_filter][languages_code][_in]': `${languageCode},it`
+            }
+          });
+          const regionData = regionResponse.data?.data[0];
+          if (regionData) {
+            let regionTranslation = regionData.translations?.find((t: any) => t.languages_code === languageCode);
+            if (!regionTranslation) {
+              regionTranslation = regionData.translations?.find((t: any) => t.languages_code === 'it');
+            }
+            destination.region_id = {
+              id: regionData.id,
+              uuid_id: regionData.uuid_id,
+              image: regionData.image,
+              translations: regionTranslation ? [regionTranslation] : []
+            };
+          }
+        } catch (error) {
+          console.warn('Could not load region data:', error);
+          destination.region_id = null;
+        }
+      }
+
+      if (destination.province_id && typeof destination.province_id === 'string') {
+        try {
+          const provinceResponse = await this.client.get('/items/destinations', {
+            params: {
+              'filter[id][_eq]': destination.province_id,
+              'fields[]': [
+                'id', 
+                'uuid_id', 
+                'image', 
+                'translations.destination_name',
+                'translations.slug_permalink',
+                'translations.languages_code'
+              ],
+              'deep[translations][_filter][languages_code][_in]': `${languageCode},it`
+            }
+          });
+          const provinceData = provinceResponse.data?.data[0];
+          if (provinceData) {
+            let provinceTranslation = provinceData.translations?.find((t: any) => t.languages_code === languageCode);
+            if (!provinceTranslation) {
+              provinceTranslation = provinceData.translations?.find((t: any) => t.languages_code === 'it');
+            }
+            destination.province_id = {
+              id: provinceData.id,
+              uuid_id: provinceData.uuid_id,
+              image: provinceData.image,
+              translations: provinceTranslation ? [provinceTranslation] : []
+            };
+          }
+        } catch (error) {
+          console.warn('Could not load province data:', error);
+          destination.province_id = null;
+        }
+      }
+
+      return destination;
     } catch (error) {
       console.error('Error fetching destination by ID:', error);
+      return null;
+    }
+  }
+
+  // NUOVA FUNZIONE: Ottieni destinazione tramite UUID (uso pubblico) - Query super ottimizzata
+  public async getDestinationByUUID(uuid: string, languageCode: string): Promise<Destination | null> {
+    try {
+      const response = await this.client.get('/items/destinations', {
+        params: {
+          'filter[uuid_id][_eq]': uuid,
+          'fields[]': [
+            'id',
+            'uuid_id', 
+            'type',
+            'image',
+            'region_id',
+            'region_id.uuid_id',
+            'region_id.image',
+            'region_id.translations.slug_permalink',
+            'region_id.translations.destination_name',
+            'region_id.translations.languages_code',
+            'province_id',
+            'province_id.uuid_id', 
+            'province_id.image',
+            'province_id.translations.slug_permalink',
+            'province_id.translations.destination_name',
+            'province_id.translations.languages_code',
+            'translations.slug_permalink',
+            'translations.destination_name',
+            'translations.seo_summary',
+            'translations.languages_code'
+          ],
+          'deep[translations][_filter][languages_code][_in]': `${languageCode},it`,
+          'deep[region_id.translations][_filter][languages_code][_in]': `${languageCode},it`,
+          'deep[province_id.translations][_filter][languages_code][_in]': `${languageCode},it`
+        },
+      });
+
+      const destination = response.data?.data[0];
+      if (!destination) return null;
+
+      // Applica fallback in italiano per le traduzioni principali
+      let translation = destination.translations?.find((t: any) => t.languages_code === languageCode);
+      if (!translation) {
+        translation = destination.translations?.find((t: any) => t.languages_code === 'it');
+      }
+
+      // Applica fallback per regione e provincia (stesso codice)
+      if (destination.region_id?.translations) {
+        let regionTranslation = destination.region_id.translations.find((t: any) => t.languages_code === languageCode);
+        if (!regionTranslation) {
+          regionTranslation = destination.region_id.translations.find((t: any) => t.languages_code === 'it');
+        }
+        destination.region_id.translations = regionTranslation ? [regionTranslation] : [];
+      }
+
+      if (destination.province_id?.translations) {
+        let provinceTranslation = destination.province_id.translations.find((t: any) => t.languages_code === languageCode);
+        if (!provinceTranslation) {
+          provinceTranslation = destination.province_id.translations.find((t: any) => t.languages_code === 'it');
+        }
+        destination.province_id.translations = provinceTranslation ? [provinceTranslation] : [];
+      }
+
+      destination.translations = translation ? [translation] : [];
+      return destination;
+    } catch (error) {
+      console.error('Error fetching destination by UUID:', error);
       return null;
     }
   }
@@ -1010,42 +1412,93 @@ class DirectusClient {
     limit: number = 10 // Limite di default
   ): Promise<Article[]> {
     try {
+      // Controllo autenticazione
+      const isAuth = await this.testAuth();
+      if (!isAuth) {
+        console.error("[getArticlesByCategory] Authentication failed");
+        return [];
+      }
+
+      // Prima ottieni l'ID della categoria dal slug usando il nome corretto della collection
+      const categoryResponse = await this.client.get('/items/categorias', {
+        params: {
+          'filter': {
+            'translations': {
+              'slug_permalink': {
+                '_eq': categorySlug
+              }
+            }
+          },
+          'fields': ['id'],
+          'limit': 1
+        }
+      });
+
+      const category = categoryResponse.data?.data?.[0];
+      if (!category) {
+        console.log(`[getArticlesByCategory] Category not found for slug: ${categorySlug}`);
+        return [];
+      }
+
+      // Poi ottieni gli articoli usando l'ID della categoria
       const response = await this.client.get('/items/articles', {
         params: {
-          'filter[status][_eq]': 'published',
-          'filter[category_id][translations][slug_permalink][_eq]': categorySlug,
-          'fields[]': [
+          'filter': {
+            'status': {
+              '_eq': 'published'
+            },
+            'category_id': {
+              '_eq': category.id
+            }
+          },
+          'fields': [
             'id',
             'image',
             'category_id.id',
             'category_id.translations.nome_categoria',
+            'category_id.translations.languages_code',
             'date_created',
+            'featured_status',
             'translations.titolo_articolo',
-            'translations.description',
+            'translations.description', 
             'translations.seo_summary',
-            'translations.slug_permalink'
+            'translations.slug_permalink',
+            'translations.languages_code'
           ],
-          'deep': {
-            'translations': {
-              '_filter': {
-                'languages_code': {
-                  '_eq': languageCode
-                }
-              }
-            },
-            'category_id.translations': {
-              '_filter': {
-                'languages_code': {
-                  '_eq': languageCode
-                }
-              }
-            }
-          },
-          'sort': ['-date_created'] 
+          'sort': ['-date_created'],
+          'limit': limit
         }
       });
   
-      return response.data?.data || [];
+      const articles = response.data?.data || [];
+      
+      // Implementa fallback in italiano per ogni articolo
+      return articles.map((article: any) => {
+        // Trova la traduzione nella lingua richiesta
+        let translation = article.translations?.find((t: any) => t.languages_code === languageCode);
+        
+        // Se non esiste, usa il fallback italiano
+        if (!translation) {
+          translation = article.translations?.find((t: any) => t.languages_code === 'it');
+        }
+        
+        // Trova la traduzione della categoria nella lingua richiesta
+        let categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === languageCode);
+        
+        // Se non esiste, usa il fallback italiano per la categoria
+        if (!categoryTranslation) {
+          categoryTranslation = article.category_id?.translations?.find((t: any) => t.languages_code === 'it');
+        }
+
+        return {
+          ...article,
+          translations: translation ? [translation] : [],
+          category_id: article.category_id ? {
+            ...article.category_id,
+            translations: categoryTranslation ? [categoryTranslation] : []
+          } : undefined
+        };
+      });
     } catch (error) {
       console.error('[getArticlesByCategory] Error fetching articles:', error);
       return [];
@@ -1182,7 +1635,7 @@ class DirectusClient {
     }
   }
 
-  async getCompanyFiles(companyId: number) {
+  async getCompanyFiles(companyId: string) {
     try {
       const response = await this.client.get('/items/companies_files', {
         params: {
@@ -1199,10 +1652,20 @@ class DirectusClient {
 
   async getCompaniesByDestination(destinationId: string, lang: string, destinationType: 'region' | 'province' | 'municipality') {
     try {
+      // Validazione e logging per debug
+      console.log('🔍 getCompaniesByDestination called with:', { destinationId, lang, destinationType, typeOfId: typeof destinationId });
+      
+      // Assicuriamoci che destinationId sia una stringa valida
+      if (!destinationId || typeof destinationId !== 'string') {
+        console.error('❌ Invalid destinationId:', destinationId);
+        return [];
+      }
+
       const filter: any = { active: { _eq: true } };
       
       if (destinationType === 'region') {
         // Per le regioni, dobbiamo prendere tutte le companies delle province di quella regione
+        console.log('🏛️ Fetching provinces for region:', destinationId);
         
         // Prima otteniamo tutte le province di questa regione
         const provincesResponse = await this.client.get('/items/destinations', {
@@ -1215,18 +1678,24 @@ class DirectusClient {
           }
         });
         
+        console.log('📋 Provinces response:', provincesResponse.data?.data);
         const provinceIds = provincesResponse.data?.data?.map((p: any) => p.id) || [];
+        console.log('🗂️ Province IDs found:', provinceIds);
         
         if (provinceIds.length > 0) {
           filter.destination_id = { _in: provinceIds };
         } else {
           // Se non ci sono province, non ci sono companies
+          console.log('⚠️ No provinces found for region:', destinationId);
           return [];
         }
       } else {
         // Per province e municipality, usiamo direttamente l'ID
+        console.log('🏙️ Using direct destination ID:', destinationId);
         filter.destination_id = { _eq: destinationId };
       }
+
+      console.log('🔧 Final filter for companies:', JSON.stringify(filter, null, 2));
 
       const response = await this.client.get('/items/companies', {
         params: {
@@ -1755,7 +2224,7 @@ export const getSupportedLanguages = async (): Promise<string[]> => {
  * @param titleId - The ID of the title record (1=homepage, 2=experience, 3=eccellenze, etc.)
  * @param lang - Language code
  */
-export const getPageTitles = async (titleId: number, lang: string): Promise<{
+export const getPageTitles = async (titleId: string, lang: string): Promise<{
   title?: string;
   seo_title?: string;
   seo_summary?: string;

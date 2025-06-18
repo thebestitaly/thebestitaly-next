@@ -192,7 +192,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     },
     React.createElement(
       'div',
-      { className: 'flex flex-wrap gap-2 justify-center items-center' },
+      { className: 'flex flex-wrap gap-2' },
       languages.map((language) => {
         let newPath;
         
@@ -230,7 +230,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           {
             key: language.code,
             href: newPath,
-            className: `flex items-center gap-2 hover:bg-gray-100 rounded-md px-1 py-1 transition-colors duration-200 ${
+            className: `flex items-center hover:bg-gray-100 rounded-md px-2 py-1 transition-colors duration-200 ${
               isCurrentLang ? "bg-gray-100 pointer-events-none text-black" : "hover:bg-blue-50 text-black"
             }`
           },
@@ -239,21 +239,21 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               'div',
               {
                 key: 'flag',
-                className: 'relative w-4 h-4 flex-shrink-0'
+                className: 'relative w-4 h-4 flex-shrink-0 mr-4'
               },
               React.createElement(Image, {
                 src: `/images/flags/${language.code}.svg`,
                 alt: "",
                 fill: true,
                 className: 'rounded-sm object-cover',
-                sizes: "20px"
+                sizes: "14px"
               })
             ),
             React.createElement(
               'span',
               {
                 key: 'text',
-                className: `text-sm whitespace-nowrap ${
+                className: `text-xs whitespace-nowrap hover:text-gray-900 ${
                   isCurrentLang ? "text-gray-900" : "text-white"
                 }`,
                 style: {

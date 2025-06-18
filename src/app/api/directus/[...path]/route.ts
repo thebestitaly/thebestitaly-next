@@ -26,13 +26,19 @@ export async function GET(
     console.log(`📖 Directus Proxy (READ): GET ${fullUrl}`);
 
     // Forward della richiesta a Directus con token di lettura
-    const readToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+    // Prova prima il token admin, poi quello pubblico
+    const adminToken = process.env.DIRECTUS_TOKEN;
+    const publicToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+    const token = adminToken || publicToken;
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     
-    if (readToken) {
-      headers['Authorization'] = `Bearer ${readToken}`;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('⚠️ No Directus token found for authentication');
     }
 
     const response = await fetch(fullUrl, {
@@ -48,8 +54,35 @@ export async function GET(
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Check content type to handle different response types
+    const contentType = response.headers.get('content-type');
+    
+    // If it's an image or other binary content, return it directly
+    if (contentType && !contentType.includes('application/json')) {
+      const buffer = await response.arrayBuffer();
+      return new NextResponse(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+        },
+      });
+    }
+
+    // Try to parse JSON, but handle cases where it might not be valid JSON
+    try {
+      const data = await response.json();
+      return NextResponse.json(data);
+    } catch (jsonError) {
+      // If JSON parsing fails, return the raw text
+      const text = await response.text();
+      return new NextResponse(text, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType || 'text/plain',
+        },
+      });
+    }
 
   } catch (error: any) {
     console.error('❌ Directus proxy error:', error);

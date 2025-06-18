@@ -2,8 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { getTranslations } from "@/lib/directus";
+import { useSectionTranslations } from '@/hooks/useTranslations';
 
 interface BreadcrumbItem {
   label: string;
@@ -27,10 +26,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({ variant = 'default' }) => {
   const lang = pathSegments[0] || "it";
   
   // Fetch traduzioni per il breadcrumb
-  const { data: menuTranslations } = useQuery({
-    queryKey: ["menu-translations", lang],
-    queryFn: () => getTranslations(lang, "menu"),
-  });
+  const { translations: menuTranslations } = useSectionTranslations('menu', lang);
   
   // Generazione dinamica del breadcrumb
   const breadcrumbs: BreadcrumbItem[] = [];

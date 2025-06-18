@@ -31,8 +31,9 @@ export async function PUT(
       );
     }
 
-    // Update article main fields (featured_status, image, category, destination)
+    // Update article main fields (status, featured_status, image, category, destination)
     const articlePayload: any = {
+      status: body.status || 'draft',
       featured_status: body.featured_status || 'none'
     };
 

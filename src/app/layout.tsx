@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import directusClient from '@/lib/directus';
 
 export async function generateMetadata(): Promise<Metadata> {

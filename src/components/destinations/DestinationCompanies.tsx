@@ -20,13 +20,28 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
   lang,
   destinationName = "questa destinazione"
 }) => {
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔍 DestinationCompanies props:', { 
+      destinationId, 
+      destinationType, 
+      lang, 
+      typeOfDestinationId: typeof destinationId,
+      destinationIdValue: destinationId 
+    });
+  }, [destinationId, destinationType, lang]);
+
   const { data: companies, isLoading, error } = useQuery({
     queryKey: ["destination-companies", destinationId, lang],
     queryFn: async () => {
-      const result = await directusClient.getCompaniesByDestination(destinationId, lang, destinationType);
+      // Assicuriamoci che destinationId sia una stringa
+      const idString = String(destinationId);
+      console.log('🔧 Converting destinationId to string:', { original: destinationId, converted: idString });
+      
+      const result = await directusClient.getCompaniesByDestination(idString, lang, destinationType);
       return result;
     },
-    enabled: !!destinationId,
+    enabled: !!destinationId && typeof destinationId !== 'undefined',
   });
 
   // Log per debugging
@@ -43,15 +58,14 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
           <Building2 className="mr-3 text-blue-600" size={28} />
           <h2 className="text-3xl font-bold text-gray-900">Punti di Interesse</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="animate-pulse">
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div className="h-48 bg-gray-300"></div>
-                <div className="p-6 space-y-3">
-                  <div className="h-6 bg-gray-300 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-full"></div>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="aspect-[3/2] bg-gray-200"></div>
+                <div className="p-3 md:p-4 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
                 </div>
               </div>
             </div>
@@ -64,9 +78,9 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
   if (error) {
     return (
       <div className="my-12">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 md:p-8 text-center">
           <Building2 className="mx-auto mb-4 text-red-400" size={48} />
-          <h3 className="text-xl font-bold text-red-800 mb-2">Errore nel caricamento</h3>
+          <h3 className="text-xl font-semibold text-red-800 mb-2">Errore nel caricamento</h3>
           <p className="text-red-600">
             Non è possibile caricare i punti di interesse al momento
           </p>
@@ -86,10 +100,9 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
     <div className="my-12">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center">
-          <Building2 className="mr-3 text-blue-600" size={28} />
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
-              Punti di Interesse
+              POI
             </h2>
             <p className="text-gray-600 mt-1">
               {destinationType === 'region' ? 'Scopri le eccellenze della regione' : 
@@ -104,17 +117,17 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
       </div>
 
       {/* Grid delle companies */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {companies.map((company: any) => {
           const translation = company.translations?.[0];
 
           return (
             <div
               key={company.id}
-              className="group bg-white rounded-2xl border border-gray-100 hover:border-blue-200 transition-all duration-300 overflow-hidden"
+              className="group rounded-xl border border-gray-100 transition-all duration-300 overflow-hidden"
             >
-              {/* Company Image */}
-              <div className="relative h-48 overflow-hidden">
+              {/* Company Image - More compact horizontal format */}
+              <div className="relative aspect-[3/2] overflow-hidden  rounded-xl">
                 {company.featured_image ? (
                   <Image
                     src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
@@ -123,46 +136,41 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                    <Building2 className="text-blue-400" size={48} />
+                  <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                    <Building2 className="text-gray-400" size={28} />
                   </div>
                 )}
                 
                 {/* Featured Badge */}
                 {company.featured && (
-                  <div className="absolute top-4 left-4">
-                    <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold flex items-center">
-                      <Star className="mr-1" size={12} />
+                  <div className="absolute top-2 left-2">
+                    <div className="bg-white/90 backdrop-blur-sm text-yellow-600 px-2 py-1 rounded-md text-xs font-medium flex items-center">
+                      <Star className="mr-1" size={10} />
                       Eccellenza
                     </div>
                   </div>
                 )}
-
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
 
               {/* Company Info */}
-              <div className="p-6">
-                <div className="mb-4">
-                  {company.slug_permalink ? (
-                    <Link href={`/${lang}/poi/${company.slug_permalink}`}>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 cursor-pointer">
-                        {company.company_name}
-                      </h3>
-                    </Link>
-                  ) : (
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+              <div className="p-2 md:p-3">
+                {company.slug_permalink ? (
+                  <Link href={`/${lang}/poi/${company.slug_permalink}`}>
+                    <h3 className="text-base md:text-xl font-medium text-gray-900 mb-1.5 group-hover:text-blue-600 transition-colors line-clamp-2 cursor-pointer leading-tight">
                       {company.company_name}
                     </h3>
-                  )}
-                  
-                  {translation?.seo_title && (
-                    <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
-                      {translation.seo_title}
-                    </p>
-                  )}
-                </div>
+                  </Link>
+                ) : (
+                  <h3 className="text-base md:text-lg font-medium text-gray-900 mb-1.5 line-clamp-2 leading-tight">
+                    {company.company_name}
+                  </h3>
+                )}
+                
+                {translation?.seo_title && (
+                  <p className="text-gray-600 text-xs md:text-sm line-clamp-2 leading-relaxed">
+                    {translation.seo_title}
+                  </p>
+                )}
               </div>
             </div>
           );

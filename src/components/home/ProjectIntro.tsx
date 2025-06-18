@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { getTranslations } from '../../lib/directus';
+import { useSectionTranslations } from '@/hooks/useTranslations';
 
 const FlorenceImage = '/images/home/florence.webp';
 const SanPietroImage = '/images/home/san-pietro.webp';
@@ -12,10 +11,7 @@ const ProjectIntro: React.FC = () => {
   const params = useParams();
   const lang = (params?.lang as string) || 'it';
 
-  const { data: infoTranslations } = useQuery({
-    queryKey: ['translations', lang, 'infothebest'],
-    queryFn: () => getTranslations(lang, 'infothebest'),
-  });
+  const { translations: infoTranslations } = useSectionTranslations('infothebest', lang);
 
   return (
     <section className="container mx-auto px-4 py-12 pb-20 mb-12">

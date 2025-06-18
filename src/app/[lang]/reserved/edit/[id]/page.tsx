@@ -3,65 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import directusClient from '../../../../../lib/directus';
-
-// Lista delle 50 lingue supportate
-const ALL_LANGS = [
-  'en','fr','es','pt','de','nl','ro','sv','pl','vi','id','el','uk','ru',
-  'bn','zh','hi','ar','fa','ur','ja','ko','am','cs','da','fi','af','hr',
-  'bg','sk','sl','sr','th','ms','tl','he','ca','et','lv','lt','mk','az',
-  'ka','hy','is','sw','zh-tw'
-];
-
-// Mapping nomi lingue per visualizzazione (allineato con le API)
-const LANG_NAMES: { [key: string]: string } = {
-  'en': 'English',
-  'fr': 'French', 
-  'es': 'Spanish',
-  'pt': 'Portuguese',
-  'de': 'German',
-  'nl': 'Dutch',
-  'ro': 'Romanian',
-  'sv': 'Swedish',
-  'pl': 'Polish',
-  'vi': 'Vietnamese',
-  'id': 'Indonesian',
-  'el': 'Greek',
-  'uk': 'Ukrainian',
-  'ru': 'Russian',
-  'bn': 'Bengali',
-  'zh': 'Chinese (Simplified)',
-  'hi': 'Hindi',
-  'ar': 'Arabic',
-  'fa': 'Persian',
-  'ur': 'Urdu',
-  'ja': 'Japanese',
-  'ko': 'Korean',
-  'am': 'Amharic',
-  'cs': 'Czech',
-  'da': 'Danish',
-  'fi': 'Finnish',
-  'af': 'Afrikaans',
-  'hr': 'Croatian',
-  'bg': 'Bulgarian',
-  'sk': 'Slovak',
-  'sl': 'Slovenian',
-  'sr': 'Serbian',
-  'th': 'Thai',
-  'ms': 'Malay',
-  'tl': 'Filipino',
-  'he': 'Hebrew',
-  'ca': 'Catalan',
-  'et': 'Estonian',
-  'lv': 'Latvian',
-  'lt': 'Lithuanian',
-  'mk': 'Macedonian',
-  'az': 'Azerbaijani',
-  'ka': 'Georgian',
-  'hy': 'Armenian',
-  'is': 'Icelandic',
-  'sw': 'Swahili',
-  'zh-tw': 'Chinese (Traditional)'
-};
+import StagingTranslationManager from '../../../../../components/translations/StagingTranslationManager';
 
 interface ArticleData {
   id: string | number;
@@ -76,22 +18,12 @@ interface ArticleData {
   image?: string;
 }
 
-// Stato di traduzione per ogni lingua
-interface TranslationStatus {
-  language: string;
-  status: 'idle' | 'translating' | 'completed' | 'error';
-  progress?: number;
-}
-
 const EditArticlePage = () => {
   const params = useParams();
   const id = params?.id as string;
   const [article, setArticle] = useState<ArticleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [isDeletingTranslations, setIsDeletingTranslations] = useState(false);
-  const [translationProgress, setTranslationProgress] = useState<TranslationStatus[]>([]);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
@@ -158,24 +90,34 @@ const EditArticlePage = () => {
   // Carica categorie e destinazioni
   useEffect(() => {
     const loadData = async () => {
+      // Carica categorie (gestione errori separata)
       try {
-        // Carica categorie
-        const categoriesResponse = await fetch('/api/directus/items/categories?fields=id,translations.nome_categoria&deep[translations][_filter][languages_code][_eq]=it');
-        if (categoriesResponse.ok) {
-          const categoriesData = await categoriesResponse.json();
-          setCategories(categoriesData.data || []);
-        }
-
-        // Carica destinazioni
-        const destinationsResponse = await fetch('/api/directus/items/destinations?fields=id,translations.destination_name&deep[translations][_filter][languages_code][_eq]=it&limit=100');
-        if (destinationsResponse.ok) {
-          const destinationsData = await destinationsResponse.json();
-          setDestinations(destinationsData.data || []);
-        }
+        const categoriesResponse = await directusClient.get('/items/categorias', {
+          params: {
+            fields: 'id,translations.nome_categoria,translations.languages_code',
+            'filter[visible][_eq]': true
+          }
+        });
+        setCategories(categoriesResponse.data.data || []);
       } catch (error) {
-        console.error('Errore caricamento dati:', error);
+        console.warn('⚠️ Categorie non disponibili (errore permessi):', error);
+        setCategories([]); // Imposta array vuoto per evitare crash
+      }
+
+      // Carica destinazioni (gestione errori separata)
+      try {
+        const destinationsResponse = await directusClient.get('/items/destinations', {
+          params: {
+            fields: 'id,translations.destination_name,translations.languages_code'
+          }
+        });
+        setDestinations(destinationsResponse.data.data || []);
+      } catch (error) {
+        console.warn('⚠️ Destinazioni non disponibili (errore permessi):', error);
+        setDestinations([]); // Imposta array vuoto per evitare crash
       }
     };
+
     loadData();
   }, []);
 
@@ -227,6 +169,7 @@ const EditArticlePage = () => {
         seo_summary: article.seo_summary,
         description: article.description,
         slug_permalink: article.slug_permalink,
+        status: article.status || 'draft',
         featured_status: article.featured_status || 'none',
         category_id: article.category_id,
         destination_id: article.destination_id,
@@ -253,130 +196,6 @@ const EditArticlePage = () => {
       alert(`❌ Errore durante l'aggiornamento: ${error}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Funzione per tradurre tutti i campi nelle 50 lingue
-  const handleTranslateAll = async () => {
-    if (!article || isTranslating) return;
-    
-    setIsTranslating(true);
-    
-    // Inizializza stato di traduzione per tutte le lingue
-    const initialProgress = ALL_LANGS.map(lang => ({
-      language: lang,
-      status: 'idle' as const,
-      progress: 0
-    }));
-    setTranslationProgress(initialProgress);
-
-    try {
-      // Simula aggiornamento progressivo dello stato
-      for (let i = 0; i < ALL_LANGS.length; i++) {
-        const lang = ALL_LANGS[i];
-        
-        // Aggiorna stato a "traducendo"
-        setTranslationProgress(prev => prev.map(item => 
-          item.language === lang 
-            ? { ...item, status: 'translating', progress: 50 }
-            : item
-        ));
-
-        // Simula delay per effetto visivo
-        await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
-        
-        // Aggiorna stato a "completato"
-        setTranslationProgress(prev => prev.map(item => 
-          item.language === lang 
-            ? { ...item, status: 'completed', progress: 100 }
-            : item
-        ));
-      }
-
-      // Chiamata API effettiva
-      const response = await fetch(`/api/translate-articles/${id}`, {
-        method: "POST",
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Errore traduzione: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("Traduzione avviata:", result);
-      alert(`✅ Traduzione di tutti i campi completata per articolo ${id}`);
-    } catch (err) {
-      console.error("Errore traduzione:", err);
-      alert(`❌ Errore nel tradurre articolo ${id}`);
-      
-      // Segna tutto come errore
-      setTranslationProgress(prev => prev.map(item => ({
-        ...item,
-        status: 'error'
-      })));
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
-  // Funzione per tradurre un singolo campo
-  const handleTranslateSingleField = async (field: 'titolo_articolo' | 'seo_summary' | 'description') => {
-    if (!article || isTranslating) return;
-    
-    setIsTranslating(true);
-    try {
-      const response = await fetch(`/api/translate-articles/${id}/field`, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          field: field,
-          value: article[field]
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Errore traduzione: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log(`Traduzione campo ${field} avviata:`, result);
-      alert(`✅ Traduzione del campo "${field}" completata per articolo ${id}`);
-    } catch (err) {
-      console.error(`Errore traduzione campo ${field}:`, err);
-      alert(`❌ Errore nel tradurre il campo ${field}`);
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
-  // Funzione per eliminare tutte le traduzioni
-  const handleDeleteAllTranslations = async () => {
-    if (!article || isDeletingTranslations) return;
-    
-    const confirm = window.confirm('⚠️ Sei sicuro di voler eliminare TUTTE le traduzioni di questo articolo? (Verrà mantenuta solo la versione italiana)');
-    if (!confirm) return;
-    
-    setIsDeletingTranslations(true);
-    try {
-      const response = await fetch(`/api/translate-articles/${id}/delete-all`, {
-        method: "DELETE",
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Errore eliminazione: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("Eliminazione traduzioni:", result);
-      alert(`✅ ${result.message}`);
-      setTranslationProgress([]); // Reset progress
-    } catch (err) {
-      console.error("Errore eliminazione traduzioni:", err);
-      alert(`❌ Errore nell'eliminare le traduzioni`);
-    } finally {
-      setIsDeletingTranslations(false);
     }
   };
 
@@ -407,8 +226,6 @@ const EditArticlePage = () => {
 
   if (!article) return null;
 
-  const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -421,6 +238,30 @@ const EditArticlePage = () => {
             ← Torna alla lista
           </button>
         </div>
+
+        {/* Avviso Permessi Directus */}
+        {(categories.length === 0 || destinations.length === 0) && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <div className="text-blue-400 text-xl">ℹ️</div>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-blue-800">
+                  Informazione sui Permessi
+                </h3>
+                <div className="mt-2 text-sm text-blue-700">
+                  <p>
+                    Alcuni campi (categorie/destinazioni) non sono disponibili a causa di restrizioni nei permessi Directus. 
+                    <strong className="block mt-1">
+                      ✅ Il sistema di traduzione funziona correttamente e non è influenzato da questo problema.
+                    </strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Informazioni articolo */}
         <div className="bg-gray-50 p-4 rounded mb-6">
@@ -450,39 +291,24 @@ const EditArticlePage = () => {
           </div>
         </div>
 
-        {/* Indicatori stato traduzione */}
-        {translationProgress.length > 0 && (
-          <div className="bg-white border rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold mb-3">🌍 Stato Traduzioni</h3>
-            <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
-              {translationProgress.map((progress) => (
-                <div key={progress.language} className="text-center">
-                  <div 
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold mb-1 ${
-                      progress.status === 'idle' ? 'bg-gray-200 text-gray-600' :
-                      progress.status === 'translating' ? 'bg-yellow-400 animate-pulse text-white' :
-                      progress.status === 'completed' ? 'bg-green-500 text-white' :
-                      'bg-red-500 text-white'
-                    }`}
-                  >
-                    {progress.status === 'idle' ? '⏳' :
-                     progress.status === 'translating' ? '🔄' :
-                     progress.status === 'completed' ? '✅' : '❌'}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {progress.language.toUpperCase()}
-                  </div>
-                  <div className="text-xs text-gray-900">
-                    {LANG_NAMES[progress.language]?.slice(0, 6) || progress.language}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Form di modifica */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Status Articolo */}
+          <div className="bg-white border rounded-lg p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status Articolo
+            </label>
+            <select
+              value={article.status || 'draft'}
+              onChange={(e) => setArticle({...article, status: e.target.value})}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="draft">Bozza</option>
+              <option value="published">Pubblicato</option>
+              <option value="archived">Archiviato</option>
+            </select>
+          </div>
+
           {/* Featured Status */}
           <div className="bg-white border rounded-lg p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -506,17 +332,30 @@ const EditArticlePage = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Categoria
             </label>
+            {categories.length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Categorie non disponibili (problema permessi Directus)
+                </p>
+              </div>
+            )}
             <select
               value={article.category_id || ''}
               onChange={(e) => setArticle({...article, category_id: e.target.value ? parseInt(e.target.value) : undefined})}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={categories.length === 0}
             >
-              <option value="">Seleziona una categoria</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.translations?.[0]?.nome_categoria || `Categoria ${category.id}`}
-                </option>
-              ))}
+              <option value="">
+                {categories.length === 0 ? 'Categorie non disponibili' : 'Seleziona una categoria'}
+              </option>
+              {categories.map((category) => {
+                const italianTranslation = category.translations?.find((trans: any) => trans.languages_code === 'it');
+                return (
+                  <option key={category.id} value={category.id}>
+                    {italianTranslation?.nome_categoria || `Categoria ${category.id}`}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -525,17 +364,30 @@ const EditArticlePage = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Destinazione
             </label>
+            {destinations.length === 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Destinazioni non disponibili (problema permessi Directus)
+                </p>
+              </div>
+            )}
             <select
               value={article.destination_id || ''}
               onChange={(e) => setArticle({...article, destination_id: e.target.value ? parseInt(e.target.value) : undefined})}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={destinations.length === 0}
             >
-              <option value="">Seleziona una destinazione</option>
-              {destinations.map((destination) => (
-                <option key={destination.id} value={destination.id}>
-                  {destination.translations?.[0]?.destination_name || `Destinazione ${destination.id}`}
-                </option>
-              ))}
+              <option value="">
+                {destinations.length === 0 ? 'Destinazioni non disponibili' : 'Seleziona una destinazione'}
+              </option>
+              {destinations.map((destination) => {
+                const italianTranslation = destination.translations?.find((trans: any) => trans.languages_code === 'it');
+                return (
+                  <option key={destination.id} value={destination.id}>
+                    {italianTranslation?.destination_name || `Destinazione ${destination.id}`}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -568,19 +420,9 @@ const EditArticlePage = () => {
 
           {/* Titolo Articolo */}
           <div className="bg-white border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Titolo Articolo
-              </label>
-              <button
-                type="button"
-                onClick={() => handleTranslateSingleField('titolo_articolo')}
-                disabled={isTranslating}
-                className="text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-2 py-1 rounded"
-              >
-                {isTranslating ? 'Traducendo...' : 'Traduci solo questo campo'}
-              </button>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Titolo Articolo
+            </label>
             <input
               type="text"
               value={article.titolo_articolo}
@@ -592,19 +434,9 @@ const EditArticlePage = () => {
 
           {/* SEO Summary */}
           <div className="bg-white border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                SEO Summary
-              </label>
-              <button
-                type="button"
-                onClick={() => handleTranslateSingleField('seo_summary')}
-                disabled={isTranslating}
-                className="text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-2 py-1 rounded"
-              >
-                {isTranslating ? 'Traducendo...' : 'Traduci solo questo campo'}
-              </button>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              SEO Summary
+            </label>
             <textarea
               value={article.seo_summary}
               onChange={(e) => setArticle({...article, seo_summary: e.target.value})}
@@ -616,19 +448,9 @@ const EditArticlePage = () => {
 
           {/* Description/Content */}
           <div className="bg-white border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Contenuto (Markdown)
-              </label>
-              <button
-                type="button"
-                onClick={() => handleTranslateSingleField('description')}
-                disabled={isTranslating}
-                className="text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-2 py-1 rounded"
-              >
-                {isTranslating ? 'Traducendo...' : 'Traduci solo questo campo'}
-              </button>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contenuto (Markdown)
+            </label>
             <textarea
               value={article.description}
               onChange={(e) => setArticle({...article, description: e.target.value})}
@@ -661,34 +483,19 @@ const EditArticlePage = () => {
             >
               {loading ? '💾 Salvando...' : '💾 Salva Modifiche'}
             </button>
-            
-            <button
-              type="button"
-              onClick={handleTranslateAll}
-              disabled={isTranslating}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-3 rounded-md font-medium"
-            >
-              {isTranslating ? '🔄 Traducendo...' : '🌍 Traduci tutti i campi nelle 50 lingue'}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDeleteAllTranslations}
-              disabled={isDeletingTranslations}
-              className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-6 py-3 rounded-md font-medium"
-            >
-              {isDeletingTranslations ? '🗑️ Eliminando...' : '🗑️ Elimina tutte le traduzioni'}
-            </button>
-
-            <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded border">
-              <strong>💡 Funzionalità Traduzione:</strong><br/>
-              • <strong>Traduci singolo campo:</strong> Usa i pulsantini blu accanto a ogni campo<br/>
-              • <strong>Traduci tutto:</strong> Usa il pulsante "Traduci tutti i campi nelle 50 lingue"<br/>
-              • <strong>Elimina traduzioni:</strong> Rimuove tutte le traduzioni tranne l'italiano<br/>
-              • Lingue supportate: {ALL_LANGS.length} lingue ({ALL_LANGS.slice(0, 10).join(', ')}...)
-            </div>
           </div>
         </form>
+
+        {/* Sistema di Staging per Traduzioni */}
+        {article && (
+          <div className="mt-8">
+            <StagingTranslationManager 
+              itemType="article"
+              itemId={parseInt(article.id.toString())}
+              itemTitle={article.titolo_articolo}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

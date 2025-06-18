@@ -4,6 +4,7 @@ import "../globals.css";
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ClientProviders from '@/components/ClientProviders';
+import HtmlLangUpdater from '@/components/HtmlLangUpdater';
 import { generateCanonicalUrl } from '@/components/widgets/seo-utils';
 
 interface LayoutProps {
@@ -33,25 +34,17 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 
 export default async function Layout({ children, params }: LayoutProps) {
   const { lang } = await params;
-  const isRTL = ['ar', 'fa', 'he', 'ur'].includes(lang);
 
   return (
-    <html 
-      lang={lang} 
-      dir={isRTL ? 'rtl' : 'ltr'}
-      className="font-sans"
-    >
-      <body className="antialiased">
-        <ClientProviders lang={lang}>
-          <Suspense fallback={<div>Loading...</div>}>
-            <Header lang={lang} />
-            <main className="min-h-screen">
-              {children}
-            </main>
-            <Footer />
-          </Suspense>
-        </ClientProviders>
-      </body>
-    </html>
+    <ClientProviders lang={lang}>
+      <HtmlLangUpdater />
+      <Suspense fallback={<div>Loading...</div>}>
+        <Header lang={lang} />
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <Footer />
+      </Suspense>
+    </ClientProviders>
   );
 }

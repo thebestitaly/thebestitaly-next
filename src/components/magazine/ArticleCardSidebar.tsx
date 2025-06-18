@@ -24,15 +24,15 @@ const ArticleCardSidebar: React.FC<ArticleCardSidebarProps> = ({ article, lang }
         href={`/${lang}/magazine/${translation.slug_permalink}/`}
         className="flex items-start space-x-4 group"
       >
-        <div className="latest-blog-post w-full">
+        <div className="w-full mb-8">
           {article.image && (
             <div className="aspect-video relative overflow-hidden">
-              <div className="relative w-full h-[200px] rounded-lg overflow-hidden">
+              <div className="relative w-full h-[200px] rounded-xl overflow-hidden">
                 <Image
                   src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
                   alt={translation.titolo_articolo}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-lg"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-xl"
                   sizes="(max-width: 768px) 100vw, 300px"
                 />
               </div>

@@ -1,7 +1,8 @@
 // app/[lang]/page.tsx
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import directusClient, { getTranslations, getSupportedLanguages } from '@/lib/directus';
+import directusClient, { getSupportedLanguages } from '@/lib/directus';
+import { getTranslationsForSection } from '@/lib/translations-server';
 import FeaturedDestinationsSlider from '../../components/home/FeaturedDestinationsSlider';
 import FeaturedCompaniesSlider from '../../components/home/FeaturedCompaniesSlider';
 import HomepageDestinationsCarousel from '../../components/home/HomepageDestinationsCarousel';
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (error) {
     console.warn('Could not fetch homepage titles from database, using defaults:', error);
     // Fallback to translations
-    const homeTranslations = await getTranslations(lang, 'homepage');
+    const homeTranslations = await getTranslationsForSection('homepage', lang);
     if (homeTranslations) {
       pageTitle = homeTranslations.seo_title || pageTitle;
       pageDescription = homeTranslations.seo_summary || pageDescription;
@@ -105,7 +106,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function Home({ params }: PageProps) {
   const { lang } = await params;
-  const homeTranslations = await getTranslations(lang, 'homepage');
+  const homeTranslations = await getTranslationsForSection('homepage', lang);
   
   // Generate schema for homepage
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';

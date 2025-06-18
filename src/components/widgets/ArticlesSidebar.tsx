@@ -51,6 +51,18 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
     );
   }
 
+  // Debug: log dei primi 3 articoli per vedere le categorie
+  if (process.env.NODE_ENV === 'development') {
+    console.log('ArticlesSidebar - First 3 articles with categories:', 
+      data.articles.slice(0, 3).map(article => ({
+        id: article.id,
+        title: article.translations[0]?.titolo_articolo,
+        category: article.category_id,
+        categoryTranslations: article.category_id?.translations
+      }))
+    );
+  }
+
   return (
     <div>
       <h3 className="text-lg font-bold mb-4 text-gray-800">Latest Articles</h3>

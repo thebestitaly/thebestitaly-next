@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getTranslations } from '@/lib/directus';
+import { useSectionTranslations } from '@/hooks/useTranslations';
 import Breadcrumb from '@/components/layout/Breadcrumb';
 import Image from 'next/image';
 

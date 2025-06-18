@@ -7,15 +7,18 @@ const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL || '')
   .with(rest())
   .with(staticToken(process.env.DIRECTUS_TOKEN || ''));
 
-// TUTTE le 50 lingue supportate con nomi completi
-const ALL_LANGS = [
+// TUTTE le 49 lingue supportate (escluso italiano)
+const ALL_LANG_CODES = [
   'en','fr','es','pt','de','nl','ro','sv','pl','vi','id','el','uk','ru',
   'bn','zh','hi','ar','fa','ur','ja','ko','am','cs','da','fi','af','hr',
   'bg','sk','sl','sr','th','ms','tl','he','ca','et','lv','lt','mk','az',
-  'ka','hy','is','sw','zh-tw'
+  'ka','hy','is','sw','zh-tw','tk','hu'
 ];
 
-// Mapping sigle lingue ai nomi completi per traduzioni più accurate
+// Solo inglese per traduzione rapida
+const ENGLISH_ONLY_CODE = ['en'];
+
+// Mapping codici lingue ai nomi completi per traduzioni più accurate
 const LANG_NAMES: { [key: string]: string } = {
   'en': 'English',
   'fr': 'French', 
@@ -51,7 +54,7 @@ const LANG_NAMES: { [key: string]: string } = {
   'sr': 'Serbian',
   'th': 'Thai',
   'ms': 'Malay',
-  'tl': 'Filipino',
+  'tl': 'Tagalog',
   'he': 'Hebrew',
   'ca': 'Catalan',
   'et': 'Estonian',
@@ -63,13 +66,13 @@ const LANG_NAMES: { [key: string]: string } = {
   'hy': 'Armenian',
   'is': 'Icelandic',
   'sw': 'Swahili',
-  'zh-tw': 'Chinese (Traditional)'
+  'zh-tw': 'Chinese (Traditional)',
+  'tk': 'Turkmen',
+  'hu': 'Hungarian'
 };
 
-// Per i test, usiamo solo le prime 3 lingue
-const TEST_LANGS = ['en', 'fr', 'es'];
-
 // ATTENZIONE: se il modello non è valido, OpenAI genererà un errore
+// Usa un modello più stabile e disponibile
 const MODEL = 'gpt-4.1-mini-2025-04-14';
 
 // Conditional OpenAI initialization to prevent build failures
@@ -80,6 +83,77 @@ try {
   }
 } catch (error) {
   console.warn('[API] OpenAI initialization failed:', error);
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  console.log('[API] *** DEBUG HANDLER - GET ARTICLE INFO ***');
+  
+  const { id } = await params;
+  
+  if (!id) {
+    return NextResponse.json({ error: 'ID articolo mancante' }, { status: 400 });
+  }
+
+  try {
+    // Recupera informazioni sull'articolo
+    const rawArticles = await directus.request(
+      readItems('articles', {
+        filter: { id: { _eq: id } },
+        fields: [
+          'id',
+          'status',
+          'translations.titolo_articolo',
+          'translations.seo_summary',
+          'translations.description',
+          'translations.slug_permalink',
+          'translations.languages_code'
+        ],
+        limit: 1,
+      })
+    );
+
+    const article = Array.isArray(rawArticles) ? rawArticles[0] : null;
+    
+    if (!article) {
+      return NextResponse.json({ error: 'Articolo non trovato' }, { status: 404 });
+    }
+
+    // Trova la traduzione italiana
+    const italianTranslation = article.translations?.find((t: any) => t.languages_code === 'it');
+    
+    // Conta le traduzioni esistenti
+    const existingLanguages = article.translations?.map((t: any) => t.languages_code) || [];
+    
+    return NextResponse.json({
+      success: true,
+      article: {
+        id: article.id,
+        status: article.status,
+        hasItalianTranslation: !!italianTranslation,
+        existingLanguages: existingLanguages,
+        totalTranslations: existingLanguages.length,
+        italianContent: italianTranslation ? {
+          titolo: italianTranslation.titolo_articolo?.substring(0, 100) + '...',
+          seoLength: italianTranslation.seo_summary?.length || 0,
+          descriptionLength: italianTranslation.description?.length || 0,
+          hasSlug: !!italianTranslation.slug_permalink
+        } : null
+      },
+      openaiAvailable: !!openai,
+      model: MODEL,
+      supportedLanguages: ALL_LANG_CODES.length
+    });
+    
+  } catch (error) {
+    console.error('[API] Errore nel debug:', error);
+    return NextResponse.json({ 
+      error: 'Errore nel recupero informazioni articolo',
+      details: String(error)
+    }, { status: 500 });
+  }
 }
 
 export async function POST(
@@ -104,6 +178,22 @@ export async function POST(
   }
 
   console.log('[API] ID articolo:', id);
+
+  // Leggi il parametro 'type' dal body della richiesta
+  let body;
+  try {
+    body = await req.json();
+  } catch (error) {
+    console.log('[API] Nessun body JSON, uso default');
+    body = {};
+  }
+
+  const translationType = body.type || 'all'; // Default: tutte le lingue
+  console.log('[API] Tipo di traduzione:', translationType);
+
+  // Determina le lingue da tradurre in base al tipo
+  const targetLanguages = translationType === 'english' ? ENGLISH_ONLY_CODE : ALL_LANG_CODES;
+  console.log('[API] Lingue target:', targetLanguages.length, 'lingue -', targetLanguages.join(', '));
 
   let rawArticles: any;
 
@@ -158,13 +248,13 @@ export async function POST(
   console.log('- SEO Summary:', it.seo_summary ? `"${it.seo_summary.substring(0, 50)}..."` : 'MISSING');
   console.log('- Description:', it.description ? `"${it.description.substring(0, 50)}..."` : 'MISSING');
 
-  console.log('[API] Articolo trovato, inizio traduzione in', TEST_LANGS.length, 'lingue (modalità test)');
+  console.log('[API] Articolo trovato, inizio traduzione in', targetLanguages.length, 'lingue');
 
   const translationResults = [];
   const errors = [];
 
-  // Traduci solo in 3 lingue per test
-  for (const lang of TEST_LANGS) {
+  // Traduci nelle lingue selezionate
+  for (const lang of targetLanguages) {
     try {
       console.log(`\n[API] === TRADUZIONE IN ${lang.toUpperCase()} (${LANG_NAMES[lang]}) ===`);
       
@@ -227,20 +317,33 @@ export async function POST(
       translationResults.push({ language: lang, success: true });
       
     } catch (translateError) {
-      console.error(`[API] Errore nella traduzione per ${LANG_NAMES[lang]}:`, translateError);
-      errors.push({ language: lang, error: String(translateError) });
+      console.error(`[API] ❌ ERRORE nella traduzione per ${LANG_NAMES[lang]} (${lang}):`, translateError);
+      console.error(`[API] Error stack:`, translateError instanceof Error ? translateError.stack : 'No stack trace');
+      console.error(`[API] Error message:`, translateError instanceof Error ? translateError.message : String(translateError));
+      
+      // Aggiungi informazioni più dettagliate sull'errore
+      const errorInfo = {
+        language: lang,
+        languageName: LANG_NAMES[lang],
+        error: translateError instanceof Error ? translateError.message : String(translateError),
+        errorType: translateError instanceof Error ? translateError.constructor.name : typeof translateError,
+        timestamp: new Date().toISOString()
+      };
+      
+      errors.push(errorInfo);
     }
   }
 
-  console.log(`[API] Completate ${translationResults.length} traduzioni su ${TEST_LANGS.length}`);
+  console.log(`[API] Completate ${translationResults.length} traduzioni su ${targetLanguages.length}`);
   console.log(`[API] Errori: ${errors.length}`);
 
   return NextResponse.json({ 
     success: true,
     translationsCompleted: translationResults.length,
-    totalLanguages: TEST_LANGS.length,
+    totalLanguages: targetLanguages.length,
     languagesTranslated: translationResults.map(t => t.language),
-    errors: errors.length > 0 ? errors : undefined
+    errors: errors.length > 0 ? errors : undefined,
+    type: translationType
   });
 }
 
@@ -281,7 +384,7 @@ Maintain professional tone and marketing appeal.
 Original text: ${text}
 
 Respond with ONLY the translation:`;
-    maxTokens = 200;
+    maxTokens = 1000;
   } else { // titolo
     prompt = `Translate the following article title from ${source} to ${target}.
 Keep it engaging and suitable for tourism content.
@@ -290,11 +393,14 @@ Maintain the same tone and appeal.
 Original title: ${text}
 
 Respond with ONLY the translation:`;
-    maxTokens = 100;
+    maxTokens = 1000;
   }
   
   try {
     console.log(`[TRANSLATE] Chiamata OpenAI per ${type} (${source} → ${target})...`);
+    console.log(`[TRANSLATE] Model: ${MODEL}, Max tokens: ${maxTokens}`);
+    console.log(`[TRANSLATE] Text length: ${text.length} characters`);
+    
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [{ role: 'user', content: prompt }],
@@ -303,15 +409,30 @@ Respond with ONLY the translation:`;
     });
 
     const result = response.choices[0].message.content?.trim() || '';
-    console.log(`[TRANSLATE] Traduzione ${type} completata (${result.length} caratteri):`, result.substring(0, 100) + '...');
+    console.log(`[TRANSLATE] ✅ Traduzione ${type} completata (${result.length} caratteri):`, result.substring(0, 100) + '...');
     
     if (!result) {
-      console.warn(`[TRANSLATE] WARNING: Traduzione vuota per ${type}!`);
+      console.warn(`[TRANSLATE] ⚠️ WARNING: Traduzione vuota per ${type}!`);
     }
     
     return result;
   } catch (translateError) {
-    console.error(`[TRANSLATE] Errore nella traduzione ${type}:`, translateError);
-    throw translateError;
+    console.error(`[TRANSLATE] ❌ ERRORE nella traduzione ${type} (${source} → ${target}):`, translateError);
+    console.error(`[TRANSLATE] Error details:`, {
+      name: translateError instanceof Error ? translateError.name : 'Unknown',
+      message: translateError instanceof Error ? translateError.message : String(translateError),
+      stack: translateError instanceof Error ? translateError.stack : 'No stack',
+      type: type,
+      source: source,
+      target: target,
+      textLength: text?.length || 0,
+      model: MODEL,
+      maxTokens: maxTokens
+    });
+    
+    // Re-throw l'errore con più contesto
+    const enhancedError = new Error(`Translation failed for ${type} (${source} → ${target}): ${translateError instanceof Error ? translateError.message : String(translateError)}`);
+    enhancedError.cause = translateError;
+    throw enhancedError;
   }
 }

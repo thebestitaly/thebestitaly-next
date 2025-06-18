@@ -1,9 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { getTranslations } from '../../lib/directus';
+import { useSectionTranslations } from '@/hooks/useTranslations';
 
 const backgroundImages = [
   '/images/hero/hero-img-1.webp',
@@ -16,10 +15,7 @@ const HeroSection: React.FC = () => {
   const lang = (params?.lang as string) || 'it';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const { data: homeTranslations } = useQuery({
-    queryKey: ['translations', lang, 'homepage'],
-    queryFn: () => getTranslations(lang, 'homepage'),
-  });
+  const { translations: homeTranslations } = useSectionTranslations('homepage', lang);
 
   useEffect(() => {
     const interval = setInterval(() => {

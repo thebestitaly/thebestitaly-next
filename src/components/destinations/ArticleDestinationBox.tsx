@@ -11,7 +11,14 @@ interface ArticleDestinationBoxProps {
 const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinationId, lang }) => {
   const { data: destination, isLoading } = useQuery({
     queryKey: ["destination", destinationId, lang],
-    queryFn: () => directusClient.getDestinationById(destinationId.toString(), lang),
+    queryFn: async () => {
+      // Usa la nostra API invece di Directus direttamente
+      const response = await fetch(`/api/destinations/${destinationId}?lang=${lang}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch destination');
+      }
+      return response.json();
+    },
     enabled: !!destinationId,
   });
 
@@ -31,6 +38,16 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
   const regionTranslation = region?.translations?.[0];
   const provinceTranslation = province?.translations?.[0];
 
+  // Funzione per tradurre i tipi in italiano
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'region': return 'Regione';
+      case 'province': return 'Provincia';
+      case 'municipality': return 'Comune';
+      default: return 'Destinazione';
+    }
+  };
+
   // Costruisci la gerarchia di destinazioni
   const hierarchy = [];
   
@@ -40,7 +57,8 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
       name: regionTranslation.destination_name || regionTranslation.description,
       image: (region as any).image, // Cast per evitare errori di tipo
       link: `/${lang}/${regionTranslation.slug_permalink}`,
-      type: 'region'
+      type: 'region',
+      typeLabel: getTypeLabel('region')
     });
   }
   
@@ -50,7 +68,8 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
       name: provinceTranslation.destination_name || provinceTranslation.description,
       image: (province as any).image, // Cast per evitare errori di tipo
       link: `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}`,
-      type: 'province'
+      type: 'province',
+      typeLabel: getTypeLabel('province')
     });
   }
   
@@ -65,7 +84,8 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
       name: destName,
       image: destImage,
       link: link,
-      type: 'municipality'
+      type: 'municipality',
+      typeLabel: getTypeLabel('municipality')
     });
   }
 
@@ -107,7 +127,9 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
                 
                 {/* Nome e tipo */}
                 <div className="flex-1 min-w-0">
-                  
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                    {item.typeLabel}
+                  </p>
                   <h4 className="text-sm md:text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mt-1 truncate">
                     {item.name}
                   </h4>

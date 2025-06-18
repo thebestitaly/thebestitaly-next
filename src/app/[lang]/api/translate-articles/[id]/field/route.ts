@@ -5,12 +5,12 @@ import { createDirectus, rest, readItems, createItem, updateItem } from '@direct
 // Client Directus
 const directus = createDirectus(process.env.NEXT_PUBLIC_DIRECTUS_URL || '').with(rest());
 
-// Tutte le 50 lingue supportate
+// Tutte le 49 lingue supportate
 const ALL_LANGS = [
   'en','fr','es','pt','de','nl','ro','sv','pl','vi','id','el','uk','ru',
   'bn','zh','hi','ar','fa','ur','ja','ko','am','cs','da','fi','af','hr',
   'bg','sk','sl','sr','th','ms','tl','he','ca','et','lv','lt','mk','az',
-  'ka','hy','is','sw','zh-tw'
+  'ka','hy','is','sw','zh-tw','tk','hu'
 ];
 
 // Mapping sigle lingue ai nomi completi per traduzioni più accurate
@@ -49,7 +49,7 @@ const LANG_NAMES: { [key: string]: string } = {
   'sr': 'Serbian',
   'th': 'Thai',
   'ms': 'Malay',
-  'tl': 'Filipino',
+  'tl': 'Tagalog',
   'he': 'Hebrew',
   'ca': 'Catalan',
   'et': 'Estonian',
@@ -61,7 +61,9 @@ const LANG_NAMES: { [key: string]: string } = {
   'hy': 'Armenian',
   'is': 'Icelandic',
   'sw': 'Swahili',
-  'zh-tw': 'Chinese (Traditional)'
+  'zh-tw': 'Chinese (Traditional)',
+  'tk': 'Turkmen',
+  'hu': 'Hungarian'
 };
 
 const MODEL = 'gpt-4.1-mini-2025-04-14';

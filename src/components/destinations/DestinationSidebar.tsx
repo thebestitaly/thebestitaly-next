@@ -153,12 +153,6 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          {showType && (
-            <div className="text-xs text-blue-600 font-medium mb-1">
-              {destination.type === 'region' ? 'Regione' : 
-               destination.type === 'province' ? 'Provincia' : 'Comune'}
-            </div>
-          )}
           <h4 className="font-semibold text-gray-900 text-sm">
             {translation?.destination_name}
           </h4>

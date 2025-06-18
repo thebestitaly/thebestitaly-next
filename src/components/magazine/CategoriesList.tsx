@@ -3,7 +3,8 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
-import directusClient, { getTranslations } from '../../lib/directus';
+import directusClient from '../../lib/directus';
+import { useSectionTranslations } from '@/hooks/useTranslations';
 
 interface CategoriesListProps {
   lang: string;
@@ -15,10 +16,7 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ lang }) => {
     queryFn: () => directusClient.getCategories(lang),
   });
 
-  const { data: translations } = useQuery({
-    queryKey: ['translations', lang, 'categories'],
-    queryFn: () => getTranslations(lang, 'categories'),
-  });
+  const { translations } = useSectionTranslations('categories', lang);
 
   if (categoriesLoading) {
     return (

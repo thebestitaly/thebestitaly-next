@@ -8,7 +8,6 @@ import directusClient from '@/lib/directus';
 import GetYourGuideWidget from '@/components/widgets/GetYourGuideWidget';
 import ArticlesSidebar from '@/components/widgets/ArticlesSidebar';
 import TableOfContents from '@/components/widgets/TableOfContents';
-import VideoEmbed from '@/components/widgets/VideoEmbed';
 import ArticleDestinationBox from '@/components/destinations/ArticleDestinationBox';
 import { getArticleHreflang } from '@/lib/directus';
 import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
@@ -250,39 +249,42 @@ export default async function MagazineArticlePage({ params }: PageProps) {
       {/* Breadcrumb - Always on top */}
       <ArticleBreadcrumb />
       
-      {/* Header Section - Responsive */}
-      <div className="container mx-auto px-4 pt-6 pb-4 ">
-      <div className="w-full md:w-1/2">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
-          {translation?.titolo_articolo}
-        </h1>
-        {translation?.seo_summary && (
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4">
-            {translation.seo_summary}
-          </p>
-        )}
+      {/* Header Section - Mobile: Stack, Desktop: Side by side */}
+      <div className="container mx-auto px-4 pt-6 mb-10">
+        <div className="flex flex-col md:flex-row md:items-start md:gap-8 lg:gap-12">
+          {/* Title and Subtitle - Left side on desktop (40%) */}
+          <div className="w-full md:w-half mb-6 md:mb-0">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 tracking-tighter">
+              {translation?.titolo_articolo}
+            </h1>
+            {translation?.seo_summary && (
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4">
+                {translation.seo_summary}
+              </p>
+            )}
+          </div>
+          
+          {/* Hero Image - Right side on desktop (60%) */}
+          {article.image && (
+            <div className="w-full md:w-half">
+              <div className="relative aspect-[16/9] md:aspect-[4/3] lg:aspect-[1/1] overflow-hidden rounded-xl md:rounded-2xl">
+                <Image
+                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+                  alt={translation?.titolo_articolo || ''}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 50vw"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
-      {/* Hero Image - Responsive */}
-      {article.image && (
-        <div className="container mx-auto px-4 mb-4 md:mb-8">
-          <div className="relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[5/2] overflow-hidden rounded-xl md:rounded-2xl">
-            <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
-              alt={translation?.titolo_articolo || ''}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-            />
-          </div>
-        </div>
-      )}
-      
       {/* TOC - Table of Contents - Mobile only here */}
-      <div className="md:hidden px-4">
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+      <div className="md:hidden px-4 ">
+        <div className="hidden md:block sticky top-16 z-10 mb-10">
           <TableOfContents content={translation?.description || ''} />
         </div>
         
@@ -307,17 +309,6 @@ export default async function MagazineArticlePage({ params }: PageProps) {
               />
             </div>
 
-            {/* Video Section - Uncomment when video_url field is added to database */}
-            {/* {article.video_url && (
-              <div className="mb-8">
-                <VideoEmbed 
-                  src={article.video_url} 
-                  title={translation?.titolo_articolo || 'Video'} 
-                  className="w-full"
-                />
-              </div>
-            )} */}
-
             <article className="prose prose-base md:prose-lg max-w-none mt-4 md:mt-8">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -341,28 +332,6 @@ export default async function MagazineArticlePage({ params }: PageProps) {
                       />
                     </div>
                   ),
-                  // Custom video component for YouTube/Vimeo links
-                  a: ({ node, ...props }) => {
-                    const href = props.href as string;
-                    const isVideo = href && (
-                      href.includes('youtube.com') || 
-                      href.includes('youtu.be') || 
-                      href.includes('vimeo.com') ||
-                      href.match(/\.(mp4|webm|ogg)$/i)
-                    );
-                    
-                    if (isVideo) {
-                      return (
-                        <VideoEmbed 
-                          src={href} 
-                          title={props.children?.toString() || 'Video'} 
-                          className="my-6"
-                        />
-                      );
-                    }
-                    
-                    return <a {...props} className="text-blue-600 hover:text-blue-800 underline" />;
-                  },
                 }}
               >
                 {translation?.description || ''}

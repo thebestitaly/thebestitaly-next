@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import directusClient from "@/lib/directus";
+import directusClient, { getSlugsAndBreadcrumbs } from "@/lib/directus";
 
 interface CompanyDestinationBoxProps {
   destinationId: string | number;
@@ -15,13 +15,18 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
     enabled: !!destinationId,
   });
 
+  // Ottieni gli slug completi per i link corretti
+  const { data: slugData } = useQuery({
+    queryKey: ["destination-slugs", destinationId, lang],
+    queryFn: () => getSlugsAndBreadcrumbs(destinationId.toString(), lang),
+    enabled: !!destinationId && !!destination,
+  });
+
   if (isLoading) return <div>Loading destination...</div>;
-  if (!destination) return null;
+  if (!destination || !slugData) return null;
 
   const translation = destination.translations?.[0];
   const destName = translation?.destination_name || "";
-  const destSummary = translation?.seo_summary || "";
-  const destSlug = translation?.slug_permalink || "";
   const destImage = destination.image;
 
   // Estrai informazioni su regione e provincia
@@ -31,42 +36,60 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
   const regionTranslation = region?.translations?.[0];
   const provinceTranslation = province?.translations?.[0];
 
-  // Costruisci la gerarchia di destinazioni
+  // Costruisci la gerarchia di destinazioni usando gli slug completi corretti
   const hierarchy = [];
   
-  // Aggiungi regione se esiste
-  if (region && regionTranslation) {
+  // Aggiungi regione se esiste (sempre presente nella gerarchia)
+  if (region && regionTranslation && slugData.regionSlug) {
     hierarchy.push({
-      name: regionTranslation.destination_name || regionTranslation.description,
-      image: (region as any).image, // Cast per evitare errori di tipo
-      link: `/${lang}/${regionTranslation.slug_permalink}`,
+      name: regionTranslation.destination_name,
+      image: (region as any).image,
+      link: `/${lang}/${slugData.regionSlug}`,
       type: 'region'
     });
   }
   
-  // Aggiungi provincia se esiste
-  if (province && provinceTranslation && region && regionTranslation) {
+  // Aggiungi provincia se esiste (presente se destination è municipality o province)
+  if (province && provinceTranslation && slugData.provinceSlug) {
     hierarchy.push({
-      name: provinceTranslation.destination_name || provinceTranslation.description,
-      image: (province as any).image, // Cast per evitare errori di tipo
-      link: `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}`,
+      name: provinceTranslation.destination_name,
+      image: (province as any).image,
+      link: `/${lang}/${slugData.regionSlug}/${slugData.provinceSlug}`,
       type: 'province'
     });
   }
   
   // Aggiungi comune/destinazione corrente se è un municipality
-  if (destination.type === "municipality") {
-    let link = `/${lang}/${destSlug}`;
-    if (provinceTranslation?.slug_permalink && regionTranslation?.slug_permalink) {
-      link = `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${destSlug}`;
-    }
-    
+  if (destination.type === "municipality" && slugData.municipalitySlug) {
     hierarchy.push({
       name: destName,
       image: destImage,
-      link: link,
+      link: `/${lang}/${slugData.regionSlug}/${slugData.provinceSlug}/${slugData.municipalitySlug}`,
       type: 'municipality'
     });
+  }
+  
+  // Aggiorna le informazioni della destinazione corrente se è regione o provincia
+  if (destination.type === "province" && slugData.provinceSlug && hierarchy.length > 0) {
+    const provinceIndex = hierarchy.findIndex(item => item.type === 'province');
+    if (provinceIndex !== -1) {
+      hierarchy[provinceIndex] = {
+        name: destName, // Usa il nome della destinazione corrente
+        image: destImage,
+        link: `/${lang}/${slugData.regionSlug}/${slugData.provinceSlug}`,
+        type: 'province'
+      };
+    }
+  } else if (destination.type === "region" && slugData.regionSlug && hierarchy.length > 0) {
+    const regionIndex = hierarchy.findIndex(item => item.type === 'region');
+    if (regionIndex !== -1) {
+      hierarchy[regionIndex] = {
+        name: destName, // Usa il nome della destinazione corrente
+        image: destImage,
+        link: `/${lang}/${slugData.regionSlug}`,
+        type: 'region'
+      };
+    }
   }
 
   return (
@@ -104,13 +127,7 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
               
               {/* Nome e tipo */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 font-medium">
-                    {item.type === 'region' ? 'Regione' : 
-                     item.type === 'province' ? 'Provincia' : 'Comune'}
-                  </span>
-                </div>
-                <h4 className="text-sm md:text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mt-1 truncate">
+                <h4 className="text-sm md:text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
                   {item.name}
                 </h4>
               </div>

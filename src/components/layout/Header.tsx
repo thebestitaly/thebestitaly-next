@@ -4,8 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { Search, X, Menu, ChevronDown } from 'lucide-react';
-import directusClient, { getTranslations } from '../../lib/directus';
+import directusClient from '../../lib/directus';
 import { useTranslation } from 'react-i18next';
+import { useSectionTranslations } from '@/hooks/useTranslations';
 import InteractiveMap from './InteractiveMap';
 
 interface HeaderProps {
@@ -22,11 +23,8 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
-  // Query per le traduzioni del menu
-  const { data: menuTranslations } = useQuery({
-    queryKey: ['translations', lang, 'menu'],
-    queryFn: () => getTranslations(lang, 'menu'),
-  });
+  // Hook per le traduzioni del menu con il nuovo sistema
+  const { translations: menuTranslations, loading: menuLoading } = useSectionTranslations('menu', lang);
 
   // Query per le destinazioni
   const { data: destinations } = useQuery({
@@ -59,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
   // Language options for desktop (only main ones)
   const mainLanguages = [
     { code: 'it', name: 'Italiano', flag: 'it' },
-    { code: 'en', name: 'English', flag: 'gb' },
+    { code: 'en', name: 'English', flag: 'en' },
     { code: 'fr', name: 'Français', flag: 'fr' },
     { code: 'es', name: 'Español', flag: 'es' },
     { code: 'pt', name: 'Português', flag: 'pt' },
@@ -70,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
   // All 50+ languages for mobile modal
   const allLanguages = [
     { code: 'it', name: 'Italiano', flag: 'it' },
-    { code: 'en', name: 'English', flag: 'gb' },
+    { code: 'en', name: 'English', flag: 'en' },
     { code: 'fr', name: 'Français', flag: 'fr' },
     { code: 'es', name: 'Español', flag: 'es' },
     { code: 'pt', name: 'Português', flag: 'pt' },
@@ -78,46 +76,46 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
     { code: 'tr', name: 'Türkçe', flag: 'tr' },
     { code: 'nl', name: 'Nederlands', flag: 'nl' },
     { code: 'ro', name: 'Română', flag: 'ro' },
-    { code: 'sv', name: 'Svenska', flag: 'se' },
+    { code: 'sv', name: 'Svenska', flag: 'sv' },
     { code: 'pl', name: 'Polski', flag: 'pl' },
-    { code: 'vi', name: 'Tiếng Việt', flag: 'vn' },
+    { code: 'vi', name: 'Tiếng Việt', flag: 'vi' },
     { code: 'id', name: 'Bahasa Indonesia', flag: 'id' },
-    { code: 'el', name: 'Ελληνικά', flag: 'gr' },
-    { code: 'uk', name: 'Українська', flag: 'ua' },
+    { code: 'el', name: 'Ελληνικά', flag: 'el' },
+    { code: 'uk', name: 'Українська', flag: 'uk' },
     { code: 'ru', name: 'Русский', flag: 'ru' },
-    { code: 'bn', name: 'বাংলা', flag: 'bd' },
-    { code: 'zh', name: '中文 (简体)', flag: 'cn' },
-    { code: 'hi', name: 'हिन्दी', flag: 'in' },
-    { code: 'ar', name: 'العربية', flag: 'sa' },
-    { code: 'fa', name: 'فارسی', flag: 'ir' },
-    { code: 'ur', name: 'اردو', flag: 'pk' },
-    { code: 'ja', name: '日本語', flag: 'jp' },
-    { code: 'ko', name: '한국어', flag: 'kr' },
-    { code: 'am', name: 'አማርኛ', flag: 'et' },
-    { code: 'cs', name: 'Čeština', flag: 'cz' },
-    { code: 'da', name: 'Dansk', flag: 'dk' },
+    { code: 'bn', name: 'বাংলা', flag: 'bn' },
+    { code: 'zh', name: '中文 (简体)', flag: 'zh' },
+    { code: 'hi', name: 'हिन्दी', flag: 'hi' },
+    { code: 'ar', name: 'العربية', flag: 'ar' },
+    { code: 'fa', name: 'فارسی', flag: 'fa' },
+    { code: 'ur', name: 'اردو', flag: 'ur' },
+    { code: 'ja', name: '日本語', flag: 'ja' },
+    { code: 'ko', name: '한국어', flag: 'ko' },
+    { code: 'am', name: 'አማርኛ', flag: 'am' },
+    { code: 'cs', name: 'Čeština', flag: 'cs' },
+    { code: 'da', name: 'Dansk', flag: 'da' },
     { code: 'fi', name: 'Suomi', flag: 'fi' },
-    { code: 'af', name: 'Afrikaans', flag: 'za' },
+    { code: 'af', name: 'Afrikaans', flag: 'af' },
     { code: 'hr', name: 'Hrvatski', flag: 'hr' },
     { code: 'bg', name: 'Български', flag: 'bg' },
     { code: 'sk', name: 'Slovenčina', flag: 'sk' },
-    { code: 'sl', name: 'Slovenščina', flag: 'si' },
-    { code: 'sr', name: 'Српски', flag: 'rs' },
+    { code: 'sl', name: 'Slovenščina', flag: 'sl' },
+    { code: 'sr', name: 'Српски', flag: 'sr' },
     { code: 'th', name: 'ไทย', flag: 'th' },
-    { code: 'ms', name: 'Bahasa Melayu', flag: 'my' },
-    { code: 'tl', name: 'Filipino', flag: 'ph' },
-    { code: 'he', name: 'עברית', flag: 'il' },
-    { code: 'ca', name: 'Català', flag: 'ad' },
-    { code: 'et', name: 'Eesti', flag: 'ee' },
+    { code: 'ms', name: 'Bahasa Melayu', flag: 'ms' },
+    { code: 'tl', name: 'Filipino', flag: 'tl' },
+    { code: 'he', name: 'עברית', flag: 'he' },
+    { code: 'ca', name: 'Català', flag: 'ca' },
+    { code: 'et', name: 'Eesti', flag: 'et' },
     { code: 'lv', name: 'Latviešu', flag: 'lv' },
     { code: 'lt', name: 'Lietuvių', flag: 'lt' },
     { code: 'mk', name: 'Македонски', flag: 'mk' },
     { code: 'az', name: 'Azərbaycan', flag: 'az' },
-    { code: 'ka', name: 'ქართული', flag: 'ge' },
-    { code: 'hy', name: 'Հայերեն', flag: 'am' },
+    { code: 'ka', name: 'ქართული', flag: 'ka' },
+    { code: 'hy', name: 'Հայերեն', flag: 'hy' },
     { code: 'is', name: 'Íslenska', flag: 'is' },
-    { code: 'sw', name: 'Kiswahili', flag: 'ke' },
-    { code: 'zh-tw', name: '中文 (繁體)', flag: 'tw' }
+    { code: 'sw', name: 'Kiswahili', flag: 'sw' },
+    { code: 'zh-tw', name: '中文 (繁體)', flag: 'zh-tw' }
   ];
 
   const handleLanguageChange = (newLang: string) => {
@@ -308,11 +306,11 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   className="flex items-center space-x-2 hover:text-blue-600 transition-colors"
                 >
                   <Image
-                    src={`/images/flags/${lang === 'en' ? 'gb' : lang}.svg`}
+                    src={`/images/flags/${lang}.svg`}
                     alt={lang.toUpperCase()}
                     width={24}
                     height={18}
-                    className="rounded"
+                    className="rounded w-6 h-[18px] object-cover"
                   />
                   <span className={`ml-2 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}>
                     {lang.toUpperCase()}
@@ -464,11 +462,11 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     onClick={() => setIsLanguageModalOpen(true)}
                   >
                       <Image
-                        src={`/images/flags/${lang === 'en' ? 'gb' : lang}.svg`}
+                        src={`/images/flags/${lang}.svg`}
                         alt={lang.toUpperCase()}
                         width={24}
                         height={18}
-                        className="rounded mr-2"
+                        className="rounded mr-2 w-6 h-[18px] object-cover"
                       />
                       {lang.toUpperCase()}
                     </button>
@@ -523,7 +521,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                       alt={language.name}
                       width={24}
                       height={18}
-                      className="rounded flex-shrink-0"
+                      className="rounded flex-shrink-0 w-6 h-[18px] object-cover"
                       onError={(e) => {
                         // Fallback per bandiere mancanti
                         const target = e.target as HTMLImageElement;

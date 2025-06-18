@@ -52,7 +52,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
   // Fetch page titles from database (ID 3 = eccellenze page)
   const { data: pageTitles } = useQuery({
     queryKey: ['page-titles-eccellenze', lang],
-    queryFn: () => getPageTitles(3, lang),
+    queryFn: () => getPageTitles('3', lang),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
@@ -319,25 +319,16 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
       <div id="eccellenze-list" className="container mx-auto px-4 py-8 md:py-16">
         
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
           {companies.filter((company: any) => company.active === true).map((company: any) => {
             const translation = company.translations?.[0];
             const category = categories?.find((cat: any) => cat.id === company.category_id);
             const categoryName = category?.translations?.[0]?.nome_categoria;
             
             return (
-              <div key={company.id} className="group">
-                {/* Category Tag */}
-                {categoryName && (
-                  <div className="mb-2 md:mb-4">
-                    <span className="inline-block bg-blue-100 text-blue-800 text-xs md:text-sm font-semibold px-3 md:px-4 py-1 md:py-2 rounded-full">
-                      {categoryName}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Company Image */}
-                <div className="relative aspect-[4/3] mb-3 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
+              <div key={company.id} className="group bg-white rounded-xl overflow-hidden hover:border-gray-200 transition-all duration-300 mb-8">
+                {/* Company Image - More compact horizontal format */}
+                <div className="relative aspect-[3/2] overflow-hidden rounded-xl ">
                   <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
                     {company.featured_image ? (
                       <Image
@@ -348,26 +339,38 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-4xl md:text-8xl">
-                        🏢
+                      <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                        <div className="text-gray-400 text-xl md:text-2xl">🏢</div>
                       </div>
                     )}
                   </Link>
+                  
+                  {/* Category Tag - positioned over image */}
+                  {categoryName && (
+                    <div className="absolute top-2 left-2">
+                      <span className="inline-block bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-medium px-2 py-1 rounded-md">
+                        {categoryName}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Company Name */}
-                <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
-                  <h3 className="text-lg md:text-2xl font-bold text-gray-900 mb-2 md:mb-3 group-hover:text-blue-600 transition-colors duration-200 leading-tight">
-                    {company.company_name}
-                  </h3>
-                </Link>
+                {/* Content */}
+                <div className="p-3 md:p-4">
+                  {/* Company Name */}
+                  <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-1.5 group-hover:text-blue-600 transition-colors duration-200 leading-tight line-clamp-2">
+                      {company.company_name}
+                    </h3>
+                  </Link>
 
-                {/* SEO Title */}
-                {translation?.seo_title && (
-                  <p className="text-blue-600 font-medium text-sm md:text-lg">
-                    {translation.seo_title}
-                  </p>
-                )}
+                  {/* SEO Title */}
+                  {translation?.seo_title && (
+                    <p className="text-gray-600 text-xs md:text-sm line-clamp-2 leading-relaxed">
+                      {translation.seo_title}
+                    </p>
+                  )}
+                </div>
               </div>
             );
           })}

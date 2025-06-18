@@ -51,7 +51,7 @@ const VideoEmbed: React.FC<VideoEmbedProps> = ({ src, title = "Video", className
 
   if (!videoInfo) {
     return (
-      <div className="bg-gray-100 p-4 rounded-lg text-center">
+      <div className={`bg-gray-100 p-4 rounded-lg text-center ${className}`}>
         <p className="text-gray-600">Formato video non supportato</p>
       </div>
     );
@@ -62,8 +62,9 @@ const VideoEmbed: React.FC<VideoEmbedProps> = ({ src, title = "Video", className
       <div className={`relative w-full ${className}`}>
         <video
           controls
-          className="w-full h-auto rounded-lg"
+          className={`w-full h-auto aspect-video rounded-lg`}
           preload="metadata"
+          style={{ aspectRatio: '16 / 9' }}
         >
           <source src={videoInfo.embedUrl} type="video/mp4" />
           Il tuo browser non supporta il tag video.

@@ -6,7 +6,7 @@ import Image from "next/image";
 import directusClient from "../../../../lib/directus";
 
 interface Category {
-  id: number;
+  id: string;
   nome_categoria: string;
   translations: Array<{
     nome_categoria: string;

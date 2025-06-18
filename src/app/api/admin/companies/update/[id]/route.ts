@@ -40,10 +40,10 @@ export async function PUT(
       companyPayload.destination_id = parseInt(body.destination_id);
     }
     if (body.lat) {
-      companyPayload.lat = parseFloat(body.lat);
+      companyPayload.lat = parseFloat(body.lat.toString().replace(',', '.'));
     }
     if (body.long) {
-      companyPayload.long = parseFloat(body.long);
+      companyPayload.long = parseFloat(body.long.toString().replace(',', '.'));
     }
 
     console.log('Updating company with payload:', companyPayload);
