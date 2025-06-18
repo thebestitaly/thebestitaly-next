@@ -261,27 +261,148 @@ export default function WidgetGeneratorPage() {
   const renderTestWidget = () => {
     if (!slug || !testMode) return null;
     
-    return (
-      <div className="border-2 border-dashed border-blue-300 p-6 rounded-lg bg-blue-50">
-        <div className="text-center">
-          <div className="text-blue-600 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+    const baseUrl = "https://thebestitaly.eu";
+    const logoUrl = "/images/logo-black.webp";
+    
+    // Widget Small
+    const SmallWidget = () => (
+      <div className="bg-white border rounded-lg p-3 shadow-sm max-w-sm">
+        <div className="flex items-center gap-3">
+          <img src={logoUrl} alt="TheBestItaly" className="h-6 w-auto" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-gray-900 truncate">
+              {searchQuery}
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-blue-800 mb-2">Widget Preview</h3>
-          <p className="text-blue-600 mb-4">
-            {type === 'destination' ? 'Destinazione' : 'Azienda'}: <strong>{searchQuery}</strong>
+          <select className="text-xs border rounded px-2 py-1 bg-white">
+            {selectedLanguages.slice(0, 5).map(lang => (
+              <option key={lang} value={lang}>
+                {lang.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    );
+
+    // Widget Medium
+    const MediumWidget = () => (
+      <div className="bg-white border rounded-xl p-4 shadow-md max-w-md">
+        <div className="flex items-center gap-4 mb-3">
+          <img src={logoUrl} alt="TheBestItaly" className="h-8 w-auto" />
+          <div className="flex-1">
+            <div className="text-base font-semibold text-gray-900">
+              {searchQuery}
+            </div>
+            <div className="text-xs text-gray-500">
+              {type === 'destination' ? 'Destinazione' : 'Eccellenza'} italiana
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-600">Scegli lingua:</span>
+          <div className="flex gap-1">
+            {selectedLanguages.slice(0, 6).map(lang => (
+              <button key={lang} className="w-6 h-6 rounded border bg-gray-50 hover:bg-blue-50 text-xs font-medium">
+                {lang.toUpperCase().slice(0, 2)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+
+    // Widget Full
+    const FullWidget = () => (
+      <div className="bg-white border rounded-2xl shadow-lg max-w-2xl">
+        <div className="p-6 border-b">
+          <div className="flex items-center gap-4 mb-4">
+            <img src={logoUrl} alt="TheBestItaly" className="h-10 w-auto" />
+            <div className="flex-1">
+              <div className="text-xl font-bold text-gray-900">
+                {searchQuery}
+              </div>
+              <div className="text-sm text-gray-600">
+                Scopri le eccellenze italiane con TheBestItaly
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-700">Lingue disponibili:</span>
+            <div className="flex flex-wrap gap-2">
+              {selectedLanguages.slice(0, 8).map(lang => (
+                <span key={lang} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {LANGUAGE_NAMES[lang]}
+                </span>
+              ))}
+              {selectedLanguages.length > 8 && (
+                <span className="text-xs text-gray-500">+{selectedLanguages.length - 8} altre</span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Articoli in Evidenza</h3>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex gap-3 p-3 rounded-lg bg-gray-50">
+                <div className="w-16 h-12 bg-gray-200 rounded flex-shrink-0"></div>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-gray-900">
+                    Articolo di esempio {i}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Breve descrizione dell'articolo correlato...
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-center">
+            <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              Vedi tutti gli articoli →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="space-y-6">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-semibold text-blue-800 mb-2">
+            Anteprima Widget - {widgetSize.charAt(0).toUpperCase() + widgetSize.slice(1)}
+          </h3>
+          <p className="text-sm text-blue-600">
+            {type === 'destination' ? 'Destinazione' : 'Azienda'}: <strong>{searchQuery}</strong> | 
+            Tema: {widgetTheme} | Lingue: {selectedLanguages.length}
           </p>
-          <p className="text-sm text-blue-500">
-            Dimensione: {widgetSize} | Tema: {widgetTheme} | Lingue: {selectedLanguages.length}
-          </p>
-          <div className="mt-4 p-4 bg-white rounded border">
-            <p className="text-gray-600 text-sm">
-              🔗 Il widget caricherà contenuti da TheBestItaly.eu<br/>
-              🌍 Supporta {selectedLanguages.length} lingue selezionate<br/>
-              📱 Responsive e ottimizzato per tutti i dispositivi
-            </p>
+        </div>
+
+        <div className="flex justify-center">
+          {widgetSize === 'small' && <SmallWidget />}
+          {widgetSize === 'medium' && <MediumWidget />}
+          {widgetSize === 'large' && <FullWidget />}
+        </div>
+
+        {/* Mostra tutti e 3 i widget per confronto */}
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <h4 className="text-sm font-semibold text-gray-700 mb-4 text-center">
+            Confronto Dimensioni Widget
+          </h4>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-xs font-medium text-gray-600 mb-2">SMALL</div>
+              <SmallWidget />
+            </div>
+            <div className="text-center">
+              <div className="text-xs font-medium text-gray-600 mb-2">MEDIUM</div>
+              <MediumWidget />
+            </div>
+            <div className="text-center">
+              <div className="text-xs font-medium text-gray-600 mb-2">LARGE (FULL)</div>
+              <FullWidget />
+            </div>
           </div>
         </div>
       </div>
