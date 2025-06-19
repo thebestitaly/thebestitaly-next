@@ -280,6 +280,14 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 {menuTranslations?.useful_informations || 'Informazioni'}
               </Link>
 
+              {/* Translations Link - Admin only */}
+              <Link
+                href={`/${lang}/reserved/translations`}
+                className={`h-full flex items-center px-6 text-gray-700 hover:text-blue-600 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}
+              >
+                🌐 Traduzioni
+              </Link>
+
               
               {/* Language Selector - Desktop: Link to footer */}
               <div className="h-full flex items-center px-6">
@@ -428,6 +436,15 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {menuTranslations?.useful_informations || 'Informazioni'}
+                  </Link>
+
+                  {/* Translations Link - Admin only */}
+                  <Link
+                    href={`/${lang}/reserved/translations`}
+                    className="block px-4 py-2 text-lg font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    🌐 Traduzioni
                   </Link>
 
                   {/* Language Selector */}

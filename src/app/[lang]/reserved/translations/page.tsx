@@ -217,6 +217,44 @@ export default function TranslationsManagementPage() {
     }
   };
 
+  // Salva tutte le traduzioni modificate
+  const saveAllTranslations = async () => {
+    try {
+      // Prepara solo le traduzioni non vuote
+      const nonEmptyTranslations = Object.fromEntries(
+        Object.entries(formData.translations).filter(([_, value]) => value.trim() !== '')
+      );
+
+      if (Object.keys(nonEmptyTranslations).length === 0) {
+        alert('❌ Nessuna traduzione da salvare');
+        return;
+      }
+
+      const response = await fetch('/api/admin/translations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keyName: formData.keyName,
+          section: formData.section,
+          translations: nonEmptyTranslations,
+          description: formData.description
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`✅ Salvate ${Object.keys(nonEmptyTranslations).length} traduzioni!`);
+        loadData();
+      } else {
+        alert(`❌ Errore: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error saving all translations:', error);
+      alert('❌ Errore salvando tutte le traduzioni');
+    }
+  };
+
   // Traduzione automatica in tutte le lingue
   const autoTranslateAll = async (keyName: string, section: string) => {
     const englishText = translations[section]?.[keyName] || formData.englishText;
@@ -346,6 +384,19 @@ export default function TranslationsManagementPage() {
     }
   };
 
+  // Salva tutte le traduzioni della pagina corrente
+  const saveAllPageTranslations = async () => {
+    if (!editingKey || editingKey === 'new') {
+      alert('❌ Prima apri una traduzione per modificarla');
+      return;
+    }
+
+    const confirmation = confirm('Vuoi salvare tutte le traduzioni modificate?');
+    if (!confirmation) return;
+
+    await saveAllTranslations();
+  };
+
   // Refresh cache
   const refreshCache = async () => {
     try {
@@ -384,6 +435,14 @@ export default function TranslationsManagementPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">🌍 Gestione Traduzioni con AI</h1>
           <div className="flex gap-3">
+            {editingKey && editingKey !== 'new' && (
+              <button
+                onClick={saveAllPageTranslations}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+              >
+                💾 Salva Tutto
+              </button>
+            )}
             <button
               onClick={refreshCache}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
@@ -542,6 +601,13 @@ export default function TranslationsManagementPage() {
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
               >
                 💾 Salva Inglese
+              </button>
+              
+              <button
+                onClick={saveAllTranslations}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+              >
+                💾 Salva Tutto
               </button>
               
               {formData.englishText && (
