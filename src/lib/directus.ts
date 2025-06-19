@@ -1165,7 +1165,7 @@ class DirectusClient {
       });
 
       // Filtra solo articoli con traduzioni valide
-      const validArticles = articles.filter(article => article.translations.length > 0);
+      const validArticles = articles.filter((article: any) => article.translations.length > 0);
 
       console.log(`[getArticles] Found ${validArticles.length}/${rawArticles.length} articles with ${languageCode} translations`);
 
@@ -1703,7 +1703,7 @@ class DirectusClient {
       });
 
       // Filtra solo articoli con traduzioni valide
-      const validArticles = finalArticles.filter(article => article.translations.length > 0);
+      const validArticles = finalArticles.filter((article: any) => article.translations.length > 0);
 
       return validArticles;
       

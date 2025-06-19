@@ -1,3 +1,5 @@
+// file: src/app/reserved/widgets/page.tsx
+
 import WidgetGeneratorClient from './WidgetGeneratorClient';
 
 interface PageProps {
@@ -10,4 +12,4 @@ export default async function WidgetGeneratorPage({ params }: PageProps) {
   const { lang } = await params;
   
   return <WidgetGeneratorClient lang={lang} />;
-} 
+}
