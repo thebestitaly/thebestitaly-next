@@ -110,6 +110,11 @@ Allow: /is/
 Allow: /sw/
 Allow: /zh-tw/
 
+# Legacy URL redirects
+# Old URLs without region are automatically redirected to new URLs with region
+# Example: /it/provincia/comune -> /it/regione/provincia/comune
+# Over 40,000 redirects are handled via middleware for SEO continuity
+
 # Crawl delay
 Crawl-delay: 1`;
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { redirectMap } from './src/lib/redirects';
 
 // Lingue supportate
 const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
@@ -11,6 +12,11 @@ const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
     'sw', 'zh-tw'];
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // 🔄 Check for redirects first (old URLs without region -> new URLs with region)
+  if (redirectMap[pathname]) {
+    return NextResponse.redirect(new URL(redirectMap[pathname], request.url), 301);
+  }
 
   // Controlla se il pathname inizia già con un codice lingua supportato
   const langMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
