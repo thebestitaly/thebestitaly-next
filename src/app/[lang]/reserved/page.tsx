@@ -476,6 +476,12 @@ function ArticlesList() {
                 🏢 Nuova Company
               </Link>
             )}
+            <Link
+              href="/it/reserved/translations"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 transform hover:scale-105 shadow-lg"
+            >
+              🌐 Traduzioni
+            </Link>
           </div>
         </div>
 

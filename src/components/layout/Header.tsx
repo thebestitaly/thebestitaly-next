@@ -438,15 +438,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     {menuTranslations?.useful_informations || 'Informazioni'}
                   </Link>
 
-                  {/* Translations Link - Admin only */}
-                  <Link
-                    href={`/${lang}/reserved/translations`}
-                    className="block px-4 py-2 text-lg font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    🌐 Traduzioni
-                  </Link>
-
                   {/* Language Selector */}
                   <div className="px-4 py-2">
                     <button
