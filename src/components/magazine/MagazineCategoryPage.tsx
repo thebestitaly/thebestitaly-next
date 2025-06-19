@@ -72,7 +72,20 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
 
   return (
     <div className="min-h-screen">
-      <div className="relative h-64 sm:h-80 lg:h-[500px]">
+      {/* Mobile Header - Clean style without background image */}
+      <div className="md:hidden">
+        <div className="px-4 pt-6 pb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {displayTitle}
+          </h1>
+          <p className="text-base text-gray-600 mb-4">
+            {displayDescription}
+          </p>
+        </div>
+      </div>
+
+      {/* Desktop Hero Section */}
+      <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
         {/* Always show background, with image if available or gradient if not */}
         <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
           {categoryInfo?.image ? (
@@ -105,9 +118,12 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
         </div>
       </div>
 
-      <Breadcrumb />
+      {/* Breadcrumb - Desktop only */}
+      <div className="hidden md:block">
+        <Breadcrumb />
+      </div>
 
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-8 md:py-16">
         <ArticleGrid 
           articles={articles || []} 
           lang={lang || 'it'} 
