@@ -13,6 +13,7 @@ import GoogleMaps from '@/components/widgets/GoogleMaps';
 import VideoEmbed from '@/components/widgets/VideoEmbed';
 import ImageGallery from '@/components/companies/ImageGallery';
 import RelatedPOI from '@/components/companies/RelatedPOI';
+import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 import { getTranslation } from '@/lib/translations-server';
 
 interface PageProps {
@@ -119,44 +120,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Check if we're using English fallback (page not fully translated)
     const isUsingEnglishFallback = lang !== 'en' && (!translation?.description || !translation?.seo_title || !translation?.seo_summary) && englishTranslation;
     
-    // Improved schema for company/POI
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": company.category_id === 1 ? "LodgingBusiness" : 
-               company.category_id === 2 ? "Restaurant" : 
-               company.category_id === 3 ? "TouristAttraction" : "LocalBusiness",
-      "name": company.company_name,
-      "description": metaDescription,
-      "url": canonicalUrl,
-      "image": company.featured_image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}` : undefined,
-      "telephone": company.phone || undefined,
-      "email": company.email || undefined,
-      "website": company.website || undefined,
-      "address": company.destination_id ? {
-        "@type": "PostalAddress",
-        "addressCountry": "IT"
-      } : undefined,
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.5",
-        "bestRating": "5",
-        "worstRating": "1",
-        "ratingCount": "1"
-      },
-      "sameAs": [
-        ...Object.values(hreflangs),
-        ...(company.website ? [company.website] : []),
-        ...(company.socials ? Object.values(company.socials).filter(Boolean) : [])
-      ].filter(Boolean)
-    };
-    
-    return generateSEO({
+        // Schema is now handled by JsonLdSchema component in the page render
+     
+     return generateSEO({
       title: `${translation?.seo_title || englishTranslation?.seo_title || company.company_name} | TheBestItaly`,
       description: metaDescription,
       type: 'article',
       canonicalUrl,
       hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
-      schema,
       noindex: isUsingEnglishFallback, // Add noindex if using English fallback
     });
   } catch (error) {
@@ -194,6 +165,54 @@ export default async function CompanyPage({ params }: PageProps) {
         console.error('Error fetching English translation:', error);
       }
     }
+
+    // Generate schema for JSON-LD
+    const getBusinessType = (categoryId: number) => {
+      switch (categoryId) {
+        case 1: return "LodgingBusiness";
+        case 2: return "Restaurant"; 
+        case 3: return "TouristAttraction";
+        default: return "LocalBusiness";
+      }
+    };
+
+    const pageSchema = {
+      "@context": "https://schema.org",
+      "@type": getBusinessType(company.category_id || 0),
+      "name": company.company_name,
+      "description": translation?.seo_summary || englishTranslation?.seo_summary || `Discover ${company.company_name}, one of the best Italian excellences selected by TheBestItaly.`,
+      "url": `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/poi/${slug}`,
+      "image": company.featured_image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}` : null,
+      "telephone": company.phone || null,
+      "email": company.email || null,
+      "website": company.website || null,
+      "address": company.destination_id ? {
+        "@type": "PostalAddress",
+        "addressCountry": "IT",
+        "addressRegion": "Italy"
+      } : null,
+      "geo": (company.lat && company.long && company.lat !== 0 && company.long !== 0) ? {
+        "@type": "GeoCoordinates",
+        "latitude": company.lat,
+        "longitude": company.long
+      } : null,
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.5",
+        "bestRating": "5",
+        "worstRating": "1",
+        "ratingCount": "1"
+      },
+      "priceRange": company.category_id === 2 ? "€€" : null,
+      "servesCuisine": company.category_id === 2 ? "Italian" : null
+    };
+
+    // Remove null values from schema
+    Object.keys(pageSchema).forEach(key => {
+      if (pageSchema[key as keyof typeof pageSchema] === null || pageSchema[key as keyof typeof pageSchema] === undefined) {
+        delete pageSchema[key as keyof typeof pageSchema];
+      }
+    });
     
     // Get destination coordinates for the map
     let destination = null;
@@ -207,6 +226,9 @@ export default async function CompanyPage({ params }: PageProps) {
 
     return (
       <div className="min-h-screen">
+        {/* JSON-LD Schema */}
+        <JsonLdSchema schema={pageSchema} />
+        
         {/* Script to modify HTML lang attribute when using English fallback */}
         {isUsingEnglishFallback && (
           <script

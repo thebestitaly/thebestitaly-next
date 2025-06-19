@@ -94,7 +94,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
         <div className="relative z-10 h-full flex items-end">
           <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
             <div className="max-w-4xl">
-              <h1 className="text-2xl sm:text-3xl lg:text-6xl font-black text-white leading-tight mb-2 sm:mb-3 lg:mb-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tighter">
                 {displayTitle}
               </h1>
               <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">
