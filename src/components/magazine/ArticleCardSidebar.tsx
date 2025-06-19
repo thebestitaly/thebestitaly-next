@@ -33,21 +33,12 @@ const ArticleCardSidebar: React.FC<ArticleCardSidebarProps> = ({ article, lang }
                   alt={translation.titolo_articolo}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-xl"
-                  sizes="(max-width: 768px) 100vw, 300px"
+                  sizes="(max-width: 768px) 100vw, 200px"
                 />
               </div>
             </div>
           )}
-          <div className="content pt-2 pb-2">
-            {/* Category Badge */}
-            {article.category_id && (
-              <div className="mb-2">
-                <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                  {article.category_id.translations?.[0]?.nome_categoria}
-                </span>
-              </div>
-            )}
-            
+          <div className="content pb-2">
             <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-3">
               {translation.titolo_articolo}
             </h3>

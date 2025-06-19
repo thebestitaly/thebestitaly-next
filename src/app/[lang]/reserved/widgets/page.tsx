@@ -79,7 +79,8 @@ interface Company {
   name: string;
 }
 
-export default function WidgetGeneratorPage() {
+export default function WidgetGeneratorPage({ params }: { params: { lang: string } }) {
+  const { lang } = params;
   const [slug, setSlug] = useState("");
   const [type, setType] = useState("destination");
   const [destinations, setDestinations] = useState<Destination[]>([]);
@@ -385,25 +386,17 @@ export default function WidgetGeneratorPage() {
           {widgetSize === 'large' && <FullWidget />}
         </div>
 
-        {/* Mostra tutti e 3 i widget per confronto */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-700 mb-4 text-center">
-            Confronto Dimensioni Widget
-          </h4>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-xs font-medium text-gray-600 mb-2">SMALL</div>
-              <SmallWidget />
-            </div>
-            <div className="text-center">
-              <div className="text-xs font-medium text-gray-600 mb-2">MEDIUM</div>
-              <MediumWidget />
-            </div>
-            <div className="text-center">
-              <div className="text-xs font-medium text-gray-600 mb-2">LARGE (FULL)</div>
-              <FullWidget />
-            </div>
-          </div>
+        {/* Link al confronto dimensioni */}
+        <div className="mt-6 text-center">
+          <a 
+            href={`/${lang}/reserved/widgets/compare`}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 00-2 2h-2a2 2 0 00-2-2z" />
+            </svg>
+            Confronta Dimensioni Widget
+          </a>
         </div>
       </div>
     );

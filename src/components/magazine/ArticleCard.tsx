@@ -35,7 +35,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, lang }) => {
             />
           </div>
         )}
-        <div className="pt-4 pb-2">
+                <div className="pt-4 pb-2">
           {/* Category Badge */}
           {article.category_id && (
             <div className="mb-2">

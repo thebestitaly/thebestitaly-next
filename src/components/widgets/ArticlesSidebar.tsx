@@ -6,9 +6,11 @@ import ArticleCardSidebar from '../magazine/ArticleCardSidebar';
 
 interface ArticlesSidebarProps {
   lang: string;
+  currentArticleId?: string;
+  categoryId?: string;
 }
 
-const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
+const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleId, categoryId }) => {
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
@@ -16,16 +18,30 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
   }, []);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['articles', lang, 'sidebar'],
-    queryFn: () => directusClient.getArticles(
-      lang, 
-      0, // offset
-      20, // limit
-      {
-        // Escludi categoria 9
+    queryKey: ['articles', lang, 'sidebar', categoryId, currentArticleId],
+    queryFn: () => {
+      const filters: any = {
+        // Escludi categoria 9 (sempre)
         category_id: { _neq: 9 }
+      };
+
+      // Se abbiamo un articolo corrente, escludilo
+      if (currentArticleId) {
+        filters.id = { _neq: currentArticleId };
       }
-    ),
+
+      // Se abbiamo una categoria, mostra articoli correlati della stessa categoria
+      if (categoryId) {
+        filters.category_id = { _eq: categoryId };
+      }
+
+      return directusClient.getArticles(
+        lang, 
+        0, // offset
+        8, // RIDOTTO: solo 8 articoli invece di 20
+        filters
+      );
+    },
     enabled: isClient,
   });
 
@@ -51,21 +67,17 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang }) => {
     );
   }
 
-  // Debug: log dei primi 3 articoli per vedere le categorie
-  if (process.env.NODE_ENV === 'development') {
-    console.log('ArticlesSidebar - First 3 articles with categories:', 
-      data.articles.slice(0, 3).map(article => ({
-        id: article.id,
-        title: article.translations[0]?.titolo_articolo,
-        category: article.category_id,
-        categoryTranslations: article.category_id?.translations
-      }))
-    );
-  }
+
+  const getTitle = () => {
+    if (categoryId && data?.articles.length > 0) {
+      return "Articoli Correlati";
+    }
+    return "Articoli Recenti";
+  };
 
   return (
     <div>
-      <h3 className="text-lg font-bold mb-4 text-gray-800">Latest Articles</h3>
+      <h3 className="text-lg font-bold mb-4 text-gray-800">{getTitle()}</h3>
       <ul className="space-y-4">
         {data.articles.map((article) => (
           <ArticleCardSidebar key={article.id} article={article} lang={lang} />

@@ -267,7 +267,8 @@ class DirectusClient {
       
     this.client = axios.create({
       baseURL,
-      timeout: 30000, // Aumentato a 30 secondi per evitare timeout
+      timeout: 60000, // Aumentato a 60 secondi per connessioni lente
+      maxRedirects: 5,
     });
   
     this.setupInterceptors();
@@ -1042,37 +1043,17 @@ class DirectusClient {
         return { articles: [], total: 0 };
       }
   
-      // Parametri base per la richiesta - OTTIMIZZATO PER LINGUA
+      // NUOVA STRATEGIA: Filtra direttamente le traduzioni invece di usare deep
       const params: Record<string, any> = {
         sort: "-date_created",
         fields: [
           "id",
           "image",
           "category_id.id",
-          "category_id.translations.languages_code",
-          "category_id.translations.nome_categoria",
-          "category_id.translations.slug_permalink",
           "destination_id",
           "date_created",
-          "featured_status",
-          "translations.languages_code",
-          "translations.titolo_articolo",
-          "translations.seo_summary",
-          "translations.slug_permalink",
+          "featured_status"
         ],
-        // OTTIMIZZAZIONE: Filtra le traduzioni per lingua specifica
-        deep: {
-          translations: {
-            _filter: {
-              languages_code: { _eq: languageCode }
-            }
-          },
-          'category_id.translations': {
-            _filter: {
-              languages_code: { _eq: languageCode }
-            }
-          }
-        },
         offset: Math.max(offset, 0),
         limit: Math.max(limit, 1),
         meta: 'total_count',
@@ -1095,34 +1076,100 @@ class DirectusClient {
         params.filter = { ...params.filter, featured_status: { _eq: featuredStatus } };
       }
 
-      // Effettua la chiamata API
+      // Effettua la chiamata API per gli articoli
       const response = await this.client.get('/items/articles', { params });
 
       // Estrai articoli e totale dal meta
       const rawArticles = response.data.data || [];
       const total = response.data.meta?.total_count || 0;
 
-      // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere solo le traduzioni corrette
-      const articles = rawArticles.map((article: any) => {
-        const translation = article.translations?.[0];
-        const categoryTranslation = article.category_id?.translations?.[0];
+      if (rawArticles.length === 0) {
+        return { articles: [], total: 0 };
+      }
 
-        // Se mancano traduzioni (edge case), log warning
-        if (!translation) {
-          console.warn(`[getArticles] Missing translation for article ${article.id}, language: ${languageCode}`);
+      // OTTIMIZZAZIONE: Ottieni traduzioni separate per lingua specifica
+      const articleIds = rawArticles.map((a: any) => a.id);
+      
+      // Query separata per traduzioni articoli
+      const translationsResponse = await this.client.get('/items/articles_translations', {
+        params: {
+          filter: {
+            articles_id: { _in: articleIds },
+            languages_code: { _eq: languageCode }
+          },
+          fields: [
+            'articles_id',
+            'languages_code',
+            'titolo_articolo',
+            'seo_summary',
+            'slug_permalink'
+          ]
+        }
+      });
+
+      const translations = translationsResponse.data?.data || [];
+      const translationsMap = translations.reduce((acc: any, t: any) => {
+        acc[t.articles_id] = t;
+        return acc;
+      }, {});
+
+      // Query separata per categorie e loro traduzioni  
+      const allCategoryIds = rawArticles.map((a: any) => a.category_id?.id || a.category_id).filter(Boolean);
+      const uniqueCategoryIds = [...new Set(allCategoryIds)];
+      let categoryTranslationsMap: any = {};
+
+      if (uniqueCategoryIds.length > 0) {
+        
+        const categoryTranslationsResponse = await this.client.get('/items/categorias_translations', {
+          params: {
+            filter: {
+              categorias_id: { _in: uniqueCategoryIds },
+              languages_code: { _eq: languageCode }
+            },
+            fields: [
+              'categorias_id',
+              'languages_code',
+              'nome_categoria',
+              'slug_permalink'
+            ]
+          }
+        });
+
+        const categoryTranslations = categoryTranslationsResponse.data?.data || [];
+        categoryTranslationsMap = categoryTranslations.reduce((acc: any, ct: any) => {
+          acc[ct.categorias_id] = ct;
+          return acc;
+        }, {});
+      }
+
+
+
+      // Costruisci gli articoli finali
+      const articles = rawArticles.map((article: any) => {
+        const translation = translationsMap[article.id];
+        const categoryTranslation = article.category_id ? categoryTranslationsMap[article.category_id] : null;
+
+        // Se mancano traduzioni per la lingua richiesta, prova fallback italiano
+        if (!translation && languageCode !== 'it') {
+          console.warn(`[getArticles] Missing translation for article ${article.id}, language: ${languageCode}. Should implement Italian fallback.`);
         }
 
         return {
           ...article,
           translations: translation ? [translation] : [],
           category_id: article.category_id ? {
-            ...article.category_id,
+            id: article.category_id,
             translations: categoryTranslation ? [categoryTranslation] : []
           } : undefined
         };
       });
 
-      return { articles, total };
+      // Filtra solo articoli con traduzioni valide
+      const validArticles = articles.filter(article => article.translations.length > 0);
+
+      console.log(`[getArticles] Found ${validArticles.length}/${rawArticles.length} articles with ${languageCode} translations`);
+
+      return { articles: validArticles, total };
     } catch (error: any) {
       console.error("Error fetching articles:", error.message || error);
       return { articles: [], total: 0 };
@@ -1565,7 +1612,7 @@ class DirectusClient {
         return [];
       }
 
-      // OTTIMIZZAZIONE: Query con deep filtering per lingua specifica
+      // NUOVA STRATEGIA: Query separata per articoli e traduzioni
       const response = await this.client.get('/items/articles', {
         params: {
           'filter': {
@@ -1579,53 +1626,86 @@ class DirectusClient {
           'fields': [
             'id',
             'image',
-            'category_id.translations.nome_categoria',
-            'category_id.translations.languages_code',
-            'translations.titolo_articolo',
-            'translations.seo_summary',
-            'translations.slug_permalink',
-            'translations.languages_code'
+            'category_id'
           ],
-          // OTTIMIZZAZIONE: Filtra traduzioni per lingua specifica
-          'deep': {
-            'translations': {
-              '_filter': {
-                'languages_code': { '_eq': languageCode }
-              }
-            },
-            'category_id.translations': {
-              '_filter': {
-                'languages_code': { '_eq': languageCode }
-              }
-            }
-          },
           'sort': ['-date_created'],
           'limit': Math.min(limit, 50) // Massimo 50 articoli per performance
         }
       });
   
       const articles = response.data?.data || [];
-      console.log(`[getArticlesByCategory] Found ${articles.length} articles for category: ${categorySlug}, language: ${languageCode}`);
+      
+      if (articles.length === 0) {
+        return [];
+      }
 
-      // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere solo le traduzioni corrette
-      return articles.map((article: any) => {
-        const translation = article.translations?.[0];
-        const categoryTranslation = article.category_id?.translations?.[0];
+      // Query separata per traduzioni nella lingua specifica
+      const articleIds = articles.map((a: any) => a.id);
+      
+      const translationsResponse = await this.client.get('/items/articles_translations', {
+        params: {
+          filter: {
+            articles_id: { _in: articleIds },
+            languages_code: { _eq: languageCode }
+          },
+          fields: [
+            'articles_id',
+            'languages_code',
+            'titolo_articolo',
+            'seo_summary',
+            'slug_permalink'
+          ]
+        }
+      });
 
-        // Se mancano traduzioni (edge case), log warning
-        if (!translation) {
+      const translations = translationsResponse.data?.data || [];
+      const translationsMap = translations.reduce((acc: any, t: any) => {
+        acc[t.articles_id] = t;
+        return acc;
+      }, {});
+
+      // Query per traduzione della categoria
+      const categoryTranslationResponse = await this.client.get('/items/categorias_translations', {
+        params: {
+          filter: {
+            categorias_id: { _eq: category.id },
+            languages_code: { _eq: languageCode }
+          },
+          fields: [
+            'categorias_id',
+            'languages_code',
+            'nome_categoria',
+            'slug_permalink'
+          ]
+        }
+      });
+
+      const categoryTranslation = categoryTranslationResponse.data?.data?.[0];
+
+      console.log(`[getArticlesByCategory] Found ${articles.length} articles for category: ${categorySlug}, ${translations.length} ${languageCode} translations`);
+
+      // Costruisci gli articoli finali con solo le traduzioni nella lingua corrente
+      const finalArticles = articles.map((article: any) => {
+        const translation = translationsMap[article.id];
+        
+        if (!translation && languageCode !== 'it') {
           console.warn(`[getArticlesByCategory] Missing translation for article ${article.id}, language: ${languageCode}`);
         }
 
         return {
           ...article,
           translations: translation ? [translation] : [],
-          category_id: article.category_id ? {
-            ...article.category_id,
+          category_id: {
+            id: category.id,
             translations: categoryTranslation ? [categoryTranslation] : []
-          } : undefined
+          }
         };
       });
+
+      // Filtra solo articoli con traduzioni valide
+      const validArticles = finalArticles.filter(article => article.translations.length > 0);
+
+      return validArticles;
       
     } catch (error) {
       console.error('[getArticlesByCategory] Error:', error);

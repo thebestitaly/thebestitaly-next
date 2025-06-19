@@ -354,7 +354,11 @@ export default async function MagazineArticlePage({ params }: PageProps) {
                 />
               )}
               
-              <ArticlesSidebar lang={lang} />
+                              <ArticlesSidebar 
+                  lang={lang} 
+                  currentArticleId={article.id}
+                  categoryId={article.category_id?.id}
+                />
             </div>
           </div>
         </div>

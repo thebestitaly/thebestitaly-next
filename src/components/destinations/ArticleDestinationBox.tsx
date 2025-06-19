@@ -25,6 +25,8 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
   if (isLoading) return <div>Loading destination...</div>;
   if (!destination) return null;
 
+  // Debug: vediamo cosa riceve il componente
+  
   const translation = destination.translations?.[0];
   const destName = translation?.destination_name || "";
   const destSummary = translation?.seo_summary || "";
@@ -51,50 +53,57 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
   // Costruisci la gerarchia di destinazioni
   const hierarchy = [];
   
-  // Aggiungi regione se esiste
+  // Aggiungi regione se esiste (sempre, indipendentemente dalla provincia)
   if (region && regionTranslation) {
     hierarchy.push({
       name: regionTranslation.destination_name || regionTranslation.description,
-      image: (region as any).image, // Cast per evitare errori di tipo
+      image: (region as any).image,
       link: `/${lang}/${regionTranslation.slug_permalink}`,
       type: 'region',
       typeLabel: getTypeLabel('region')
     });
   }
   
-  // Aggiungi provincia se esiste
-  if (province && provinceTranslation && region && regionTranslation) {
+  // Aggiungi provincia se esiste (solo se la destinazione corrente non è già una provincia)
+  if (province && provinceTranslation && destination.type !== 'province') {
     hierarchy.push({
       name: provinceTranslation.destination_name || provinceTranslation.description,
-      image: (province as any).image, // Cast per evitare errori di tipo
-      link: `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}`,
+      image: (province as any).image,
+      link: `/${lang}/${regionTranslation?.slug_permalink}/${provinceTranslation.slug_permalink}`,
       type: 'province',
       typeLabel: getTypeLabel('province')
     });
   }
   
-  // Aggiungi comune/destinazione corrente se è un municipality
-  if (destination.type === "municipality") {
-    let link = `/${lang}/${destSlug}`;
-    if (provinceTranslation?.slug_permalink && regionTranslation?.slug_permalink) {
-      link = `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${destSlug}`;
+  // Aggiungi la destinazione corrente solo se non è già una regione
+  if (destination.type !== 'region') {
+    let currentDestinationLink = `/${lang}/${destSlug}`;
+    
+    // Costruisci il link appropriato in base al tipo
+    if (destination.type === "municipality" && provinceTranslation?.slug_permalink && regionTranslation?.slug_permalink) {
+      currentDestinationLink = `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${destSlug}`;
+    } else if (destination.type === "province" && regionTranslation?.slug_permalink) {
+      currentDestinationLink = `/${lang}/${regionTranslation.slug_permalink}/${destSlug}`;
     }
     
     hierarchy.push({
       name: destName,
       image: destImage,
-      link: link,
-      type: 'municipality',
-      typeLabel: getTypeLabel('municipality')
+      link: currentDestinationLink,
+      type: destination.type,
+      typeLabel: getTypeLabel(destination.type)
     });
   }
+
+  // Debug: vediamo la gerarchia costruita
+  console.log('ArticleDestinationBox - hierarchy:', hierarchy);
 
   return (
     <div className="bg-white rounded-xl">
       
-      <div className="rounded-xl bg-gray-50 p-4">
+      <div className="rounded-xl bg-gray-50">
         <div className="space-y-3">
-          {hierarchy.map((item, index) => (
+          {hierarchy.length > 0 ? hierarchy.map((item, index) => (
             <a
               key={`${item.type}-${index}`}
               href={item.link}
@@ -143,13 +152,17 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
                 </div>
               </div>
             </a>
-          ))}
+          )) : (
+            <div className="p-3 text-center text-gray-500">
+              Nessuna informazione di destinazione disponibile
+            </div>
+          )}
         </div>
       </div>
       
       {/* Descrizione della destinazione se disponibile */}
       {destSummary && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+        <div className="mt-4 p-3 rounded-lg">
           <p className="text-sm text-blue-800 leading-relaxed">
             {destSummary}
           </p>
