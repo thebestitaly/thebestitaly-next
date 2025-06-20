@@ -74,6 +74,9 @@ const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
     'sw', 'zh-tw'];
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  
+  // Debug logging per Railway
+  console.log(`🚀 MIDDLEWARE ACTIVE for path: ${pathname}`);
 
   // 🔄 Check for redirects first (old URLs without region -> new URLs with region)
   const redirectUrl = getRedirectUrl(pathname);
@@ -112,7 +115,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Escludi favicon.ico, robots.txt, sitemap.xml e le altre directory
-    '/((?!api|_next/static|_next/image|images|favicon.ico|robots.txt|sitemap.xml).*)',
+    // Match specifico per i path che ci interessano
+    '/it/:path*',
+    '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images).*)',
   ],
 };
