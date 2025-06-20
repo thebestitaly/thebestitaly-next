@@ -228,7 +228,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                 className="hidden lg:block text-left"
                 aria-label={`Explore ${currentTranslation?.destination_name || 'this destination'} - ${currentTranslation?.seo_summary || 'Discover more'}`}
               >
-                <h2 className="text-6xl lg:text-6xl xl:text-7xl text-white leading-none mb-8 tracking-tighter">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-7xl font-bold text-white mb-2 tracking-tighter">
                   {currentTranslation?.destination_name || 'Italy'}
                 </h2>
                 

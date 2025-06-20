@@ -1,6 +1,14 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
-import directusClient from '@/lib/directus';
+import { Poppins } from 'next/font/google'
+
+// Configurazione font ottimizzata
+const poppins = Poppins({
+  weight: ['400', '500', '600', '700', '800', '900'],
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-poppins',
+})
 
 export default function RootLayout({
   children,
@@ -8,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="it" dir="ltr" className="font-sans">
+    <html lang="it" dir="ltr" className={`${poppins.variable} font-sans`}>
       <head>
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -17,15 +25,7 @@ export default function RootLayout({
         
         {/* Performance optimizations */}
         <link rel="preconnect" href="https://directus-production-93f0.up.railway.app" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        
-        {/* Google Fonts - Optimized loading */}
-        <link 
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" 
-          rel="stylesheet"
-        />
         
         {/* Google Tag Manager */}
         <script

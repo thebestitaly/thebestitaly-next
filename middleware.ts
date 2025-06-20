@@ -16,7 +16,10 @@ export function middleware(request: NextRequest) {
   // 🔄 Check for redirects first (old URLs without region -> new URLs with region)
   const redirectUrl = getRedirectUrl(pathname);
   if (redirectUrl) {
-    console.log(`🔄 Redirect: ${pathname} -> ${redirectUrl}`);
+    // Solo log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔄 Redirect: ${pathname} -> ${redirectUrl}`);
+    }
     return NextResponse.redirect(new URL(redirectUrl, request.url), 301);
   }
 
@@ -30,7 +33,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
     // Se la lingua non è supportata, reindirizza a inglese
-    return NextResponse.redirect(new URL(pathname.replace(`/${lang}`, '/en'), request.url));
+    return NextResponse.redirect(new URL(pathname.replace(`/${lang}`, '/en'), request.url), 302);
   }
 
   // Se non c'è lingua nel pathname, aggiungi la lingua preferita
@@ -41,7 +44,7 @@ export function middleware(request: NextRequest) {
     lang = 'en';
   }
 
-  return NextResponse.redirect(new URL(`/${lang}${pathname}`, request.url));
+  return NextResponse.redirect(new URL(`/${lang}${pathname}`, request.url), 302);
 }
 
 export const config = {

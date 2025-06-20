@@ -101,11 +101,96 @@
     }
 
     async fetchData() {
-      this.data = {
-        name: this.config.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        description: 'Scopri questa eccellenza italiana',
-        image: null
-      };
+      try {
+        // Different API endpoints for different types
+        let apiEndpoint;
+        if (this.config.type === 'destination') {
+          apiEndpoint = `${CONFIG.apiUrl}/destinations?filter[slug_permalink][_eq]=${this.config.slug}&fields[]=id&fields[]=translations.*&deep[translations][_filter][languages_code][_in]=${this.config.languages.join(',')}`;
+        } else if (this.config.type === 'company') {
+          apiEndpoint = `${CONFIG.apiUrl}/companies?filter[slug_permalink][_eq]=${this.config.slug}&fields[]=id&fields[]=company_name&fields[]=translations.*&deep[translations][_filter][languages_code][_in]=${this.config.languages.join(',')}`;
+        } else if (this.config.type === 'article') {
+          apiEndpoint = `${CONFIG.apiUrl}/articles?filter[slug_permalink][_eq]=${this.config.slug}&fields[]=id&fields[]=translations.*&deep[translations][_filter][languages_code][_in]=${this.config.languages.join(',')}`;
+        }
+
+        const response = await fetch(`${CONFIG.baseUrl}/api/directus/items/${apiEndpoint.split('/items/')[1]}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          const data = result.data && result.data.length > 0 ? result.data[0] : null;
+          
+          if (data && data.translations) {
+            // Build language-specific URLs from translations
+            this.languageUrls = {};
+            this.data = {
+              name: '',
+              description: '',
+              image: data.image || null,
+              rating: 4.8,
+              translations: data.translations
+            };
+
+            // Build URLs for each language based on translations
+            data.translations.forEach(translation => {
+              const lang = translation.languages_code;
+              let url = `${CONFIG.baseUrl}/${lang}`;
+              
+              if (this.config.type === 'destination') {
+                // For destinations: /{lang}/{region}/{province}/{municipality}
+                url += `/${translation.slug_permalink || this.config.slug}`;
+              } else if (this.config.type === 'company') {
+                // For companies: /{lang}/poi/{slug}
+                url += `/poi/${translation.slug_permalink || this.config.slug}`;
+              } else if (this.config.type === 'article') {
+                // For articles: /{lang}/magazine/{slug}
+                url += `/magazine/${translation.slug_permalink || this.config.slug}`;
+              }
+              
+              this.languageUrls[lang] = url;
+              
+              // Set current language data
+              if (lang === this.currentLang) {
+                this.data.name = translation.destination_name || translation.company_name || translation.titolo_articolo || this.config.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                this.data.description = translation.seo_summary || translation.descrizione_breve || 'Scopri questa eccellenza italiana';
+              }
+            });
+
+            // Fallback if no translation found for current language
+            if (!this.data.name && data.translations.length > 0) {
+              const firstTranslation = data.translations[0];
+              this.data.name = firstTranslation.destination_name || firstTranslation.company_name || firstTranslation.titolo_articolo || this.config.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              this.data.description = firstTranslation.seo_summary || firstTranslation.descrizione_breve || 'Scopri questa eccellenza italiana';
+            }
+          } else {
+            throw new Error('No data found');
+          }
+        } else {
+          throw new Error('API request failed');
+        }
+      } catch (error) {
+        console.warn('TheBestItaly Widget: Could not fetch data, using fallback');
+        // Fallback data with static URLs
+        this.languageUrls = {};
+        this.config.languages.forEach(lang => {
+          let url = `${CONFIG.baseUrl}/${lang}`;
+          if (this.config.type === 'destination') {
+            url += `/${this.config.slug}`;
+          } else if (this.config.type === 'company') {
+            url += `/poi/${this.config.slug}`;
+          } else if (this.config.type === 'article') {
+            url += `/magazine/${this.config.slug}`;
+          }
+          this.languageUrls[lang] = url;
+        });
+
+        this.data = {
+          name: this.config.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          description: this.config.type === 'destination' ? 'Scopri questa destinazione italiana' :
+                      this.config.type === 'company' ? 'Eccellenza italiana' : 'Articolo dal magazine',
+          image: null,
+          rating: 4.8,
+          translations: []
+        };
+      }
     }
 
     showLoading() {
@@ -137,8 +222,10 @@
 
     renderSmall() {
       const langOptions = this.config.languages.map(lang => 
-        `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${LANGUAGES[lang]?.name || lang}</option>`
+        `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${LANGUAGES[lang]?.flag || '🏳️'} ${LANGUAGES[lang]?.name || lang}</option>`
       ).join('');
+
+      const currentUrl = this.languageUrls ? this.languageUrls[this.currentLang] : `${CONFIG.baseUrl}/${this.currentLang}`;
 
       this.element.innerHTML = `
         <div class="tbi-widget tbi-small ${this.config.theme}">
@@ -152,7 +239,7 @@
           <div class="tbi-lang-dropdown-container">
             <div class="tbi-lang-dropdown">
               <img src="${CONFIG.baseUrl}/images/flags/${this.currentLang}.svg" alt="${this.currentLang}" class="tbi-dropdown-flag" />
-              <span class="tbi-dropdown-text">${LANGUAGES[this.currentLang]?.name || this.currentLang}</span>
+              <span class="tbi-dropdown-text">${LANGUAGES[this.currentLang]?.flag || '🏳️'} ${LANGUAGES[this.currentLang]?.name || this.currentLang}</span>
               <svg class="tbi-dropdown-arrow" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
               </svg>
@@ -160,11 +247,11 @@
                 ${langOptions}
               </select>
             </div>
-            <button class="tbi-action-btn">
+            <a href="${currentUrl}" target="_blank" class="tbi-action-btn" title="Visita in ${LANGUAGES[this.currentLang]?.name || this.currentLang}">
               <svg viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
               </svg>
-            </button>
+            </a>
           </div>
         </div>
       `;
@@ -174,8 +261,10 @@
 
     renderMedium() {
       const langOptions = this.config.languages.map(lang => 
-        `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${LANGUAGES[lang]?.name || lang}</option>`
+        `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${LANGUAGES[lang]?.flag || '🏳️'} ${LANGUAGES[lang]?.name || lang}</option>`
       ).join('');
+
+      const currentUrl = this.languageUrls ? this.languageUrls[this.currentLang] : `${CONFIG.baseUrl}/${this.currentLang}`;
 
       this.element.innerHTML = `
         <div class="tbi-widget tbi-medium ${this.config.theme}">
@@ -186,11 +275,11 @@
             <div class="tbi-stars">★★★★★</div>
           </div>
           <div class="tbi-name">${this.data.name}</div>
-          <div class="tbi-subtitle">Scopri ${this.config.type === 'destination' ? 'questa destinazione' : 'questa eccellenza'} italiana</div>
+          <div class="tbi-subtitle">${this.data.description}</div>
           <div class="tbi-lang-dropdown-container">
             <div class="tbi-lang-dropdown">
               <img src="${CONFIG.baseUrl}/images/flags/${this.currentLang}.svg" alt="${this.currentLang}" class="tbi-dropdown-flag" />
-              <span class="tbi-dropdown-text">${LANGUAGES[this.currentLang]?.name || this.currentLang}</span>
+              <span class="tbi-dropdown-text">${LANGUAGES[this.currentLang]?.flag || '🏳️'} ${LANGUAGES[this.currentLang]?.name || this.currentLang}</span>
               <svg class="tbi-dropdown-arrow" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
               </svg>
@@ -198,11 +287,11 @@
                 ${langOptions}
               </select>
             </div>
-            <button class="tbi-action-btn">
+            <a href="${currentUrl}" target="_blank" class="tbi-action-btn" title="Visita in ${LANGUAGES[this.currentLang]?.name || this.currentLang}">
               <svg viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
               </svg>
-            </button>
+            </a>
           </div>
         </div>
       `;
@@ -212,8 +301,10 @@
 
     renderLarge() {
       const langOptions = this.config.languages.map(lang => 
-        `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${LANGUAGES[lang]?.name || lang}</option>`
+        `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${LANGUAGES[lang]?.flag || '🏳️'} ${LANGUAGES[lang]?.name || lang}</option>`
       ).join('');
+
+      const currentUrl = this.languageUrls ? this.languageUrls[this.currentLang] : `${CONFIG.baseUrl}/${this.currentLang}`;
 
       this.element.innerHTML = `
         <div class="tbi-widget tbi-large ${this.config.theme}">
@@ -224,7 +315,7 @@
             <div class="tbi-stars">★★★★★</div>
           </div>
           <div class="tbi-name">${this.data.name}</div>
-          <div class="tbi-subtitle">Scopri le meraviglie di ${this.config.type === 'destination' ? 'questa destinazione' : 'questa eccellenza'} italiana</div>
+          <div class="tbi-subtitle">${this.data.description}</div>
           
           <div class="tbi-content">
             <h3 class="tbi-content-title">Contenuto Principale</h3>
@@ -236,7 +327,7 @@
           <div class="tbi-lang-dropdown-container">
             <div class="tbi-lang-dropdown">
               <img src="${CONFIG.baseUrl}/images/flags/${this.currentLang}.svg" alt="${this.currentLang}" class="tbi-dropdown-flag" />
-              <span class="tbi-dropdown-text">${LANGUAGES[this.currentLang]?.name || this.currentLang}</span>
+              <span class="tbi-dropdown-text">${LANGUAGES[this.currentLang]?.flag || '🏳️'} ${LANGUAGES[this.currentLang]?.name || this.currentLang}</span>
               <svg class="tbi-dropdown-arrow" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
               </svg>
@@ -244,11 +335,11 @@
                 ${langOptions}
               </select>
             </div>
-            <button class="tbi-action-btn">
+            <a href="${currentUrl}" target="_blank" class="tbi-action-btn" title="Visita in ${LANGUAGES[this.currentLang]?.name || this.currentLang}">
               <svg viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
               </svg>
-            </button>
+            </a>
           </div>
         </div>
       `;
@@ -347,7 +438,30 @@
       }
       
       if (dropdownText) {
-        dropdownText.textContent = LANGUAGES[this.currentLang]?.name || this.currentLang;
+        dropdownText.textContent = `${LANGUAGES[this.currentLang]?.flag || '🏳️'} ${LANGUAGES[this.currentLang]?.name || this.currentLang}`;
+      }
+
+      // Aggiorna il contenuto del widget con i dati della nuova lingua
+      const nameElement = this.element.querySelector('.tbi-name');
+      const subtitleElement = this.element.querySelector('.tbi-subtitle');
+      
+      if (this.data.translations && this.data.translations.length > 0) {
+        const translation = this.data.translations.find(t => t.languages_code === this.currentLang);
+        if (translation) {
+          if (nameElement) {
+            nameElement.textContent = translation.destination_name || translation.company_name || translation.titolo_articolo || this.data.name;
+          }
+          if (subtitleElement) {
+            subtitleElement.textContent = translation.seo_summary || translation.descrizione_breve || this.data.description;
+          }
+        }
+      }
+
+      // Aggiorna il link del pulsante azione
+      const actionBtn = this.element.querySelector('.tbi-action-btn');
+      if (actionBtn && this.languageUrls && this.languageUrls[this.currentLang]) {
+        actionBtn.href = this.languageUrls[this.currentLang];
+        actionBtn.title = `Visita in ${LANGUAGES[this.currentLang]?.name || this.currentLang}`;
       }
 
       // Ricarica contenuto per widget large
