@@ -79,7 +79,7 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
   // TEST REDIRECT SEMPLICE: solo napoli -> campania/napoli
-  if (pathname === '/it/napoli/ischia/') {
+  if (pathname === '/it/napoli/ischia' || pathname === '/it/napoli/ischia/') {
     console.log(`🔄 REDIRECT NAPOLI -> CAMPANIA/NAPOLI`);
     return NextResponse.redirect(new URL('/it/campania/napoli/ischia/', request.url), 301);
   }
