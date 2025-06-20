@@ -47,8 +47,11 @@ const provinceToRegion: Record<string, string> = {
 
 // Function to get redirect URL - inline
 function getRedirectUrl(pathname: string): string | null {
+  // Normalize pathname - remove trailing slash for matching
+  const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  
   // Pattern: /it/provincia/comune -> /it/regione/provincia/comune
-  const match = pathname.match(/^\/it\/([^\/]+)\/(.+)$/);
+  const match = normalizedPath.match(/^\/it\/([^\/]+)\/(.+)$/);
   
   if (!match) {
     return null;
@@ -61,7 +64,9 @@ function getRedirectUrl(pathname: string): string | null {
     return null;
   }
   
-  return `/it/${regione}/${provincia}/${resto}`;
+  // Keep original trailing slash if it existed
+  const trailingSlash = pathname.endsWith('/') ? '/' : '';
+  return `/it/${regione}/${provincia}/${resto}${trailingSlash}`;
 }
 
 // Lingue supportate
@@ -73,25 +78,46 @@ const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
     'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is',
     'sw', 'zh-tw'];
 export function middleware(request: NextRequest) {
-  // SEMPRE LOG - per verificare che middleware si attivi
-  console.log(`🚨 MIDDLEWARE WORKING! PATH: ${request.nextUrl.pathname}`);
-  
   const pathname = request.nextUrl.pathname;
   
-  // TEST REDIRECT SEMPLICE: solo napoli -> campania/napoli
-  if (pathname === '/it/napoli/ischia' || pathname === '/it/napoli/ischia/') {
-    console.log(`🔄 REDIRECT NAPOLI -> CAMPANIA/NAPOLI`);
-    return NextResponse.redirect(new URL('/it/campania/napoli/ischia/', request.url), 301);
+  // 🔄 Check for redirects first (old URLs without region -> new URLs with region)
+  const redirectUrl = getRedirectUrl(pathname);
+  if (redirectUrl) {
+    // Log only in development now that we know it works
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔄 MIDDLEWARE REDIRECT: ${pathname} -> ${redirectUrl}`);
+    }
+    return NextResponse.redirect(new URL(redirectUrl, request.url), 301);
   }
+
+  // Controlla se il pathname inizia già con un codice lingua supportato
+  const langMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
   
-  // Aggiungi header per test
-  const response = NextResponse.next();
-  response.headers.set('x-middleware-test', 'ACTIVE');
-  return response;
+  if (langMatch) {
+    const lang = langMatch[1];
+    // Se la lingua è supportata, lascia passare
+    if (supportedLanguages.includes(lang)) {
+      return NextResponse.next();
+    }
+    // Se la lingua non è supportata, reindirizza a inglese
+    return NextResponse.redirect(new URL(pathname.replace(`/${lang}`, '/en'), request.url), 302);
+  }
+
+  // Se non c'è lingua nel pathname, aggiungi la lingua preferita
+  let lang = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
+  
+  // Se la lingua non è supportata, usa 'en'
+  if (!supportedLanguages.includes(lang)) {
+    lang = 'en';
+  }
+
+  return NextResponse.redirect(new URL(`/${lang}${pathname}`, request.url), 302);
 }
 
 export const config = {
   matcher: [
-    '/it/:path*'
+    // Match Italian paths and root paths for language detection
+    '/it/:path*',
+    '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images).*)',
   ],
 };
