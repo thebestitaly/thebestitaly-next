@@ -50,14 +50,15 @@ function getRedirectUrl(pathname: string): string | null {
   // Normalize pathname - remove trailing slash for matching
   const normalizedPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   
-  // Pattern: /it/provincia/comune -> /it/regione/provincia/comune
-  const match = normalizedPath.match(/^\/it\/([^\/]+)\/(.+)$/);
+  // Pattern: /[LANG]/provincia/comune -> /[LANG]/regione/provincia/comune
+  // Support all languages: it, en, es, fr, de, etc.
+  const match = normalizedPath.match(/^\/([a-z]{2})\/([^\/]+)\/(.+)$/);
   
   if (!match) {
     return null;
   }
   
-  const [, provincia, resto] = match;
+  const [, lingua, provincia, resto] = match;
   const regione = provinceToRegion[provincia];
   
   if (!regione) {
@@ -66,7 +67,7 @@ function getRedirectUrl(pathname: string): string | null {
   
   // Keep original trailing slash if it existed
   const trailingSlash = pathname.endsWith('/') ? '/' : '';
-  return `/it/${regione}/${provincia}/${resto}${trailingSlash}`;
+  return `/${lingua}/${regione}/${provincia}/${resto}${trailingSlash}`;
 }
 
 // Lingue supportate
@@ -116,8 +117,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match Italian paths and root paths for language detection
-    '/it/:path*',
+    // Match ALL language paths and root paths for language detection
+    '/(it|en|es|fr|de|pt|ru|zh|ja|ar|hi|bn|ur|ko|vi|th|tr|pl|nl|sv|da|no|fi|cs|sk|hu|ro|bg|hr|sr|sl|et|lv|lt|el|he|fa|am|az|ka|hy|tk|tl|sw|ms|id|is|mk|af)/:path*',
     '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images).*)',
   ],
 };

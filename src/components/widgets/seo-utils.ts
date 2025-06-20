@@ -20,7 +20,7 @@ interface SEOProps {
 
 // Helper function to generate canonical URLs consistently
 export function generateCanonicalUrl(lang: string, path?: string[]): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+  const baseUrl = 'https://thebestitaly.eu'; // Hardcoded per produzione
   
   if (!path || path.length === 0) {
     return `${baseUrl}/${lang}`;
@@ -45,7 +45,7 @@ export function generateMetadata({
   schema,
   noindex,
 }: SEOProps): Metadata {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
+  const siteUrl = 'https://thebestitaly.eu'; // Hardcoded per produzione
   const defaultImage = `${siteUrl}/images/default-og.jpg`;
   const finalImage = image || defaultImage;
 
