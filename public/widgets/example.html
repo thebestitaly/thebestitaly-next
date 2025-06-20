@@ -3,266 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Widget TheBestItaly - Esempi</title>
+    <title>TheBestItaly Widget - Premium Translation Service</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
             margin: 0;
             padding: 20px;
-            background: #f8fafc;
+            background: #f5f5f5;
         }
-        .container {
+        
+        .demo-container {
             max-width: 1200px;
             margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: #1f2937;
-            margin-bottom: 2rem;
-        }
-        .widget-section {
             background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .widget-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 1rem;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 0.5rem;
+        
+        .demo-section {
+            margin-bottom: 40px;
         }
-        .widget-description {
-            color: #6b7280;
-            margin-bottom: 1.5rem;
+        
+        .demo-section h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
-        .widgets-grid {
+        
+        .demo-section p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .widget-examples {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
+            gap: 30px;
+            margin-bottom: 30px;
         }
-        .widget-demo {
-            border: 2px dashed #d1d5db;
-            border-radius: 8px;
-            padding: 1rem;
-            background: #f9fafb;
+        
+        .widget-example {
+            padding: 20px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
         }
-        .widget-demo h3 {
-            margin: 0 0 1rem 0;
-            color: #374151;
-            font-size: 1.1rem;
+        
+        .widget-example h4 {
+            margin: 0 0 15px 0;
+            color: #333;
         }
-        .code-section {
-            background: #1f2937;
-            color: #f9fafb;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 0.875rem;
+        
+        .code-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
             overflow-x: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
         }
-        .instructions {
-            background: #dbeafe;
-            border: 1px solid #3b82f6;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-        }
-        .instructions h2 {
-            color: #1e40af;
-            margin-top: 0;
+        
+        .premium-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎨 Widget TheBestItaly - Esempi di Integrazione</h1>
+    <div class="demo-container">
+        <h1>TheBestItaly Widget System</h1>
+        <div class="premium-badge">🌟 PREMIUM TRANSLATION SERVICE - ALL 50 LANGUAGES INCLUDED</div>
         
-        <div class="instructions">
-            <h2>📋 Nuovi Widget con Bandiere e Contenuto Dinamico</h2>
-            <p>I widget TheBestItaly sono stati completamente ridisegnati con nuove funzionalità:</p>
+        <div class="demo-section">
+            <h2>Widget Sizes</h2>
+            <p>Our premium translation service provides standardized widgets that always include all 50 available languages. No customization options - consistent, professional appearance across all implementations.</p>
+            
+            <div class="widget-examples">
+                <div class="widget-example">
+                    <h4>Small Widget (300px)</h4>
+                    <div id="widget-small" 
+                         data-thebestitaly-widget
+                         data-type="small" 
+                         data-content-type="destination" 
+                         data-content-id="1"
+                         data-language="it"></div>
+                </div>
+                
+                <div class="widget-example">
+                    <h4>Medium Widget (400px)</h4>
+                    <div id="widget-medium" 
+                         data-thebestitaly-widget
+                         data-type="medium" 
+                         data-content-type="company" 
+                         data-content-id="1"
+                         data-language="en"></div>
+                </div>
+            </div>
+            
+            <div class="widget-example">
+                <h4>Large Widget (100% width)</h4>
+                <div id="widget-large" 
+                     data-thebestitaly-widget
+                     data-type="large" 
+                     data-content-type="article" 
+                     data-content-id="1"
+                     data-language="fr"></div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>Implementation Code</h2>
+            <p>Simply include our widget script and add the data attributes. All 50 languages are automatically loaded.</p>
+            
+            <div class="code-example">
+&lt;!-- Include the widget script --&gt;
+&lt;script src="https://thebestitaly.eu/widgets/widget.js"&gt;&lt;/script&gt;
+
+&lt;!-- Small Widget --&gt;
+&lt;div id="my-widget-1" 
+     data-thebestitaly-widget
+     data-type="small" 
+     data-content-type="destination" 
+     data-content-id="123"
+     data-language="it"&gt;&lt;/div&gt;
+
+&lt;!-- Medium Widget --&gt;
+&lt;div id="my-widget-2" 
+     data-thebestitaly-widget
+     data-type="medium" 
+     data-content-type="company" 
+     data-content-id="456"
+     data-language="en"&gt;&lt;/div&gt;
+
+&lt;!-- Large Widget --&gt;
+&lt;div id="my-widget-3" 
+     data-thebestitaly-widget
+     data-type="large" 
+     data-content-type="article" 
+     data-content-id="789"
+     data-language="de"&gt;&lt;/div&gt;
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>Available Parameters</h2>
             <ul>
-                <li><strong>🔹 Small:</strong> Logo + nome + bandiere con nomi delle lingue (compatto per sidebar)</li>
-                <li><strong>🔸 Medium:</strong> Header completo + griglia di lingue con bandiere (equilibrato)</li>
-                <li><strong>🔶 Large:</strong> Widget completo con contenuto che cambia lingua dinamicamente</li>
+                <li><strong>data-type:</strong> "small", "medium", or "large"</li>
+                <li><strong>data-content-type:</strong> "destination", "company", or "article"</li>
+                <li><strong>data-content-id:</strong> The ID of your content</li>
+                <li><strong>data-language:</strong> Initial language (any of the 50 supported languages)</li>
             </ul>
-            <p><strong>Novità:</strong> Ogni widget mostra bandiere reali con nomi delle lingue e il contenuto si aggiorna automaticamente quando cambi lingua!</p>
         </div>
-
-        <div class="widget-section">
-            <h2 class="widget-title">🏛️ Widget Destinazioni</h2>
-            <p class="widget-description">
-                Esempi di widget per destinazioni turistiche italiane (Roma, Firenze, Venezia, ecc.)
-            </p>
-            
-            <div class="widgets-grid">
-                <div class="widget-demo">
-                    <h3>Small Widget - Roma</h3>
-                    <!-- Widget Small Destinazione -->
-                    <div id="widget-roma-small" 
-                         data-slug="roma" 
-                         data-type="destination"
-                         data-size="small"
-                         data-theme="light"
-                         data-languages="it,en,fr,es,de">
-                    </div>
-                </div>
-
-                <div class="widget-demo">
-                    <h3>Medium Widget - Firenze</h3>
-                    <!-- Widget Medium Destinazione -->
-                    <div id="widget-firenze-medium" 
-                         data-slug="firenze" 
-                         data-type="destination"
-                         data-size="medium"
-                         data-theme="light"
-                         data-languages="it,en,fr,es,de,pt">
-                    </div>
-                </div>
-
-                <div class="widget-demo">
-                    <h3>Large Widget - Venezia</h3>
-                    <!-- Widget Large Destinazione -->
-                                         <div id="widget-venezia-large" 
-                         data-slug="venezia" 
-                         data-type="destination"
-                         data-size="large"
-                         data-theme="light"
-                         data-languages="it,en,fr,es,de,pt,ru,zh,ja,ar,nl,sv,pl,tr,ko,hi,th,vi,uk,ro">
-                    </div>
-                </div>
+        
+        <div class="demo-section">
+            <h2>Supported Languages (All 50 Always Available)</h2>
+            <p>Every widget includes all 50 languages automatically:</p>
+            <div style="columns: 3; column-gap: 30px;">
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Afrikaans (af)</li>
+                    <li>አማርኛ (am)</li>
+                    <li>العربية (ar)</li>
+                    <li>Azərbaycan (az)</li>
+                    <li>Български (bg)</li>
+                    <li>বাংলা (bn)</li>
+                    <li>Català (ca)</li>
+                    <li>Čeština (cs)</li>
+                    <li>Dansk (da)</li>
+                    <li>Deutsch (de)</li>
+                    <li>Ελληνικά (el)</li>
+                    <li>English (en)</li>
+                    <li>Español (es)</li>
+                    <li>Eesti (et)</li>
+                    <li>فارسی (fa)</li>
+                    <li>Suomi (fi)</li>
+                    <li>Français (fr)</li>
+                    <li>עברית (he)</li>
+                    <li>हिन्दी (hi)</li>
+                    <li>Hrvatski (hr)</li>
+                    <li>Magyar (hu)</li>
+                    <li>Հայերեն (hy)</li>
+                    <li>Bahasa Indonesia (id)</li>
+                    <li>Íslenska (is)</li>
+                    <li>Italiano (it)</li>
+                    <li>日本語 (ja)</li>
+                    <li>ქართული (ka)</li>
+                    <li>한국어 (ko)</li>
+                    <li>Lietuvių (lt)</li>
+                    <li>Latviešu (lv)</li>
+                    <li>Македонски (mk)</li>
+                    <li>Bahasa Melayu (ms)</li>
+                    <li>Nederlands (nl)</li>
+                    <li>Norsk (no)</li>
+                    <li>Polski (pl)</li>
+                    <li>Português (pt)</li>
+                    <li>Română (ro)</li>
+                    <li>Русский (ru)</li>
+                    <li>Slovenčina (sk)</li>
+                    <li>Slovenščina (sl)</li>
+                    <li>Српски (sr)</li>
+                    <li>Svenska (sv)</li>
+                    <li>Kiswahili (sw)</li>
+                    <li>ไทย (th)</li>
+                    <li>Türkmençe (tk)</li>
+                    <li>Filipino (tl)</li>
+                    <li>Türkçe (tr)</li>
+                    <li>Українська (uk)</li>
+                    <li>اردو (ur)</li>
+                    <li>Tiếng Việt (vi)</li>
+                    <li>中文 (zh)</li>
+                    <li>繁體中文 (zh-tw)</li>
+                </ul>
             </div>
         </div>
-
-        <div class="widget-section">
-            <h2 class="widget-title">🏢 Widget Aziende</h2>
-            <p class="widget-description">
-                Esempi di widget per eccellenze e aziende italiane
-            </p>
-            
-            <div class="widgets-grid">
-                <div class="widget-demo">
-                    <h3>Small Widget - Azienda</h3>
-                    <!-- Widget Small Azienda -->
-                    <div id="widget-azienda-small" 
-                         data-slug="eccellenza-italiana" 
-                         data-type="companies"
-                         data-size="small"
-                         data-theme="light"
-                         data-languages="it,en,fr">
-                    </div>
-                </div>
-
-                <div class="widget-demo">
-                    <h3>Medium Widget - Azienda</h3>
-                    <!-- Widget Medium Azienda -->
-                    <div id="widget-azienda-medium" 
-                         data-slug="made-in-italy" 
-                         data-type="companies"
-                         data-size="medium"
-                         data-theme="light"
-                         data-languages="it,en,fr,es,de">
-                    </div>
-                </div>
-
-                <div class="widget-demo">
-                    <h3>Large Widget - Azienda</h3>
-                    <!-- Widget Large Azienda -->
-                    <div id="widget-azienda-large" 
-                         data-slug="tradizione-italiana" 
-                         data-type="companies"
-                         data-size="large"
-                         data-theme="light"
-                         data-languages="it,en,fr,es,de,pt,ru">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="widget-section">
-            <h2 class="widget-title">🌙 Widget Tema Scuro</h2>
-            <p class="widget-description">
-                Esempi di widget con tema scuro per siti con background scuri
-            </p>
-            
-            <div style="background: #1f2937; padding: 2rem; border-radius: 8px;">
-                <div class="widgets-grid">
-                    <div class="widget-demo" style="background: #374151; border-color: #4b5563;">
-                        <h3 style="color: white;">Medium Widget - Tema Scuro</h3>
-                        <!-- Widget Medium Dark Theme -->
-                        <div id="widget-dark-medium" 
-                             data-slug="italia-bellezza" 
-                             data-type="destination"
-                             data-size="medium"
-                             data-theme="dark"
-                             data-languages="it,en,fr,es">
-                        </div>
-                    </div>
-
-                    <div class="widget-demo" style="background: #374151; border-color: #4b5563;">
-                        <h3 style="color: white;">Large Widget - Tema Scuro</h3>
-                        <!-- Widget Large Dark Theme -->
-                                                 <div id="widget-dark-large" 
-                             data-slug="patrimonio-unesco" 
-                             data-type="destination"
-                             data-size="large"
-                             data-theme="dark"
-                             data-languages="it,en,fr,es,de,pt,ru,zh,ja,ar,nl,sv,pl,tr,ko,hi,th,vi,uk,ro,cs,da,fi,no,el,he,hr,hu,bg,sk,sl,sr">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="widget-section">
-            <h2 class="widget-title">💻 Codice di Esempio</h2>
-            <p class="widget-description">
-                Ecco come integrare un widget nel tuo sito web:
-            </p>
-            
-            <div class="code-section">
-&lt;!-- Widget TheBestItaly --&gt;
-&lt;div id="mio-widget-thebestitaly" 
-     data-slug="roma" 
-     data-type="destination"
-     data-size="medium"
-     data-theme="light"
-     data-languages="it,en,fr,es,de"
-     style="max-width: 100%; margin: 20px 0;"&gt;
-&lt;/div&gt;
-
-&lt;script&gt;
-(function() {
-  const script = document.createElement('script');
-  script.src = 'https://thebestitaly.eu/widgets/widget.js?v=2.0';
-  script.async = true;
-  script.onload = function() {
-    if (window.TheBestItalyWidget) {
-      window.TheBestItalyWidget.init('mio-widget-thebestitaly');
-    }
-  };
-  document.head.appendChild(script);
-})();
-&lt;/script&gt;
-&lt;!-- End Widget TheBestItaly --&gt;
-            </div>
+        
+        <div class="demo-section">
+            <h2>Premium Service Features</h2>
+            <ul>
+                <li>✅ All 50 languages always included</li>
+                <li>✅ Real-time content switching</li>
+                <li>✅ Standardized professional design</li>
+                <li>✅ Automatic URL generation for all content types</li>
+                <li>✅ SEO-optimized metadata</li>
+                <li>✅ Mobile responsive</li>
+                <li>✅ Fast loading with fallback data</li>
+                <li>✅ No customization needed - consistent branding</li>
+            </ul>
         </div>
     </div>
-
-    <!-- Caricamento del widget script -->
-    <script>
-    (function() {
-        const script = document.createElement('script');
-        script.src = './widget.js?v=2.0';
-        script.async = true;
-        document.head.appendChild(script);
-    })();
-    </script>
+    
+    <!-- Widget Script -->
+    <script src="widget.js"></script>
 </body>
 </html> 

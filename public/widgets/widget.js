@@ -1,704 +1,581 @@
-(function() {
-  'use strict';
+/**
+ * TheBestItaly Widget v3.1
+ * Premium Translation Service Widget
+ * Always loads all 50 available languages
+ */
 
-  const CONFIG = {
-    baseUrl: 'https://thebestitaly.eu',
-    apiUrl: 'https://thebestitaly.eu/api',
-    logoUrl: 'https://thebestitaly.eu/images/logo-black.webp',
-    version: '3.0'
-  };
-
-  const LANGUAGES = {
-    'af': { name: 'Afrikaans', flag: '🇿🇦' },
-    'am': { name: 'Amharic', flag: '🇪🇹' },
-    'ar': { name: 'العربية', flag: '🇸🇦' },
-    'az': { name: 'Azərbaycan', flag: '🇦🇿' },
-    'bg': { name: 'Български', flag: '🇧🇬' },
-    'bn': { name: 'বাংলা', flag: '🇧🇩' },
-    'ca': { name: 'Català', flag: '🇪🇸' },
-    'cs': { name: 'Čeština', flag: '🇨🇿' },
-    'da': { name: 'Dansk', flag: '🇩🇰' },
-    'de': { name: 'Deutsch', flag: '🇩🇪' },
-    'el': { name: 'Ελληνικά', flag: '🇬🇷' },
-    'en': { name: 'English', flag: '🇬🇧' },
-    'es': { name: 'Español', flag: '🇪🇸' },
-    'et': { name: 'Eesti', flag: '🇪🇪' },
-    'fa': { name: 'فارسی', flag: '🇮🇷' },
-    'fi': { name: 'Suomi', flag: '🇫🇮' },
-    'fr': { name: 'Français', flag: '🇫🇷' },
-    'he': { name: 'עברית', flag: '🇮🇱' },
-    'hi': { name: 'हिन्दी', flag: '🇮🇳' },
-    'hr': { name: 'Hrvatski', flag: '🇭🇷' },
-    'hu': { name: 'Magyar', flag: '🇭🇺' },
-    'hy': { name: 'Հայերեն', flag: '🇦🇲' },
-    'id': { name: 'Bahasa Indonesia', flag: '🇮🇩' },
-    'is': { name: 'Íslenska', flag: '🇮🇸' },
-    'it': { name: 'Italiano', flag: '🇮🇹' },
-    'ja': { name: '日本語', flag: '🇯🇵' },
-    'ka': { name: 'ქართული', flag: '🇬🇪' },
-    'ko': { name: '한국어', flag: '🇰🇷' },
-    'lt': { name: 'Lietuvių', flag: '🇱🇹' },
-    'lv': { name: 'Latviešu', flag: '🇱🇻' },
-    'mk': { name: 'Македонски', flag: '🇲🇰' },
-    'ms': { name: 'Bahasa Melayu', flag: '🇲🇾' },
-    'nl': { name: 'Nederlands', flag: '🇳🇱' },
-    'no': { name: 'Norsk', flag: '🇳🇴' },
-    'pl': { name: 'Polski', flag: '🇵🇱' },
-    'pt': { name: 'Português', flag: '🇵🇹' },
-    'ro': { name: 'Română', flag: '🇷🇴' },
-    'ru': { name: 'Русский', flag: '🇷🇺' },
-    'sk': { name: 'Slovenčina', flag: '🇸🇰' },
-    'sl': { name: 'Slovenščina', flag: '🇸🇮' },
-    'sr': { name: 'Српски', flag: '🇷🇸' },
-    'sv': { name: 'Svenska', flag: '🇸🇪' },
-    'sw': { name: 'Kiswahili', flag: '🇹🇿' },
-    'th': { name: 'ไทย', flag: '🇹🇭' },
-    'tk': { name: 'Türkmençe', flag: '🇹🇲' },
-    'tl': { name: 'Filipino', flag: '🇵🇭' },
-    'tr': { name: 'Türkçe', flag: '🇹🇷' },
-    'uk': { name: 'Українська', flag: '🇺🇦' },
-    'ur': { name: 'اردو', flag: '🇵🇰' },
-    'vi': { name: 'Tiếng Việt', flag: '🇻🇳' },
-    'zh': { name: '中文', flag: '🇨🇳' }
-  };
-
-  class TheBestItalyWidget {
-    constructor(elementId) {
-      this.elementId = elementId;
-      this.element = document.getElementById(elementId);
-      this.config = this.parseConfig();
-      this.currentLang = this.config.languages[0] || 'it';
-      this.data = null;
-      this.languageUrls = {};
-      
-      if (!this.element) {
-        console.error('TheBestItaly Widget: Element not found:', elementId);
-        return;
-      }
-
-      this.init();
-    }
-
-    parseConfig() {
-      const el = this.element;
-      const languages = el.dataset.languages ? el.dataset.languages.split(',') : ['it', 'en'];
-      
-      return {
-        slug: el.dataset.slug || '',
-        type: el.dataset.type || 'destination', // destination, company, article
-        size: el.dataset.size || 'medium', // small, medium, large
-        theme: el.dataset.theme || 'light',
-        languages: languages,
-        height: el.dataset.height || 'auto' // for large widget
-      };
-    }
-
-    async init() {
-      try {
-        this.injectStyles();
-        this.showLoading();
-        await this.fetchData();
-        this.render();
-      } catch (error) {
-        console.error('TheBestItaly Widget Error:', error);
-        this.showError();
-      }
-    }
-
-    async fetchData() {
-      try {
-        let endpoint = '';
-        let fields = [];
-        
-        if (this.config.type === 'destination') {
-          // For destinations: get translations with slug_permalink
-          endpoint = 'destinations';
-          fields = [
-            'id', 'image', 'region_id', 'province_id',
-            'translations.languages_code',
-            'translations.destination_name',
-            'translations.seo_title', 
-            'translations.seo_summary',
-            'translations.slug_permalink',
-            'region_id.translations.slug_permalink',
-            'province_id.translations.slug_permalink'
-          ];
-        } else if (this.config.type === 'company') {
-          // For companies: slug_permalink is unique (not in translations)
-          endpoint = 'companies';
-          fields = [
-            'id', 'company_name', 'slug_permalink', 'featured_image',
-            'translations.languages_code',
-            'translations.seo_title',
-            'translations.seo_summary', 
-            'translations.descrizione_breve'
-          ];
-        } else if (this.config.type === 'article') {
-          // For articles: get translations
-          endpoint = 'articles';
-          fields = [
-            'id', 'image',
-            'translations.languages_code',
-            'translations.titolo_articolo',
-            'translations.seo_title',
-            'translations.seo_summary',
-            'translations.slug_permalink'
-          ];
-        }
-
-        const apiUrl = `${CONFIG.baseUrl}/api/directus/items/${endpoint}?filter[slug_permalink][_eq]=${this.config.slug}&fields[]=${fields.join('&fields[]=')}&deep[translations][_filter][languages_code][_in]=${this.config.languages.join(',')}`;
-        
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status}`);
-        }
-
-        const result = await response.json();
-        const item = result.data && result.data.length > 0 ? result.data[0] : null;
-        
-        if (!item) {
-          throw new Error('Item not found');
-        }
-
-        this.data = {
-          id: item.id,
-          image: item.image || item.featured_image,
-          translations: item.translations || [],
-          // For companies, use the main slug_permalink (not in translations)
-          mainSlug: item.slug_permalink,
-          regionSlug: item.region_id?.translations?.[0]?.slug_permalink,
-          provinceSlug: item.province_id?.translations?.[0]?.slug_permalink
+class TheBestItalyWidget {
+    constructor(containerId, options = {}) {
+        this.containerId = containerId;
+        this.container = document.getElementById(containerId);
+        this.options = {
+            type: options.type || 'small', // small, medium, large
+            contentType: options.contentType || 'destination', // destination, company, article
+            contentId: options.contentId || null,
+            language: options.language || 'it',
+            ...options
         };
-
-        // Build language URLs
-        this.buildLanguageUrls();
-
-        // Set initial content for current language
-        this.updateCurrentContent();
-
-      } catch (error) {
-        console.warn('TheBestItaly Widget: Could not fetch data, using fallback', error);
-        this.createFallbackData();
-      }
-    }
-
-    buildLanguageUrls() {
-      this.languageUrls = {};
-      
-      this.config.languages.forEach(lang => {
-        let url = `${CONFIG.baseUrl}/${lang}`;
         
-        if (this.config.type === 'destination') {
-          // For destinations: /{lang}/{region}/{province}/{municipality}
-          const translation = this.data.translations.find(t => t.languages_code === lang);
-          if (translation && this.data.regionSlug && this.data.provinceSlug) {
-            url += `/${this.data.regionSlug}/${this.data.provinceSlug}/${translation.slug_permalink}`;
-          } else {
-            url += `/${this.config.slug}`;
-          }
-        } else if (this.config.type === 'company') {
-          // For companies: /{lang}/poi/{slug} (slug is unique, not translated)
-          url += `/poi/${this.data.mainSlug || this.config.slug}`;
-        } else if (this.config.type === 'article') {
-          // For articles: /{lang}/magazine/{slug}
-          const translation = this.data.translations.find(t => t.languages_code === lang);
-          if (translation && translation.slug_permalink) {
-            url += `/magazine/${translation.slug_permalink}`;
-          } else {
-            url += `/magazine/${this.config.slug}`;
-          }
+        this.baseUrl = 'https://thebestitaly.eu';
+        this.apiUrl = 'https://thebestitaly.eu/api/directus';
+        
+        // All 50 languages - Premium service always includes all
+        this.languages = [
+            { code: 'af', name: 'Afrikaans' },
+            { code: 'am', name: 'አማርኛ' },
+            { code: 'ar', name: 'العربية' },
+            { code: 'az', name: 'Azərbaycan' },
+            { code: 'bg', name: 'Български' },
+            { code: 'bn', name: 'বাংলা' },
+            { code: 'ca', name: 'Català' },
+            { code: 'cs', name: 'Čeština' },
+            { code: 'da', name: 'Dansk' },
+            { code: 'de', name: 'Deutsch' },
+            { code: 'el', name: 'Ελληνικά' },
+            { code: 'en', name: 'English' },
+            { code: 'es', name: 'Español' },
+            { code: 'et', name: 'Eesti' },
+            { code: 'fa', name: 'فارسی' },
+            { code: 'fi', name: 'Suomi' },
+            { code: 'fr', name: 'Français' },
+            { code: 'he', name: 'עברית' },
+            { code: 'hi', name: 'हिन्दी' },
+            { code: 'hr', name: 'Hrvatski' },
+            { code: 'hu', name: 'Magyar' },
+            { code: 'hy', name: 'Հայերեն' },
+            { code: 'id', name: 'Bahasa Indonesia' },
+            { code: 'is', name: 'Íslenska' },
+            { code: 'it', name: 'Italiano' },
+            { code: 'ja', name: '日本語' },
+            { code: 'ka', name: 'ქართული' },
+            { code: 'ko', name: '한국어' },
+            { code: 'lt', name: 'Lietuvių' },
+            { code: 'lv', name: 'Latviešu' },
+            { code: 'mk', name: 'Македонски' },
+            { code: 'ms', name: 'Bahasa Melayu' },
+            { code: 'nl', name: 'Nederlands' },
+            { code: 'no', name: 'Norsk' },
+            { code: 'pl', name: 'Polski' },
+            { code: 'pt', name: 'Português' },
+            { code: 'ro', name: 'Română' },
+            { code: 'ru', name: 'Русский' },
+            { code: 'sk', name: 'Slovenčina' },
+            { code: 'sl', name: 'Slovenščina' },
+            { code: 'sr', name: 'Српски' },
+            { code: 'sv', name: 'Svenska' },
+            { code: 'sw', name: 'Kiswahili' },
+            { code: 'th', name: 'ไทย' },
+            { code: 'tk', name: 'Türkmençe' },
+            { code: 'tl', name: 'Filipino' },
+            { code: 'tr', name: 'Türkçe' },
+            { code: 'uk', name: 'Українська' },
+            { code: 'ur', name: 'اردو' },
+            { code: 'vi', name: 'Tiếng Việt' },
+            { code: 'zh', name: '中文' },
+            { code: 'zh-tw', name: '繁體中文' }
+        ];
+        
+        this.currentLanguage = this.options.language;
+        this.content = null;
+        this.loading = true;
+        this.error = null;
+        
+        this.init();
+    }
+    
+    async init() {
+        if (!this.container) {
+            console.error(`Widget container #${this.containerId} not found`);
+            return;
         }
         
-        this.languageUrls[lang] = url;
-      });
+        this.render();
+        await this.loadContent();
     }
-
-    createFallbackData() {
-      this.data = {
-        id: null,
-        image: null,
-        translations: [],
-        mainSlug: this.config.slug
-      };
-
-      // Create fallback URLs
-      this.languageUrls = {};
-      this.config.languages.forEach(lang => {
-        let url = `${CONFIG.baseUrl}/${lang}`;
-        if (this.config.type === 'destination') {
-          url += `/${this.config.slug}`;
-        } else if (this.config.type === 'company') {
-          url += `/poi/${this.config.slug}`;
-        } else if (this.config.type === 'article') {
-          url += `/magazine/${this.config.slug}`;
+    
+    async loadContent() {
+        this.loading = true;
+        this.render();
+        
+        try {
+            let endpoint = '';
+            let fields = [];
+            
+            switch (this.options.contentType) {
+                case 'destination':
+                    endpoint = 'items/destinations';
+                    fields = [
+                        'id', 'type', 'image', 'region_id', 'province_id',
+                        'translations.destination_name',
+                        'translations.seo_title',
+                        'translations.seo_summary',
+                        'translations.slug_permalink',
+                        'translations.languages_code'
+                    ];
+                    break;
+                    
+                case 'company':
+                    endpoint = 'items/companies';
+                    fields = [
+                        'id', 'company_name', 'image', 'slug_permalink',
+                        'translations.seo_title',
+                        'translations.seo_summary',
+                        'translations.description',
+                        'translations.languages_code'
+                    ];
+                    break;
+                    
+                case 'article':
+                    endpoint = 'items/articles';
+                    fields = [
+                        'id', 'image', 'status',
+                        'translations.titolo_articolo',
+                        'translations.seo_title',
+                        'translations.seo_summary',
+                        'translations.slug_permalink',
+                        'translations.languages_code'
+                    ];
+                    break;
+            }
+            
+            const url = `${this.apiUrl}/${endpoint}/${this.options.contentId}?fields=${fields.join(',')}&deep[translations][_filter][languages_code][_in]=${this.languages.map(l => l.code).join(',')}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to fetch content');
+            
+            const data = await response.json();
+            this.content = data.data;
+            this.loading = false;
+            this.render();
+            
+        } catch (error) {
+            console.warn('Widget API error, using fallback data:', error);
+            this.createFallbackContent();
+            this.loading = false;
+            this.render();
         }
-        this.languageUrls[lang] = url;
-      });
-
-      this.updateCurrentContent();
     }
-
-    updateCurrentContent() {
-      const translation = this.data.translations.find(t => t.languages_code === this.currentLang);
-      
-      this.currentContent = {
-        name: translation?.destination_name || translation?.titolo_articolo || this.config.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        seoTitle: translation?.seo_title || '',
-        description: translation?.seo_summary || translation?.descrizione_breve || '',
-        url: this.languageUrls[this.currentLang] || `${CONFIG.baseUrl}/${this.currentLang}`
-      };
-    }
-
-    showLoading() {
-      this.element.innerHTML = '<div class="tbi-widget tbi-loading"><div class="tbi-spinner"></div><span>Caricamento...</span></div>';
-    }
-
-    showError() {
-      this.element.innerHTML = '<div class="tbi-widget tbi-error"><span>⚠️ Errore nel caricamento del widget</span></div>';
-    }
-
-    render() {
-      switch (this.config.size) {
-        case 'small':
-          this.renderSmall();
-          break;
-        case 'medium':
-          this.renderMedium();
-          break;
-        case 'large':
-          this.renderLarge();
-          break;
-        default:
-          this.renderMedium();
-      }
-      
-      this.attachEventListeners();
-    }
-
-    renderSmall() {
-      // Small: Logo + Name + Language Dropdown + Visit Button
-      const languageOptions = this.config.languages.map(lang => {
-        const langData = LANGUAGES[lang] || { name: lang, flag: '🏳️' };
-        return `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${langData.flag} ${langData.name}</option>`;
-      }).join('');
-
-      this.element.innerHTML = `
-        <div class="tbi-widget tbi-small ${this.config.theme}">
-          <div class="tbi-header">
-            <img src="${CONFIG.logoUrl}" alt="TheBestItaly" class="tbi-logo" />
-          </div>
-          <div class="tbi-content">
-            <h3 class="tbi-name">${this.currentContent.name}</h3>
-          </div>
-          <div class="tbi-actions">
-            <div class="tbi-language-selector">
-              <select class="tbi-language-select">
-                ${languageOptions}
-              </select>
-            </div>
-            <a href="${this.currentContent.url}" target="_blank" class="tbi-visit-btn" title="Visita ${this.currentContent.name}">
-              <svg viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      `;
-    }
-
-    renderMedium() {
-      // Medium: Logo + Name + SEO Title + Language Dropdown + Visit Button
-      const languageOptions = this.config.languages.map(lang => {
-        const langData = LANGUAGES[lang] || { name: lang, flag: '🏳️' };
-        return `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${langData.flag} ${langData.name}</option>`;
-      }).join('');
-
-      this.element.innerHTML = `
-        <div class="tbi-widget tbi-medium ${this.config.theme}">
-          <div class="tbi-header">
-            <img src="${CONFIG.logoUrl}" alt="TheBestItaly" class="tbi-logo" />
-          </div>
-          <div class="tbi-content">
-            <h3 class="tbi-name">${this.currentContent.name}</h3>
-            ${this.currentContent.seoTitle ? `<p class="tbi-seo-title">${this.currentContent.seoTitle}</p>` : ''}
-          </div>
-          <div class="tbi-actions">
-            <div class="tbi-language-selector">
-              <select class="tbi-language-select">
-                ${languageOptions}
-              </select>
-            </div>
-            <a href="${this.currentContent.url}" target="_blank" class="tbi-visit-btn" title="Visita ${this.currentContent.name}">
-              <svg viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      `;
-    }
-
-    renderLarge() {
-      // Large: Full width, adjustable height, with description and link to our site
-      const languageOptions = this.config.languages.map(lang => {
-        const langData = LANGUAGES[lang] || { name: lang, flag: '🏳️' };
-        return `<option value="${lang}" ${lang === this.currentLang ? 'selected' : ''}>${langData.flag} ${langData.name}</option>`;
-      }).join('');
-
-      const height = this.config.height !== 'auto' ? `height: ${this.config.height}px;` : '';
-
-      this.element.innerHTML = `
-        <div class="tbi-widget tbi-large ${this.config.theme}" style="width: 100%; ${height}">
-          <div class="tbi-header">
-            <img src="${CONFIG.logoUrl}" alt="TheBestItaly" class="tbi-logo" />
-            <div class="tbi-language-selector">
-              <select class="tbi-language-select">
-                ${languageOptions}
-              </select>
-            </div>
-          </div>
-          <div class="tbi-content">
-            <h2 class="tbi-name">${this.currentContent.name}</h2>
-            ${this.currentContent.seoTitle ? `<h3 class="tbi-seo-title">${this.currentContent.seoTitle}</h3>` : ''}
-            ${this.currentContent.description ? `<div class="tbi-description">${this.currentContent.description}</div>` : ''}
-          </div>
-          <div class="tbi-footer">
-            <a href="${this.currentContent.url}" target="_blank" class="tbi-visit-btn">
-              Visita ${this.currentContent.name}
-            </a>
-            <a href="${CONFIG.baseUrl}/${this.currentLang}" target="_blank" class="tbi-site-btn">
-              Scopri TheBestItaly
-            </a>
-          </div>
-        </div>
-      `;
-    }
-
-    attachEventListeners() {
-      const languageSelect = this.element.querySelector('.tbi-language-select');
-      if (languageSelect) {
-        languageSelect.addEventListener('change', (e) => {
-          this.currentLang = e.target.value;
-          this.updateCurrentContent();
-          this.render();
+    
+    createFallbackContent() {
+        // Create fallback content based on type
+        const fallbackTranslations = this.languages.map(lang => {
+            let name, seoTitle, summary, slug;
+            
+            switch (this.options.contentType) {
+                case 'destination':
+                    name = this.getFallbackDestinationName(lang.code);
+                    seoTitle = `Discover ${name} - TheBestItaly`;
+                    summary = `Explore the beauty and culture of ${name} with our premium travel guide.`;
+                    slug = 'beautiful-destination';
+                    return {
+                        languages_code: lang.code,
+                        destination_name: name,
+                        seo_title: seoTitle,
+                        seo_summary: summary,
+                        slug_permalink: slug
+                    };
+                    
+                case 'company':
+                    name = this.getFallbackCompanyName(lang.code);
+                    seoTitle = `${name} - Italian Excellence`;
+                    summary = `Discover authentic Italian craftsmanship and tradition with ${name}.`;
+                    return {
+                        languages_code: lang.code,
+                        nome_azienda: name,
+                        seo_title: seoTitle,
+                        seo_summary: summary
+                    };
+                    
+                case 'article':
+                    name = this.getFallbackArticleTitle(lang.code);
+                    seoTitle = `${name} - TheBestItaly Magazine`;
+                    summary = `Read our latest insights about Italian culture, travel, and lifestyle.`;
+                    slug = 'italian-culture-guide';
+                    return {
+                        languages_code: lang.code,
+                        titolo_articolo: name,
+                        seo_title: seoTitle,
+                        seo_summary: summary,
+                        slug_permalink: slug
+                    };
+            }
         });
-      }
+        
+        this.content = {
+            id: this.options.contentId || 'demo',
+            image: null,
+            translations: fallbackTranslations,
+            slug_permalink: 'demo-content',
+            nome_azienda: 'Italian Excellence'
+        };
     }
-
-    injectStyles() {
-      if (document.getElementById('tbi-widget-styles')) return;
-
-      const styles = `
-        .tbi-widget {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: white;
-          border: 2px solid #e5e7eb;
-          border-radius: 12px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          padding: 16px;
-          box-sizing: border-box;
-          position: relative;
-        }
-        
-        .tbi-widget.dark {
-          background: #1f2937;
-          border-color: #374151;
-          color: white;
-        }
-
-        /* Loading State */
-        .tbi-widget.tbi-loading {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100px;
-        }
-        
-        .tbi-spinner {
-          width: 20px;
-          height: 20px;
-          border: 2px solid #e5e7eb;
-          border-top: 2px solid #3b82f6;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-right: 8px;
-        }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        /* Error State */
-        .tbi-widget.tbi-error {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 100px;
-          color: #dc2626;
-        }
-
-        /* Small Widget */
-        .tbi-widget.tbi-small {
-          width: 280px;
-          min-height: 140px;
-        }
-        
-        .tbi-widget.tbi-small .tbi-header {
-          text-align: center;
-          margin-bottom: 12px;
-        }
-        
-        .tbi-widget.tbi-small .tbi-logo {
-          height: 32px;
-          width: auto;
-        }
-        
-        .tbi-widget.tbi-small .tbi-name {
-          font-size: 16px;
-          font-weight: 600;
-          margin: 0 0 12px 0;
-          text-align: center;
-          color: #111827;
-        }
-        
-        .tbi-widget.dark .tbi-name {
-          color: white;
-        }
-        
-        .tbi-widget.tbi-small .tbi-actions {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-        }
-
-        /* Medium Widget */
-        .tbi-widget.tbi-medium {
-          width: 350px;
-          min-height: 180px;
-        }
-        
-        .tbi-widget.tbi-medium .tbi-header {
-          text-align: center;
-          margin-bottom: 16px;
-        }
-        
-        .tbi-widget.tbi-medium .tbi-logo {
-          height: 40px;
-          width: auto;
-        }
-        
-        .tbi-widget.tbi-medium .tbi-name {
-          font-size: 18px;
-          font-weight: 600;
-          margin: 0 0 8px 0;
-          text-align: center;
-          color: #111827;
-        }
-        
-        .tbi-widget.tbi-medium .tbi-seo-title {
-          font-size: 14px;
-          color: #6b7280;
-          margin: 0 0 16px 0;
-          text-align: center;
-          line-height: 1.4;
-        }
-        
-        .tbi-widget.dark .tbi-seo-title {
-          color: #9ca3af;
-        }
-        
-        .tbi-widget.tbi-medium .tbi-actions {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-        }
-
-        /* Large Widget */
-        .tbi-widget.tbi-large {
-          min-height: 300px;
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .tbi-widget.tbi-large .tbi-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 20px;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 16px;
-        }
-        
-        .tbi-widget.dark .tbi-header {
-          border-bottom-color: #374151;
-        }
-        
-        .tbi-widget.tbi-large .tbi-logo {
-          height: 48px;
-          width: auto;
-        }
-        
-        .tbi-widget.tbi-large .tbi-content {
-          flex: 1;
-          margin-bottom: 20px;
-        }
-        
-        .tbi-widget.tbi-large .tbi-name {
-          font-size: 24px;
-          font-weight: 700;
-          margin: 0 0 12px 0;
-          color: #111827;
-        }
-        
-        .tbi-widget.tbi-large .tbi-seo-title {
-          font-size: 18px;
-          font-weight: 500;
-          color: #374151;
-          margin: 0 0 16px 0;
-        }
-        
-        .tbi-widget.dark .tbi-seo-title {
-          color: #d1d5db;
-        }
-        
-        .tbi-widget.tbi-large .tbi-description {
-          font-size: 16px;
-          line-height: 1.6;
-          color: #6b7280;
-        }
-        
-        .tbi-widget.dark .tbi-description {
-          color: #9ca3af;
-        }
-        
-        .tbi-widget.tbi-large .tbi-footer {
-          display: flex;
-          gap: 12px;
-          border-top: 1px solid #e5e7eb;
-          padding-top: 16px;
-        }
-        
-        .tbi-widget.dark .tbi-footer {
-          border-top-color: #374151;
-        }
-
-        /* Language Selector */
-        .tbi-language-selector {
-          flex: 1;
-        }
-        
-        .tbi-language-select {
-          width: 100%;
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          background: white;
-          font-size: 14px;
-          cursor: pointer;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-          background-position: right 8px center;
-          background-repeat: no-repeat;
-          background-size: 16px;
-          padding-right: 32px;
-        }
-        
-        .tbi-widget.dark .tbi-language-select {
-          background: #374151;
-          border-color: #4b5563;
-          color: white;
-        }
-        
-        .tbi-language-select:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        /* Visit Button */
-        .tbi-visit-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 8px 16px;
-          background: #3b82f6;
-          color: white;
-          text-decoration: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 500;
-          transition: background-color 0.2s;
-          white-space: nowrap;
-        }
-        
-        .tbi-visit-btn:hover {
-          background: #2563eb;
-        }
-        
-        .tbi-widget.tbi-small .tbi-visit-btn {
-          width: 40px;
-          height: 40px;
-          padding: 0;
-        }
-        
-        .tbi-widget.tbi-small .tbi-visit-btn svg {
-          width: 16px;
-          height: 16px;
-        }
-        
-        .tbi-widget.tbi-large .tbi-visit-btn {
-          flex: 1;
-          justify-content: center;
-        }
-
-        /* Site Button (Large widget only) */
-        .tbi-site-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 8px 16px;
-          background: #10b981;
-          color: white;
-          text-decoration: none;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 500;
-          transition: background-color 0.2s;
-          flex: 1;
-        }
-        
-        .tbi-site-btn:hover {
-          background: #059669;
-        }
-      `;
-
-      const styleSheet = document.createElement('style');
-      styleSheet.id = 'tbi-widget-styles';
-      styleSheet.textContent = styles;
-      document.head.appendChild(styleSheet);
+    
+    getFallbackDestinationName(langCode) {
+        const names = {
+            'it': 'Roma - Città Eterna',
+            'en': 'Rome - The Eternal City',
+            'fr': 'Rome - La Ville Éternelle',
+            'es': 'Roma - La Ciudad Eterna',
+            'de': 'Rom - Die Ewige Stadt',
+            'pt': 'Roma - A Cidade Eterna',
+            'ru': 'Рим - Вечный Город',
+            'zh': '罗马 - 永恒之城',
+            'ja': 'ローマ - 永遠の都',
+            'ar': 'روما - المدينة الخالدة'
+        };
+        return names[langCode] || names['en'];
     }
-  }
+    
+    getFallbackCompanyName(langCode) {
+        const names = {
+            'it': 'Eccellenza Italiana',
+            'en': 'Italian Excellence',
+            'fr': 'Excellence Italienne',
+            'es': 'Excelencia Italiana',
+            'de': 'Italienische Exzellenz',
+            'pt': 'Excelência Italiana',
+            'ru': 'Итальянское Совершенство',
+            'zh': '意大利卓越',
+            'ja': 'イタリアの卓越性',
+            'ar': 'التميز الإيطالي'
+        };
+        return names[langCode] || names['en'];
+    }
+    
+    getFallbackArticleTitle(langCode) {
+        const titles = {
+            'it': 'Scopri l\'Italia Autentica',
+            'en': 'Discover Authentic Italy',
+            'fr': 'Découvrez l\'Italie Authentique',
+            'es': 'Descubre la Italia Auténtica',
+            'de': 'Entdecke das Authentische Italien',
+            'pt': 'Descubra a Itália Autêntica',
+            'ru': 'Откройте Подлинную Италию',
+            'zh': '发现真正的意大利',
+            'ja': '本物のイタリアを発見',
+            'ar': 'اكتشف إيطاليا الأصيلة'
+        };
+        return titles[langCode] || titles['en'];
+    }
+    
+    getTranslation(field) {
+        if (!this.content || !this.content.translations) return '';
+        
+        const translation = this.content.translations.find(t => t.languages_code === this.currentLanguage);
+        return translation ? translation[field] : '';
+    }
+    
+    generateUrl() {
+        if (!this.content) return this.baseUrl;
+        
+        const lang = this.currentLanguage;
+        
+        switch (this.options.contentType) {
+            case 'destination':
+                const slug = this.getTranslation('slug_permalink');
+                if (!slug) return this.baseUrl;
+                
+                // Get region and province info for URL structure
+                const regionId = this.content.region_id;
+                const provinceId = this.content.province_id;
+                
+                // This would need actual region/province mapping
+                // For now, return basic structure
+                return `${this.baseUrl}/${lang}/${slug}`;
+                
+            case 'company':
+                const companySlug = this.content.slug_permalink || this.getTranslation('slug_permalink');
+                return `${this.baseUrl}/${lang}/poi/${companySlug}`;
+                
+            case 'article':
+                const articleSlug = this.getTranslation('slug_permalink');
+                return `${this.baseUrl}/${lang}/magazine/${articleSlug}`;
+                
+            default:
+                return this.baseUrl;
+        }
+    }
+    
+    getDisplayName() {
+        if (!this.content) return 'Loading...';
+        
+        switch (this.options.contentType) {
+            case 'destination':
+                return this.getTranslation('destination_name') || 'Destination';
+            case 'company':
+                return this.getTranslation('nome_azienda') || this.content.nome_azienda || 'Company';
+            case 'article':
+                return this.getTranslation('titolo_articolo') || 'Article';
+            default:
+                return 'Content';
+        }
+    }
+    
+    getSeoTitle() {
+        return this.getTranslation('seo_title') || this.getDisplayName();
+    }
+    
+    getDescription() {
+        return this.getTranslation('seo_summary') || '';
+    }
+    
+    getImage() {
+        if (!this.content || !this.content.image) return null;
+        return `https://directus-production-93f0.up.railway.app/assets/${this.content.image}?width=300&height=200&fit=cover`;
+    }
+    
+    changeLanguage(langCode) {
+        this.currentLanguage = langCode;
+        this.render();
+    }
+    
+    render() {
+        if (!this.container) return;
+        
+        const widgetClass = `thebestitaly-widget thebestitaly-widget-${this.options.type}`;
+        
+        if (this.loading) {
+            this.container.innerHTML = `
+                <div class="${widgetClass}">
+                    <div class="thebestitaly-widget-loading">
+                        <div class="thebestitaly-widget-spinner"></div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        const displayName = this.getDisplayName();
+        const seoTitle = this.getSeoTitle();
+        const description = this.getDescription();
+        const image = this.getImage();
+        const url = this.generateUrl();
+        
+        let content = '';
+        
+        // Language dropdown - ALWAYS all 50 languages
+        const languageOptions = this.languages.map(lang => `
+            <option value="${lang.code}" ${lang.code === this.currentLanguage ? 'selected' : ''}>
+                ${lang.name}
+            </option>
+        `).join('');
+        
+        const languageDropdown = `
+            <div class="thebestitaly-widget-language">
+                <select onchange="window.thebestitalyWidgets['${this.containerId}'].changeLanguage(this.value)">
+                    ${languageOptions}
+                </select>
+            </div>
+        `;
+        
+        // Logo
+        const logo = `
+            <div class="thebestitaly-widget-logo">
+                <img src="${this.baseUrl}/images/logo-black.webp" alt="TheBestItaly" />
+            </div>
+        `;
+        
+        // Visit button
+        const visitButton = `
+            <a href="${url}" target="_blank" class="thebestitaly-widget-button">
+                Visit TheBestItaly
+            </a>
+        `;
+        
+        switch (this.options.type) {
+            case 'small':
+                content = `
+                    <div class="thebestitaly-widget-header">
+                        ${logo}
+                        ${languageDropdown}
+                    </div>
+                    <div class="thebestitaly-widget-content">
+                        <h3 class="thebestitaly-widget-title">${displayName}</h3>
+                        ${visitButton}
+                    </div>
+                `;
+                break;
+                
+            case 'medium':
+                content = `
+                    <div class="thebestitaly-widget-header">
+                        ${logo}
+                        ${languageDropdown}
+                    </div>
+                    <div class="thebestitaly-widget-content">
+                        <h3 class="thebestitaly-widget-title">${displayName}</h3>
+                        <p class="thebestitaly-widget-seo-title">${seoTitle}</p>
+                        ${visitButton}
+                    </div>
+                `;
+                break;
+                
+            case 'large':
+                content = `
+                    <div class="thebestitaly-widget-header">
+                        ${logo}
+                        ${languageDropdown}
+                    </div>
+                    <div class="thebestitaly-widget-content">
+                        ${image ? `<img src="${image}" alt="${displayName}" class="thebestitaly-widget-image" />` : ''}
+                        <h3 class="thebestitaly-widget-title">${displayName}</h3>
+                        <p class="thebestitaly-widget-seo-title">${seoTitle}</p>
+                        ${description ? `<p class="thebestitaly-widget-description">${description}</p>` : ''}
+                        ${visitButton}
+                    </div>
+                `;
+                break;
+        }
+        
+        this.container.innerHTML = `
+            <div class="${widgetClass}">
+                ${content}
+            </div>
+        `;
+    }
+    
+    getStyles() {
+        return `
+            <style>
+                .thebestitaly-widget {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: #ffffff;
+                    border: 1px solid #e0e0e0;
+                    padding: 20px;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                }
+                
+                .thebestitaly-widget-small {
+                    width: 300px;
+                    min-height: 150px;
+                }
+                
+                .thebestitaly-widget-medium {
+                    width: 400px;
+                    min-height: 200px;
+                }
+                
+                .thebestitaly-widget-large {
+                    width: 100%;
+                    min-height: 300px;
+                }
+                
+                .thebestitaly-widget-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid #f0f0f0;
+                }
+                
+                .thebestitaly-widget-logo img {
+                    height: 30px;
+                    width: auto;
+                }
+                
+                .thebestitaly-widget-language select {
+                    padding: 5px 10px;
+                    border: 1px solid #ddd;
+                    background: white;
+                    font-size: 14px;
+                    min-width: 120px;
+                }
+                
+                .thebestitaly-widget-content {
+                    text-align: center;
+                }
+                
+                .thebestitaly-widget-image {
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    margin-bottom: 15px;
+                }
+                
+                .thebestitaly-widget-title {
+                    font-size: 18px;
+                    font-weight: 600;
+                    margin: 0 0 10px 0;
+                    color: #333;
+                }
+                
+                .thebestitaly-widget-seo-title {
+                    font-size: 14px;
+                    color: #666;
+                    margin: 0 0 10px 0;
+                }
+                
+                .thebestitaly-widget-description {
+                    font-size: 14px;
+                    color: #666;
+                    line-height: 1.4;
+                    margin: 0 0 15px 0;
+                }
+                
+                .thebestitaly-widget-button {
+                    display: inline-block;
+                    background: #007bff;
+                    color: white;
+                    padding: 10px 20px;
+                    text-decoration: none;
+                    font-weight: 500;
+                    transition: background-color 0.2s;
+                }
+                
+                .thebestitaly-widget-button:hover {
+                    background: #0056b3;
+                }
+                
+                .thebestitaly-widget-loading {
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #666;
+                }
+                
+                .thebestitaly-widget-spinner {
+                    width: 30px;
+                    height: 30px;
+                    border: 3px solid #f3f3f3;
+                    border-top: 3px solid #007bff;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 10px;
+                }
+                
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+    }
+}
 
-  // Auto-initialize widgets
-  window.TheBestItalyWidget = TheBestItalyWidget;
-  
-  // Initialize widgets on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeWidgets);
-  } else {
-    initializeWidgets();
-  }
+// Global widget manager
+window.thebestitalyWidgets = window.thebestitalyWidgets || {};
 
-  function initializeWidgets() {
-    const widgets = document.querySelectorAll('[data-slug][data-type]');
+// Auto-initialize widgets
+document.addEventListener('DOMContentLoaded', function() {
+    // Add styles to page
+    const styleSheet = document.createElement('style');
+    styleSheet.innerHTML = new TheBestItalyWidget().getStyles();
+    document.head.appendChild(styleSheet);
+    
+    // Initialize widgets
+    const widgets = document.querySelectorAll('[data-thebestitaly-widget]');
     widgets.forEach(widget => {
-      if (!widget.id) {
-        widget.id = `tbi-widget-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      }
-      new TheBestItalyWidget(widget.id);
+        const options = {
+            type: widget.dataset.type || 'small',
+            contentType: widget.dataset.contentType || 'destination',
+            contentId: widget.dataset.contentId,
+            language: widget.dataset.language || 'it'
+        };
+        
+        window.thebestitalyWidgets[widget.id] = new TheBestItalyWidget(widget.id, options);
     });
-  }
+});
 
-})();
+// Export for manual initialization
+window.TheBestItalyWidget = TheBestItalyWidget;

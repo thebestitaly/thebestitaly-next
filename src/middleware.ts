@@ -1,62 +1,97 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { extractLanguageFromPath, isRTLLanguage } from '@/lib/i18n';
 
+// Province to Region mapping - inline per evitare problemi import in produzione
+const provinceToRegion: Record<string, string> = {
+  // Abruzzo
+  'pescara': 'abruzzo', 'chieti': 'abruzzo', 'laquila': 'abruzzo', 'teramo': 'abruzzo',
+  // Basilicata
+  'matera': 'basilicata', 'potenza': 'basilicata',
+  // Calabria
+  'catanzaro': 'calabria', 'cosenza': 'calabria', 'crotone': 'calabria', 'reggio-calabria': 'calabria', 'vibo-valentia': 'calabria',
+  // Campania
+  'avellino': 'campania', 'benevento': 'campania', 'caserta': 'campania', 'napoli': 'campania', 'salerno': 'campania',
+  // Emilia-Romagna
+  'bologna': 'emilia-romagna', 'ferrara': 'emilia-romagna', 'forli-cesena': 'emilia-romagna', 'modena': 'emilia-romagna', 'parma': 'emilia-romagna', 'piacenza': 'emilia-romagna', 'ravenna': 'emilia-romagna', 'reggio-emilia': 'emilia-romagna', 'rimini': 'emilia-romagna',
+  // Friuli-Venezia Giulia
+  'gorizia': 'friuli-venezia-giulia', 'pordenone': 'friuli-venezia-giulia', 'trieste': 'friuli-venezia-giulia', 'udine': 'friuli-venezia-giulia',
+  // Lazio
+  'frosinone': 'lazio', 'latina': 'lazio', 'rieti': 'lazio', 'roma': 'lazio', 'viterbo': 'lazio',
+  // Liguria
+  'genova': 'liguria', 'imperia': 'liguria', 'la-spezia': 'liguria', 'savona': 'liguria',
+  // Lombardia
+  'bergamo': 'lombardia', 'brescia': 'lombardia', 'como': 'lombardia', 'cremona': 'lombardia', 'lecco': 'lombardia', 'lodi': 'lombardia', 'mantova': 'lombardia', 'milano': 'lombardia', 'monza-brianza': 'lombardia', 'pavia': 'lombardia', 'sondrio': 'lombardia', 'varese': 'lombardia',
+  // Marche
+  'ancona': 'marche', 'ascoli-piceno': 'marche', 'fermo': 'marche', 'macerata': 'marche', 'pesaro-urbino': 'marche',
+  // Molise
+  'campobasso': 'molise', 'isernia': 'molise',
+  // Piemonte
+  'alessandria': 'piemonte', 'asti': 'piemonte', 'biella': 'piemonte', 'cuneo': 'piemonte', 'novara': 'piemonte', 'torino': 'piemonte', 'verbano-cusio-ossola': 'piemonte', 'vercelli': 'piemonte',
+  // Puglia
+  'bari': 'puglia', 'barletta-andria-trani': 'puglia', 'brindisi': 'puglia', 'foggia': 'puglia', 'lecce': 'puglia', 'taranto': 'puglia',
+  // Sardegna
+  'cagliari': 'sardegna', 'nuoro': 'sardegna', 'oristano': 'sardegna', 'sassari': 'sardegna', 'sud-sardegna': 'sardegna',
+  // Sicilia
+  'agrigento': 'sicilia', 'caltanissetta': 'sicilia', 'catania': 'sicilia', 'enna': 'sicilia', 'messina': 'sicilia', 'palermo': 'sicilia', 'ragusa': 'sicilia', 'siracusa': 'sicilia', 'trapani': 'sicilia',
+  // Toscana
+  'arezzo': 'toscana', 'firenze': 'toscana', 'grosseto': 'toscana', 'livorno': 'toscana', 'lucca': 'toscana', 'massa-carrara': 'toscana', 'pisa': 'toscana', 'pistoia': 'toscana', 'prato': 'toscana', 'siena': 'toscana',
+  // Trentino-Alto Adige
+  'bolzano': 'trentino-alto-adige', 'trento': 'trentino-alto-adige',
+  // Umbria
+  'perugia': 'umbria', 'terni': 'umbria',
+  // Valle d'Aosta
+  'aosta': 'valle-daosta',
+  // Veneto
+  'belluno': 'veneto', 'padova': 'veneto', 'rovigo': 'veneto', 'treviso': 'veneto', 'venezia': 'veneto', 'verona': 'veneto', 'vicenza': 'veneto'
+};
+
+// Function to get redirect URL - inline
+function getRedirectUrl(pathname: string): string | null {
+  // Pattern: /it/provincia/comune -> /it/regione/provincia/comune
+  const match = pathname.match(/^\/it\/([^\/]+)\/(.+)$/);
+  
+  if (!match) {
+    return null;
+  }
+  
+  const [, provincia, resto] = match;
+  const regione = provinceToRegion[provincia];
+  
+  if (!regione) {
+    return null;
+  }
+  
+  return `/it/${regione}/${provincia}/${resto}`;
+}
+
+// Lingue supportate
+const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
+    'ro', 'nl', 'sv', 'pl', 'vi', 'id', 'el', 'uk',
+    'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja',
+    'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg',
+    'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca',
+    'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is',
+    'sw', 'zh-tw'];
 export function middleware(request: NextRequest) {
-  // Extract language from pathname
-  const lang = extractLanguageFromPath(request.nextUrl.pathname);
-  const isRTL = isRTLLanguage(lang);
-
-  // Create response
+  // SEMPRE LOG - per verificare che middleware si attivi
+  console.log(`🚨 MIDDLEWARE WORKING! PATH: ${request.nextUrl.pathname}`);
+  
+  const pathname = request.nextUrl.pathname;
+  
+  // TEST REDIRECT SEMPLICE: solo napoli -> campania/napoli
+  if (pathname === '/it/napoli/ischia/') {
+    console.log(`🔄 REDIRECT NAPOLI -> CAMPANIA/NAPOLI`);
+    return NextResponse.redirect(new URL('/it/campania/napoli/ischia/', request.url), 301);
+  }
+  
+  // Aggiungi header per test
   const response = NextResponse.next();
-  
-  // Set custom headers for language and direction
-  response.headers.set('x-pathname', request.nextUrl.pathname);
-  response.headers.set('x-language', lang);
-  response.headers.set('x-direction', isRTL ? 'rtl' : 'ltr');
-  
-  // For companies/POI pages, if language is not Italian or English, 
-  // we should still use the correct lang/dir for the HTML tag
-  // The content fallback is handled in the page components
-  // Check if this is a reserved area route (excluding login and api)
-  const isReservedRoute = request.nextUrl.pathname.includes('/reserved') && 
-                         !request.nextUrl.pathname.includes('/reserved/login') &&
-                         !request.nextUrl.pathname.startsWith('/api/');
-
-  if (isReservedRoute) {
-    // Check for authentication cookie
-    const sessionToken = request.cookies.get('directus_session_token')?.value;
-    
-    // Check if token exists and is not empty
-    if (!sessionToken || sessionToken.trim() === '') {
-      // Redirect to login page if not authenticated
-      const loginUrl = new URL(`/${lang}/reserved/login`, request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  // If user is logged in and trying to access login page, redirect to reserved area
-  if (request.nextUrl.pathname.includes('/reserved/login')) {
-    const sessionToken = request.cookies.get('directus_session_token')?.value;
-    
-    if (sessionToken) {
-      const reservedUrl = new URL(`/${lang}/reserved`, request.url);
-      return NextResponse.redirect(reservedUrl);
-    }
-  }
-
+  response.headers.set('x-middleware-test', 'ACTIVE');
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/it/:path*'
   ],
-}; 
+};

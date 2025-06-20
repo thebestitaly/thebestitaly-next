@@ -6,7 +6,7 @@ const nextConfig = {
   
   // Ottimizzazione bundle
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: false, // MANTIENI CONSOLE.LOG per debug middleware
   },
   
   // Configurazione immagini
