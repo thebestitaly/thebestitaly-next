@@ -434,6 +434,18 @@ export default function WidgetGeneratorClient({ lang }: WidgetGeneratorClientPro
                 <div className="text-sm text-green-800">Responsive</div>
               </div>
             </div>
+
+            {/* Important Notes */}
+            <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-yellow-800 mb-4">📝 Note Importanti</h3>
+              <ul className="space-y-2 text-sm text-yellow-700">
+                <li><strong>URL Aziende:</strong> Tutte le aziende usano il formato <code className="bg-yellow-100 px-1 rounded">/poi/slug</code> indipendentemente dall'ID</li>
+                <li><strong>Dropdown Lingue:</strong> Sempre visibile per default - niente pulsante "Scopri di più", solo selezione diretta delle lingue</li>
+                <li><strong>Contenuto Integrato:</strong> I widget grandi caricano il contenuto completo della pagina direttamente dal database</li>
+                <li><strong>Dati Real-time:</strong> Tutti i contenuti vengono caricati live dall'API di TheBestItaly</li>
+                <li><strong>Grafica Migliorata:</strong> Widget piccoli non più tagliati, dimensioni ottimizzate per tutti i formati</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
