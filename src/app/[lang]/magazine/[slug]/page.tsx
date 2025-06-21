@@ -250,11 +250,11 @@ export default async function MagazineArticlePage({ params }: PageProps) {
       <ArticleBreadcrumb />
       
       {/* Header Section - Mobile: Stack, Desktop: Side by side */}
-      <div className="container mx-auto px-4 pt-6 mb-10">
+      <div className="container mx-auto px-4 pt-6 ">
         <div className="flex flex-col md:flex-row md:items-start md:gap-8 lg:gap-12">
           {/* Title and Subtitle - Left side on desktop (40%) */}
           <div className="w-full md:w-half mb-6 md:mb-0">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 tracking-tighter">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-grey-600 mb-2 tracking-tighter">
               {translation?.titolo_articolo}
             </h1>
             {translation?.seo_summary && (
@@ -302,40 +302,56 @@ export default async function MagazineArticlePage({ params }: PageProps) {
       <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
           <div className="lg:col-span-2">
-            <div className="rounded-lg p-2 mb-4 md:mb-0">
-              <GetYourGuideWidget 
-                lang={lang} 
-                destinationName="Italy"
-              />
-            </div>
-
-            <article className="prose prose-base md:prose-lg max-w-none mt-4 md:mt-8">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h2: ({ node, ...props }) => {
-                    const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
-                    return <h2 id={id} {...props} />;
-                  },
-                  h3: ({ node, ...props }) => {
-                    const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
-                    return <h3 id={id} {...props} />;
-                  },
-                  img: ({ node, ...props }) => (
-                    <div className="relative w-full h-64 md:h-96">
-                      <Image
-                        src={typeof props.src === 'string' ? props.src : ''}
-                        alt={props.alt || ''}
-                        fill
-                        className="object-cover rounded-lg"
-                        sizes="(max-width: 768px) 100vw, 800px"
-                      />
-                    </div>
-                  ),
-                }}
-              >
-                {translation?.description || ''}
-              </ReactMarkdown>
+            <article className="prose prose-base md:prose-lg max-w-none">
+              {(() => {
+                let h2Count = 0;
+                const content = translation?.description || '';
+                
+                return (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      h2: ({ node, ...props }) => {
+                        h2Count++;
+                        const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
+                        
+                        return (
+                          <>
+                            {h2Count === 2 && (
+                              <div className="not-prose my-8">
+                                <div className="rounded-lg p-2">
+                                  <GetYourGuideWidget 
+                                    lang={lang} 
+                                    destinationName="Italy"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            <h2 id={id} {...props} />
+                          </>
+                        );
+                      },
+                      h3: ({ node, ...props }) => {
+                        const id = props.children?.toString().toLowerCase().replace(/\W+/g, '-');
+                        return <h3 id={id} {...props} />;
+                      },
+                      img: ({ node, ...props }) => (
+                        <div className="relative w-full h-64 md:h-96">
+                          <Image
+                            src={typeof props.src === 'string' ? props.src : ''}
+                            alt={props.alt || ''}
+                            fill
+                            className="object-cover rounded-lg"
+                            sizes="(max-width: 768px) 100vw, 800px"
+                          />
+                        </div>
+                      ),
+                    }}
+                  >
+                    {content}
+                  </ReactMarkdown>
+                );
+              })()}
             </article>
           </div>
 

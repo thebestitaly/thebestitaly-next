@@ -3,240 +3,486 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TheBestItaly Widget - Premium Translation Service</title>
+    <title>TheBestItaly Widget - Esempi e Documentazione</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f5f5f5;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-        
-        .demo-container {
+
+        .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            padding: 40px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
         }
-        
-        .demo-section {
+
+        .header {
+            text-align: center;
+            color: white;
             margin-bottom: 40px;
         }
-        
-        .demo-section h2 {
-            color: #333;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 10px;
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
             margin-bottom: 20px;
         }
-        
-        .demo-section p {
-            color: #666;
-            margin-bottom: 20px;
+
+        .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
         }
-        
-        .widget-examples {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+
+        .content-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: #718096;
             margin-bottom: 30px;
         }
-        
-        .widget-example {
-            padding: 20px;
-            background: #f9f9f9;
-            border: 1px solid #e0e0e0;
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
         }
-        
-        .widget-example h4 {
-            margin: 0 0 15px 0;
-            color: #333;
+
+        .example {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
         }
-        
-        .code-example {
-            background: #2d3748;
+
+        .example:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        .example h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .example p {
+            color: #4a5568;
+            margin-bottom: 20px;
+        }
+
+        .widget-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .code-block {
+            background: #1a202c;
             color: #e2e8f0;
-            padding: 20px;
+            padding: 25px;
+            border-radius: 10px;
             overflow-x: auto;
-            font-family: 'Monaco', 'Courier New', monospace;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 14px;
             line-height: 1.5;
         }
-        
-        .premium-badge {
+
+        .code-block pre {
+            margin: 0;
+        }
+
+        .highlight {
+            color: #68d391;
+        }
+
+        .attribute {
+            color: #fbb6ce;
+        }
+
+        .string {
+            color: #90cdf4;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .feature {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 10px 20px;
-            display: inline-block;
-            font-weight: bold;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .languages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .language-item {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .language-item:hover {
+            background: #edf2f7;
+            transform: translateY(-2px);
+        }
+
+        .language-flag {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .language-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 50px;
+            border-radius: 20px;
+            margin-top: 40px;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
             margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content-card {
+                padding: 25px;
+            }
+            
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="demo-container">
-        <h1>TheBestItaly Widget System</h1>
-        <div class="premium-badge">🌟 PREMIUM TRANSLATION SERVICE - ALL 50 LANGUAGES INCLUDED</div>
-        
-        <div class="demo-section">
-            <h2>Widget Sizes</h2>
-            <p>Our premium translation service provides standardized widgets that always include all 50 available languages. No customization options - consistent, professional appearance across all implementations.</p>
-            
-            <div class="widget-examples">
-                <div class="widget-example">
-                    <h4>Small Widget (300px)</h4>
-                    <div id="widget-small" 
-                         data-thebestitaly-widget
-                         data-type="small" 
-                         data-content-type="destination" 
-                         data-content-id="1"
-                         data-language="it"></div>
+    <div class="container">
+        <div class="header">
+            <h1>✨ TheBestItaly Widget</h1>
+            <p>Widget moderni e responsivi per il tuo sito web</p>
+            <div class="badge">🌍 Supporta 50+ Lingue</div>
+        </div>
+
+        <div class="content-card">
+            <h2 class="section-title">
+                🎯 Esempi Live
+            </h2>
+            <p class="section-subtitle">
+                Prova i nostri widget in azione. Ogni widget include automaticamente tutte le 50+ lingue supportate.
+            </p>
+
+            <div class="examples-grid">
+                <div class="example">
+                    <h3>📱 Widget Piccolo</h3>
+                    <p>Perfetto per sidebar e spazi ristretti. Compatto ma efficace.</p>
+                    <div class="widget-container">
+                        <div id="widget-small" 
+                             data-tbi-widget
+                             data-type="destination" 
+                             data-id="roma"
+                             data-size="small"
+                             data-theme="light"
+                             data-language="it"
+                             data-show-selector="true"></div>
+                    </div>
                 </div>
-                
-                <div class="widget-example">
-                    <h4>Medium Widget (400px)</h4>
-                    <div id="widget-medium" 
-                         data-thebestitaly-widget
-                         data-type="medium" 
-                         data-content-type="company" 
-                         data-content-id="1"
-                         data-language="en"></div>
+
+                <div class="example">
+                    <h3>💻 Widget Medio</h3>
+                    <p>Ideale per la maggior parte dei contenuti. Equilibrio perfetto tra spazio e informazioni.</p>
+                    <div class="widget-container">
+                        <div id="widget-medium" 
+                             data-tbi-widget
+                             data-type="company" 
+                             data-id="123"
+                             data-size="medium"
+                             data-theme="light"
+                             data-language="en"
+                             data-show-selector="true"></div>
+                    </div>
+                </div>
+
+                <div class="example">
+                    <h3>🖥️ Widget Grande</h3>
+                    <p>Massima visibilità per contenuti importanti. Si adatta alla larghezza del contenitore.</p>
+                    <div class="widget-container">
+                        <div id="widget-large" 
+                             data-tbi-widget
+                             data-type="article" 
+                             data-id="456"
+                             data-size="large"
+                             data-theme="auto"
+                             data-language="fr"
+                             data-show-selector="true"></div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="widget-example">
-                <h4>Large Widget (100% width)</h4>
-                <div id="widget-large" 
-                     data-thebestitaly-widget
-                     data-type="large" 
-                     data-content-type="article" 
-                     data-content-id="1"
-                     data-language="fr"></div>
+        </div>
+
+        <div class="content-card">
+            <h2 class="section-title">
+                ⚡ Implementazione
+            </h2>
+            <p class="section-subtitle">
+                Semplicissimo da integrare. Basta copiare e incollare il codice nel tuo sito.
+            </p>
+
+            <div class="code-block">
+<pre><span class="highlight">&lt;!-- Includi lo script del widget --&gt;</span>
+<span class="string">&lt;script</span> <span class="attribute">src</span>=<span class="string">"https://thebestitaly.eu/widgets/widget.js"</span><span class="string">&gt;&lt;/script&gt;</span>
+
+<span class="highlight">&lt;!-- Widget per Destinazione --&gt;</span>
+<span class="string">&lt;div</span> <span class="attribute">id</span>=<span class="string">"my-widget-1"</span> 
+     <span class="attribute">data-tbi-widget</span>
+     <span class="attribute">data-type</span>=<span class="string">"destination"</span> 
+     <span class="attribute">data-id</span>=<span class="string">"roma"</span>
+     <span class="attribute">data-size</span>=<span class="string">"medium"</span>
+     <span class="attribute">data-theme</span>=<span class="string">"light"</span>
+     <span class="attribute">data-language</span>=<span class="string">"it"</span>
+     <span class="attribute">data-show-selector</span>=<span class="string">"true"</span><span class="string">&gt;&lt;/div&gt;</span>
+
+<span class="highlight">&lt;!-- Widget per Azienda --&gt;</span>
+<span class="string">&lt;div</span> <span class="attribute">id</span>=<span class="string">"my-widget-2"</span> 
+     <span class="attribute">data-tbi-widget</span>
+     <span class="attribute">data-type</span>=<span class="string">"company"</span> 
+     <span class="attribute">data-id</span>=<span class="string">"123"</span>
+     <span class="attribute">data-size</span>=<span class="string">"large"</span>
+     <span class="attribute">data-theme</span>=<span class="string">"dark"</span>
+     <span class="attribute">data-language</span>=<span class="string">"en"</span>
+     <span class="attribute">data-show-selector</span>=<span class="string">"false"</span><span class="string">&gt;&lt;/div&gt;</span>
+
+<span class="highlight">&lt;!-- Widget per Articolo --&gt;</span>
+<span class="string">&lt;div</span> <span class="attribute">id</span>=<span class="string">"my-widget-3"</span> 
+     <span class="attribute">data-tbi-widget</span>
+     <span class="attribute">data-type</span>=<span class="string">"article"</span> 
+     <span class="attribute">data-id</span>=<span class="string">"456"</span>
+     <span class="attribute">data-size</span>=<span class="string">"small"</span>
+     <span class="attribute">data-theme</span>=<span class="string">"auto"</span>
+     <span class="attribute">data-language</span>=<span class="string">"de"</span>
+     <span class="attribute">data-show-selector</span>=<span class="string">"true"</span><span class="string">&gt;&lt;/div&gt;</span></pre>
             </div>
         </div>
-        
-        <div class="demo-section">
-            <h2>Implementation Code</h2>
-            <p>Simply include our widget script and add the data attributes. All 50 languages are automatically loaded.</p>
-            
-            <div class="code-example">
-&lt;!-- Include the widget script --&gt;
-&lt;script src="https://thebestitaly.eu/widgets/widget.js"&gt;&lt;/script&gt;
 
-&lt;!-- Small Widget --&gt;
-&lt;div id="my-widget-1" 
-     data-thebestitaly-widget
-     data-type="small" 
-     data-content-type="destination" 
-     data-content-id="123"
-     data-language="it"&gt;&lt;/div&gt;
+        <div class="content-card">
+            <h2 class="section-title">
+                🔧 Parametri Disponibili
+            </h2>
+            <p class="section-subtitle">
+                Personalizza ogni aspetto del widget secondo le tue esigenze.
+            </p>
 
-&lt;!-- Medium Widget --&gt;
-&lt;div id="my-widget-2" 
-     data-thebestitaly-widget
-     data-type="medium" 
-     data-content-type="company" 
-     data-content-id="456"
-     data-language="en"&gt;&lt;/div&gt;
-
-&lt;!-- Large Widget --&gt;
-&lt;div id="my-widget-3" 
-     data-thebestitaly-widget
-     data-type="large" 
-     data-content-type="article" 
-     data-content-id="789"
-     data-language="de"&gt;&lt;/div&gt;
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">📋</div>
+                    <h4>data-type</h4>
+                    <p>"destination", "company", "article"</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🆔</div>
+                    <h4>data-id</h4>
+                    <p>ID o slug del contenuto</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📏</div>
+                    <h4>data-size</h4>
+                    <p>"small", "medium", "large"</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <h4>data-theme</h4>
+                    <p>"light", "dark", "auto"</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🌐</div>
+                    <h4>data-language</h4>
+                    <p>Lingua iniziale (it, en, fr, etc.)</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚙️</div>
+                    <h4>data-show-selector</h4>
+                    <p>"true" o "false" per il selettore lingue</p>
+                </div>
             </div>
         </div>
-        
-        <div class="demo-section">
-            <h2>Available Parameters</h2>
-            <ul>
-                <li><strong>data-type:</strong> "small", "medium", or "large"</li>
-                <li><strong>data-content-type:</strong> "destination", "company", or "article"</li>
-                <li><strong>data-content-id:</strong> The ID of your content</li>
-                <li><strong>data-language:</strong> Initial language (any of the 50 supported languages)</li>
-            </ul>
-        </div>
-        
-        <div class="demo-section">
-            <h2>Supported Languages (All 50 Always Available)</h2>
-            <p>Every widget includes all 50 languages automatically:</p>
-            <div style="columns: 3; column-gap: 30px;">
-                <ul style="margin: 0; padding-left: 20px;">
-                    <li>Afrikaans (af)</li>
-                    <li>አማርኛ (am)</li>
-                    <li>العربية (ar)</li>
-                    <li>Azərbaycan (az)</li>
-                    <li>Български (bg)</li>
-                    <li>বাংলা (bn)</li>
-                    <li>Català (ca)</li>
-                    <li>Čeština (cs)</li>
-                    <li>Dansk (da)</li>
-                    <li>Deutsch (de)</li>
-                    <li>Ελληνικά (el)</li>
-                    <li>English (en)</li>
-                    <li>Español (es)</li>
-                    <li>Eesti (et)</li>
-                    <li>فارسی (fa)</li>
-                    <li>Suomi (fi)</li>
-                    <li>Français (fr)</li>
-                    <li>עברית (he)</li>
-                    <li>हिन्दी (hi)</li>
-                    <li>Hrvatski (hr)</li>
-                    <li>Magyar (hu)</li>
-                    <li>Հայերեն (hy)</li>
-                    <li>Bahasa Indonesia (id)</li>
-                    <li>Íslenska (is)</li>
-                    <li>Italiano (it)</li>
-                    <li>日本語 (ja)</li>
-                    <li>ქართული (ka)</li>
-                    <li>한국어 (ko)</li>
-                    <li>Lietuvių (lt)</li>
-                    <li>Latviešu (lv)</li>
-                    <li>Македонски (mk)</li>
-                    <li>Bahasa Melayu (ms)</li>
-                    <li>Nederlands (nl)</li>
-                    <li>Norsk (no)</li>
-                    <li>Polski (pl)</li>
-                    <li>Português (pt)</li>
-                    <li>Română (ro)</li>
-                    <li>Русский (ru)</li>
-                    <li>Slovenčina (sk)</li>
-                    <li>Slovenščina (sl)</li>
-                    <li>Српски (sr)</li>
-                    <li>Svenska (sv)</li>
-                    <li>Kiswahili (sw)</li>
-                    <li>ไทย (th)</li>
-                    <li>Türkmençe (tk)</li>
-                    <li>Filipino (tl)</li>
-                    <li>Türkçe (tr)</li>
-                    <li>Українська (uk)</li>
-                    <li>اردو (ur)</li>
-                    <li>Tiếng Việt (vi)</li>
-                    <li>中文 (zh)</li>
-                    <li>繁體中文 (zh-tw)</li>
-                </ul>
+
+        <div class="content-card">
+            <h2 class="section-title">
+                🌍 Tutte le Lingue Supportate
+            </h2>
+            <p class="section-subtitle">
+                Ogni widget include automaticamente tutte queste lingue. Non serve configurazione aggiuntiva.
+            </p>
+
+            <div class="languages-grid">
+                <div class="language-item"><div class="language-flag">🇿🇦</div><div class="language-name">Afrikaans</div></div>
+                <div class="language-item"><div class="language-flag">🇪🇹</div><div class="language-name">አማርኛ</div></div>
+                <div class="language-item"><div class="language-flag">🇸🇦</div><div class="language-name">العربية</div></div>
+                <div class="language-item"><div class="language-flag">🇦🇿</div><div class="language-name">Azərbaycan</div></div>
+                <div class="language-item"><div class="language-flag">🇧🇬</div><div class="language-name">Български</div></div>
+                <div class="language-item"><div class="language-flag">🇧🇩</div><div class="language-name">বাংলা</div></div>
+                <div class="language-item"><div class="language-flag">🇪🇸</div><div class="language-name">Català</div></div>
+                <div class="language-item"><div class="language-flag">🇨🇿</div><div class="language-name">Čeština</div></div>
+                <div class="language-item"><div class="language-flag">🇩🇰</div><div class="language-name">Dansk</div></div>
+                <div class="language-item"><div class="language-flag">🇩🇪</div><div class="language-name">Deutsch</div></div>
+                <div class="language-item"><div class="language-flag">🇬🇷</div><div class="language-name">Ελληνικά</div></div>
+                <div class="language-item"><div class="language-flag">🇬🇧</div><div class="language-name">English</div></div>
+                <div class="language-item"><div class="language-flag">🇪🇸</div><div class="language-name">Español</div></div>
+                <div class="language-item"><div class="language-flag">🇪🇪</div><div class="language-name">Eesti</div></div>
+                <div class="language-item"><div class="language-flag">🇮🇷</div><div class="language-name">فارسی</div></div>
+                <div class="language-item"><div class="language-flag">🇫🇮</div><div class="language-name">Suomi</div></div>
+                <div class="language-item"><div class="language-flag">🇫🇷</div><div class="language-name">Français</div></div>
+                <div class="language-item"><div class="language-flag">🇮🇱</div><div class="language-name">עברית</div></div>
+                <div class="language-item"><div class="language-flag">🇮🇳</div><div class="language-name">हिन्दी</div></div>
+                <div class="language-item"><div class="language-flag">🇭🇷</div><div class="language-name">Hrvatski</div></div>
+                <div class="language-item"><div class="language-flag">🇭🇺</div><div class="language-name">Magyar</div></div>
+                <div class="language-item"><div class="language-flag">🇦🇲</div><div class="language-name">Հայերեն</div></div>
+                <div class="language-item"><div class="language-flag">🇮🇩</div><div class="language-name">Bahasa Indonesia</div></div>
+                <div class="language-item"><div class="language-flag">🇮🇸</div><div class="language-name">Íslenska</div></div>
+                <div class="language-item"><div class="language-flag">🇮🇹</div><div class="language-name">Italiano</div></div>
+                <div class="language-item"><div class="language-flag">🇯🇵</div><div class="language-name">日本語</div></div>
+                <div class="language-item"><div class="language-flag">🇬🇪</div><div class="language-name">ქართული</div></div>
+                <div class="language-item"><div class="language-flag">🇰🇷</div><div class="language-name">한국어</div></div>
+                <div class="language-item"><div class="language-flag">🇱🇹</div><div class="language-name">Lietuvių</div></div>
+                <div class="language-item"><div class="language-flag">🇱🇻</div><div class="language-name">Latviešu</div></div>
+                <div class="language-item"><div class="language-flag">🇲🇰</div><div class="language-name">Македонски</div></div>
+                <div class="language-item"><div class="language-flag">🇲🇾</div><div class="language-name">Bahasa Melayu</div></div>
+                <div class="language-item"><div class="language-flag">🇳🇱</div><div class="language-name">Nederlands</div></div>
+                <div class="language-item"><div class="language-flag">🇳🇴</div><div class="language-name">Norsk</div></div>
+                <div class="language-item"><div class="language-flag">🇵🇱</div><div class="language-name">Polski</div></div>
+                <div class="language-item"><div class="language-flag">🇵🇹</div><div class="language-name">Português</div></div>
+                <div class="language-item"><div class="language-flag">🇷🇴</div><div class="language-name">Română</div></div>
+                <div class="language-item"><div class="language-flag">🇷🇺</div><div class="language-name">Русский</div></div>
+                <div class="language-item"><div class="language-flag">🇸🇰</div><div class="language-name">Slovenčina</div></div>
+                <div class="language-item"><div class="language-flag">🇸🇮</div><div class="language-name">Slovenščina</div></div>
+                <div class="language-item"><div class="language-flag">🇷🇸</div><div class="language-name">Српски</div></div>
+                <div class="language-item"><div class="language-flag">🇸🇪</div><div class="language-name">Svenska</div></div>
+                <div class="language-item"><div class="language-flag">🇹🇿</div><div class="language-name">Kiswahili</div></div>
+                <div class="language-item"><div class="language-flag">🇹🇭</div><div class="language-name">ไทย</div></div>
+                <div class="language-item"><div class="language-flag">🇹🇲</div><div class="language-name">Türkmençe</div></div>
+                <div class="language-item"><div class="language-flag">🇵🇭</div><div class="language-name">Filipino</div></div>
+                <div class="language-item"><div class="language-flag">🇹🇷</div><div class="language-name">Türkçe</div></div>
+                <div class="language-item"><div class="language-flag">🇺🇦</div><div class="language-name">Українська</div></div>
+                <div class="language-item"><div class="language-flag">🇵🇰</div><div class="language-name">اردو</div></div>
+                <div class="language-item"><div class="language-flag">🇻🇳</div><div class="language-name">Tiếng Việt</div></div>
+                <div class="language-item"><div class="language-flag">🇨🇳</div><div class="language-name">中文</div></div>
+                <div class="language-item"><div class="language-flag">🇹🇼</div><div class="language-name">繁體中文</div></div>
             </div>
         </div>
-        
-        <div class="demo-section">
-            <h2>Premium Service Features</h2>
-            <ul>
-                <li>✅ All 50 languages always included</li>
-                <li>✅ Real-time content switching</li>
-                <li>✅ Standardized professional design</li>
-                <li>✅ Automatic URL generation for all content types</li>
-                <li>✅ SEO-optimized metadata</li>
-                <li>✅ Mobile responsive</li>
-                <li>✅ Fast loading with fallback data</li>
-                <li>✅ No customization needed - consistent branding</li>
-            </ul>
+
+        <div class="cta-section">
+            <h2>🚀 Pronto per iniziare?</h2>
+            <p>Crea il tuo widget personalizzato in pochi secondi</p>
+            <a href="/it/reserved/widgets" class="cta-button">Genera il tuo Widget</a>
         </div>
     </div>
-    
-    <!-- Widget Script -->
+
+    <!-- Include the widget script -->
     <script src="widget.js"></script>
 </body>
 </html> 

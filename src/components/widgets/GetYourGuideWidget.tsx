@@ -183,7 +183,7 @@ const GetYourGuideWidget: React.FC<GetYourGuideWidgetProps> = ({
   }, [lang, destinationName, numberOfItems]);
 
   return (
-    <div className="mb-4">
+    <div className="rounded-lg p-2">
       <div className="container mx-auto">
         <h2 className="text-2xl font-bold mb-6">Experiences in {destinationName}</h2>
         <div ref={containerRef} className="gyg-widget-container"></div>

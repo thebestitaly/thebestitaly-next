@@ -2,6 +2,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import directusClient from "@/lib/directus";
+import { useSectionTranslations } from "@/hooks/useTranslations";
 
 interface ArticleDestinationBoxProps {
   destinationId: string | number;
@@ -9,6 +10,8 @@ interface ArticleDestinationBoxProps {
 }
 
 const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinationId, lang }) => {
+  const { t } = useSectionTranslations('navigation', lang);
+  
   const { data: destination, isLoading } = useQuery({
     queryKey: ["destination", destinationId, lang],
     queryFn: async () => {
@@ -25,8 +28,6 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
   if (isLoading) return <div>Loading destination...</div>;
   if (!destination) return null;
 
-  // Debug: vediamo cosa riceve il componente
-  
   const translation = destination.translations?.[0];
   const destName = translation?.destination_name || "";
   const destSummary = translation?.seo_summary || "";
@@ -40,20 +41,22 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
   const regionTranslation = region?.translations?.[0];
   const provinceTranslation = province?.translations?.[0];
 
-  // Funzione per tradurre i tipi in italiano
+  // Funzione per tradurre i tipi in base alla lingua corrente
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'region': return 'Regione';
-      case 'province': return 'Provincia';
-      case 'municipality': return 'Comune';
+      case 'region': return t('region') || 'Regione';
+      case 'province': return t('province') || 'Provincia';
+      case 'municipality': return t('city') || 'Comune';
       default: return 'Destinazione';
     }
   };
 
-  // Costruisci la gerarchia di destinazioni
+  // Costruisci la gerarchia completa delle destinazioni
   const hierarchy = [];
   
-  // Aggiungi regione se esiste (sempre, indipendentemente dalla provincia)
+  // Logica completamente rivista per costruire la gerarchia completa
+  
+  // 1. Se abbiamo una regione (sempre in cima alla gerarchia)
   if (region && regionTranslation) {
     hierarchy.push({
       name: regionTranslation.destination_name || regionTranslation.description,
@@ -64,8 +67,8 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
     });
   }
   
-  // Aggiungi provincia se esiste (solo se la destinazione corrente non è già una provincia)
-  if (province && provinceTranslation && destination.type !== 'province') {
+  // 2. Se abbiamo una provincia (secondo livello)
+  if (province && provinceTranslation) {
     hierarchy.push({
       name: provinceTranslation.destination_name || provinceTranslation.description,
       image: (province as any).image,
@@ -75,28 +78,51 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
     });
   }
   
-  // Aggiungi la destinazione corrente solo se non è già una regione
-  if (destination.type !== 'region') {
-    let currentDestinationLink = `/${lang}/${destSlug}`;
+  // 3. Se la destinazione corrente è una municipalità (terzo livello)
+  if (destination.type === 'municipality' && destName) {
+    let municipalityLink = `/${lang}/${destSlug}`;
     
-    // Costruisci il link appropriato in base al tipo
-    if (destination.type === "municipality" && provinceTranslation?.slug_permalink && regionTranslation?.slug_permalink) {
-      currentDestinationLink = `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${destSlug}`;
-    } else if (destination.type === "province" && regionTranslation?.slug_permalink) {
-      currentDestinationLink = `/${lang}/${regionTranslation.slug_permalink}/${destSlug}`;
+    // Costruisci il link completo per la municipalità
+    if (provinceTranslation?.slug_permalink && regionTranslation?.slug_permalink) {
+      municipalityLink = `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${destSlug}`;
     }
     
     hierarchy.push({
       name: destName,
       image: destImage,
-      link: currentDestinationLink,
+      link: municipalityLink,
       type: destination.type,
       typeLabel: getTypeLabel(destination.type)
     });
   }
-
-  // Debug: vediamo la gerarchia costruita
-  console.log('ArticleDestinationBox - hierarchy:', hierarchy);
+  
+  // 4. Se la destinazione corrente è una provincia e non l'abbiamo già aggiunta
+  if (destination.type === 'province' && destName && !hierarchy.find(h => h.type === 'province')) {
+    let provinceLink = `/${lang}/${destSlug}`;
+    
+    if (regionTranslation?.slug_permalink) {
+      provinceLink = `/${lang}/${regionTranslation.slug_permalink}/${destSlug}`;
+    }
+    
+    hierarchy.push({
+      name: destName,
+      image: destImage,
+      link: provinceLink,
+      type: destination.type,
+      typeLabel: getTypeLabel(destination.type)
+    });
+  }
+  
+  // 5. Se la destinazione corrente è una regione e non l'abbiamo già aggiunta
+  if (destination.type === 'region' && destName && !hierarchy.find(h => h.type === 'region')) {
+    hierarchy.push({
+      name: destName,
+      image: destImage,
+      link: `/${lang}/${destSlug}`,
+      type: destination.type,
+      typeLabel: getTypeLabel(destination.type)
+    });
+  }
 
   return (
     <div className="bg-white rounded-xl">
@@ -162,8 +188,8 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
       
       {/* Descrizione della destinazione se disponibile */}
       {destSummary && (
-        <div className="mt-4 p-3 rounded-lg">
-          <p className="text-sm text-blue-800 leading-relaxed">
+        <div className="p-3 rounded-lg">
+          <p className="text-sm text-gray-800 leading-relaxed">
             {destSummary}
           </p>
         </div>

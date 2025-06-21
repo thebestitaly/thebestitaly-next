@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { keyName, section, englishText, translationType = 'all' } = body;
+    const { keyName, section, englishText, translationType = 'all', targetLanguage } = body;
 
     if (!keyName || !section || !englishText) {
       return NextResponse.json(
@@ -102,6 +102,8 @@ export async function POST(request: NextRequest) {
     // Determina le lingue target (escludi inglese che è già fornito)
     const targetLanguages = translationType === 'italian' 
       ? ['it'] 
+      : translationType === 'single' && targetLanguage
+      ? [targetLanguage]
       : ALL_LANGUAGES.filter(lang => lang !== 'en'); // Escludi inglese
 
     const translations: Record<string, string> = { en: englishText };

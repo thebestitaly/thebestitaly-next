@@ -22,32 +22,28 @@ const ArticleCardSidebar: React.FC<ArticleCardSidebarProps> = ({ article, lang }
     <li>
       <Link
         href={`/${lang}/magazine/${translation.slug_permalink}/`}
-        className="flex items-start space-x-4 group"
+        className="flex items-start space-x-4 group mb-6"
       >
-        <div className="w-full mb-8">
-          {article.image && (
-            <div className="aspect-video relative overflow-hidden">
-              <div className="relative w-full h-[200px] rounded-xl overflow-hidden">
-                <Image
-                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
-                  alt={translation.titolo_articolo}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-xl"
-                  sizes="(max-width: 768px) 100vw, 200px"
-                />
-              </div>
+        {/* Foto quadrata con bordi arrotondati */}
+        {article.image && (
+          <div className="flex-shrink-0">
+            <div className="relative w-20 h-20 rounded-xl overflow-hidden">
+              <Image
+                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+                alt={translation.titolo_articolo}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="80px"
+              />
             </div>
-          )}
-          <div className="content pb-2">
-            <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-3">
-              {translation.titolo_articolo}
-            </h3>
-            {translation.seo_summary && (
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {translation.seo_summary}
-              </p>
-            )}
           </div>
+        )}
+        
+        {/* Titolo a destra */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-md text-gray-900 group-hover:text-blue-600 transition-colors leading-tight">
+            {translation.titolo_articolo}
+          </h3>
         </div>
       </Link>
     </li>

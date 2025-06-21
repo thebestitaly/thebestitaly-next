@@ -1167,8 +1167,6 @@ class DirectusClient {
       // Filtra solo articoli con traduzioni valide
       const validArticles = articles.filter((article: any) => article.translations.length > 0);
 
-      console.log(`[getArticles] Found ${validArticles.length}/${rawArticles.length} articles with ${languageCode} translations`);
-
       return { articles: validArticles, total };
     } catch (error: any) {
       console.error("Error fetching articles:", error.message || error);
@@ -1434,11 +1432,11 @@ class DirectusClient {
       destination.translations = translation ? [translation] : [];
 
       // Se abbiamo region_id o province_id, proviamo a caricarli separatamente con query ottimizzata
-      if (destination.region_id && typeof destination.region_id === 'string') {
+      if (destination.region_id && (typeof destination.region_id === 'string' || typeof destination.region_id === 'number')) {
         try {
           const regionResponse = await this.client.get('/items/destinations', {
             params: {
-              'filter[id][_eq]': destination.region_id,
+              'filter[id][_eq]': destination.region_id.toString(),
               'fields[]': [
                 'id', 
                 'uuid_id', 
@@ -1469,11 +1467,11 @@ class DirectusClient {
         }
       }
 
-      if (destination.province_id && typeof destination.province_id === 'string') {
+      if (destination.province_id && (typeof destination.province_id === 'string' || typeof destination.province_id === 'number')) {
         try {
           const provinceResponse = await this.client.get('/items/destinations', {
             params: {
-              'filter[id][_eq]': destination.province_id,
+              'filter[id][_eq]': destination.province_id.toString(),
               'fields[]': [
                 'id', 
                 'uuid_id', 

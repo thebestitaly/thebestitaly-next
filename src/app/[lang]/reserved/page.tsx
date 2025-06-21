@@ -257,20 +257,135 @@ function ArticlesList() {
     }
   }
 
-  // Funzione per tradurre destinazioni
+  // Funzione per tradurre destinazioni (nuovo sistema)
   async function triggerTranslateDestination(destinationId: number | string) {
     setTranslatingItems(prev => new Set(prev).add(destinationId));
     try {
-      const res = await fetch(`/it/api/translate-destinations/${destinationId}`, {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error(`Errore traduzione: ${res.status}`);
-      const payload = await res.json();
-      console.log("Traduzione destinazione avviata:", payload);
-      alert(`✅ Traduzione completata per destinazione ${destinationId}!\n🌍 ${payload.translationsCompleted}/${payload.totalLanguages} lingue tradotte`);
+      // Prima ottieni i dati della destinazione per avere il contenuto inglese
+      const destinationResponse = await fetch(`/api/destinations/${destinationId}`);
+      if (!destinationResponse.ok) {
+        throw new Error('Errore nel recuperare la destinazione');
+      }
+      const destination = await destinationResponse.json();
+      const translation = destination.translations?.[0];
+      
+      if (!translation) {
+        throw new Error('Nessuna traduzione italiana trovata per la destinazione');
+      }
+
+      // Usa il nuovo sistema di traduzioni automatiche
+      const fields = [
+        { key: 'name', value: translation.destination_name || '' },
+        { key: 'seo_title', value: translation.seo_title || '' },
+        { key: 'seo_summary', value: translation.seo_summary || '' },
+        { key: 'description', value: translation.description || '' },
+        { key: 'slug', value: translation.slug_permalink || '' }
+      ];
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const field of fields) {
+        if (field.value.trim()) {
+          try {
+            const response = await fetch('/api/admin/translations/auto-translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                keyName: `destination_${destinationId}_${field.key}`,
+                section: 'destinations',
+                englishText: field.value,
+                translationType: 'all'
+              })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+              successCount++;
+            } else {
+              errorCount++;
+            }
+          } catch (error) {
+            console.error(`Error translating field ${field.key}:`, error);
+            errorCount++;
+          }
+        }
+      }
+
+      alert(`✅ Traduzione destinazione ${destinationId} completata!\n🌍 ${successCount} campi tradotti\n❌ ${errorCount} errori`);
     } catch (err) {
       console.error("triggerTranslateDestination error:", err);
-      alert(`❌ Errore nel tradurre destinazione ${destinationId}`);
+      alert(`❌ Errore nel tradurre destinazione ${destinationId}: ${err}`);
+    } finally {
+      setTranslatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(destinationId);
+        return newSet;
+      });
+    }
+  }
+
+  // Funzione per tradurre destinazioni solo in inglese (nuovo sistema)
+  async function triggerTranslateDestinationEnglish(destinationId: number | string) {
+    setTranslatingItems(prev => new Set(prev).add(destinationId));
+    try {
+      // Prima ottieni i dati della destinazione per avere il contenuto italiano
+      const destinationResponse = await fetch(`/api/destinations/${destinationId}`);
+      if (!destinationResponse.ok) {
+        throw new Error('Errore nel recuperare la destinazione');
+      }
+      const destination = await destinationResponse.json();
+      const translation = destination.translations?.[0];
+      
+      if (!translation) {
+        throw new Error('Nessuna traduzione italiana trovata per la destinazione');
+      }
+
+      // Usa il nuovo sistema per tradurre solo in inglese
+      const fields = [
+        { key: 'name', value: translation.destination_name || '' },
+        { key: 'seo_title', value: translation.seo_title || '' },
+        { key: 'seo_summary', value: translation.seo_summary || '' },
+        { key: 'description', value: translation.description || '' },
+        { key: 'slug', value: translation.slug_permalink || '' }
+      ];
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const field of fields) {
+        if (field.value.trim()) {
+          try {
+            // Traduci dall'italiano all'inglese
+            const response = await fetch('/api/admin/translations/auto-translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                keyName: `destination_${destinationId}_${field.key}`,
+                section: 'destinations',
+                englishText: field.value, // Il testo italiano viene usato come base
+                translationType: 'single',
+                targetLanguage: 'en'
+              })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+              successCount++;
+            } else {
+              errorCount++;
+            }
+          } catch (error) {
+            console.error(`Error translating field ${field.key} to English:`, error);
+            errorCount++;
+          }
+        }
+      }
+
+      alert(`✅ Traduzione in inglese per destinazione ${destinationId} completata!\n🌍 ${successCount} campi tradotti\n❌ ${errorCount} errori`);
+    } catch (err) {
+      console.error("triggerTranslateDestinationEnglish error:", err);
+      alert(`❌ Errore nel tradurre in inglese destinazione ${destinationId}: ${err}`);
     } finally {
       setTranslatingItems(prev => {
         const newSet = new Set(prev);
@@ -369,6 +484,48 @@ function ArticlesList() {
     // Per altri tipi, usa lo slug semplice come fallback
     return `/it/${destination.slug_permalink}`;
   };
+
+  // Funzione per eliminare tutte le traduzioni di una destinazione
+  async function deleteAllDestinationTranslations(destinationId: number | string) {
+    const confirm = window.confirm('⚠️ Sei sicuro di voler eliminare TUTTE le traduzioni di questa destinazione? (Verranno eliminate dal sistema di traduzioni)');
+    if (!confirm) return;
+    
+    setTranslatingItems(prev => new Set(prev).add(destinationId));
+    try {
+      // Elimina tutte le chiavi di traduzione per questa destinazione
+      const fields = ['name', 'seo_title', 'seo_summary', 'description', 'slug'];
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const field of fields) {
+        try {
+          const response = await fetch(`/api/admin/translations?keyName=destination_${destinationId}_${field}`, {
+            method: 'DELETE'
+          });
+          
+          if (response.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } catch (error) {
+          console.error(`Error deleting translation key destination_${destinationId}_${field}:`, error);
+          errorCount++;
+        }
+      }
+
+      alert(`✅ Eliminazione traduzioni destinazione ${destinationId} completata!\n🗑️ ${successCount} chiavi eliminate\n❌ ${errorCount} errori`);
+    } catch (err) {
+      console.error("deleteAllDestinationTranslations error:", err);
+      alert(`❌ Errore nell'eliminare le traduzioni della destinazione ${destinationId}`);
+    } finally {
+      setTranslatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(destinationId);
+        return newSet;
+      });
+    }
+  }
 
   async function deleteAllCompanyTranslations(companyId: number | string) {
     const confirm = window.confirm('⚠️ Sei sicuro di voler eliminare TUTTE le traduzioni di questa company? (Verrà mantenuta solo la versione italiana)');
@@ -716,7 +873,7 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Traducendo...
                                 </>
@@ -738,7 +895,7 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Eliminando...
                                 </>
@@ -871,7 +1028,51 @@ function ArticlesList() {
                                   Traducendo...
                                 </>
                               ) : (
-                                <>🚀 Traduci</>
+                                <>🌍 Traduci 49 lingue</>
+                              )}
+                            </button>
+
+                            <button
+                              onClick={() => triggerTranslateDestinationEnglish(destination.id)}
+                              disabled={translatingItems.has(destination.id)}
+                              className={`inline-flex items-center px-4 py-2 text-white font-semibold text-sm rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md ${
+                                translatingItems.has(destination.id)
+                                  ? 'bg-orange-500 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                              }`}
+                            >
+                              {translatingItems.has(destination.id) ? (
+                                <>
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Traducendo...
+                                </>
+                              ) : (
+                                <>🇬🇧 Solo inglese</>
+                              )}
+                            </button>
+                            
+                            <button
+                              onClick={() => deleteAllDestinationTranslations(destination.id)}
+                              disabled={translatingItems.has(destination.id)}
+                              className={`inline-flex items-center px-4 py-2 text-white font-semibold text-sm rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md ${
+                                translatingItems.has(destination.id)
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                              }`}
+                            >
+                              {translatingItems.has(destination.id) ? (
+                                <>
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Eliminando...
+                                </>
+                              ) : (
+                                <>🗑️ Elimina traduzioni</>
                               )}
                             </button>
                             
@@ -1043,7 +1244,7 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Traducendo...
                                 </>
@@ -1065,7 +1266,7 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Traducendo...
                                 </>
@@ -1087,7 +1288,7 @@ function ArticlesList() {
                                 <>
                                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
                                   Eliminando...
                                 </>
