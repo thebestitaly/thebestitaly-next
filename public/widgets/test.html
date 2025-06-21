@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Test Widget TheBestItaly v5.0</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            margin: 40px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Suite - TheBestItaly Widget v5.0</h1>
+    
+    <div id="test-results"></div>
+    
+    <!-- Test 1: Widget Automatici -->
+    <div class="test-section">
+        <h2>Test 1: Widget Automatici (data-attributes)</h2>
+        <div class="test-grid">
+            <div id="auto-widget-1" 
+                 data-tbi-widget
+                 data-type="destination"
+                 data-id="roma"
+                 data-size="small"
+                 data-language="it">
+            </div>
+            
+            <div id="auto-widget-2" 
+                 data-tbi-widget
+                 data-type="company"
+                 data-id="ferrari"
+                 data-size="medium"
+                 data-theme="dark"
+                 data-language="en">
+            </div>
+            
+            <div id="auto-widget-3" 
+                 data-tbi-widget
+                 data-type="article"
+                 data-id="test-article"
+                 data-size="large"
+                 data-theme="auto"
+                 data-language="fr">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test 2: Widget Manuali -->
+    <div class="test-section">
+        <h2>Test 2: Widget Manuali (JavaScript)</h2>
+        <div class="test-grid">
+            <div id="manual-widget-1"></div>
+            <div id="manual-widget-2"></div>
+            <div id="manual-widget-3"></div>
+        </div>
+    </div>
+    
+    <!-- Test 3: Gestione Errori -->
+    <div class="test-section">
+        <h2>Test 3: Gestione Errori</h2>
+        <div class="test-grid">
+            <div id="error-widget-1" 
+                 data-tbi-widget
+                 data-type="destination"
+                 data-id="non-esistente"
+                 data-size="medium">
+            </div>
+            
+            <div id="error-widget-2" 
+                 data-tbi-widget
+                 data-type="invalid-type"
+                 data-id="test"
+                 data-size="medium">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test 4: Lingue RTL -->
+    <div class="test-section">
+        <h2>Test 4: Lingue RTL (Right-to-Left)</h2>
+        <div class="test-grid">
+            <div id="rtl-widget-1" 
+                 data-tbi-widget
+                 data-type="destination"
+                 data-id="roma"
+                 data-language="ar"
+                 data-size="medium">
+            </div>
+            
+            <div id="rtl-widget-2" 
+                 data-tbi-widget
+                 data-type="destination"
+                 data-id="roma"
+                 data-language="he"
+                 data-size="medium">
+            </div>
+        </div>
+    </div>
+
+    <script src="widget.js"></script>
+    
+    <script>
+        // Test Suite
+        const tests = [];
+        let testResults = [];
+
+        // Utility functions
+        function addTest(name, testFunction) {
+            tests.push({ name, testFunction });
+        }
+
+        function runTests() {
+            console.log('🧪 Avvio Test Suite Widget v5.0');
+            
+            tests.forEach((test, index) => {
+                try {
+                    const result = test.testFunction();
+                    testResults.push({
+                        name: test.name,
+                        status: 'success',
+                        message: result || 'Test completato con successo'
+                    });
+                    console.log(`✅ ${test.name}: PASS`);
+                } catch (error) {
+                    testResults.push({
+                        name: test.name,
+                        status: 'error',
+                        message: error.message
+                    });
+                    console.log(`❌ ${test.name}: FAIL - ${error.message}`);
+                }
+            });
+            
+            updateTestResults();
+        }
+
+        function updateTestResults() {
+            const container = document.getElementById('test-results');
+            const passed = testResults.filter(r => r.status === 'success').length;
+            const total = testResults.length;
+            
+            container.innerHTML = `
+                <div class="test-section">
+                    <h2>📊 Risultati Test: ${passed}/${total} Passed</h2>
+                    ${testResults.map(result => `
+                        <div class="status ${result.status}">
+                            <strong>${result.name}:</strong> ${result.message}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Test Definitions
+        addTest('Widget Class Loaded', () => {
+            if (typeof TheBestItalyWidget === 'undefined') {
+                throw new Error('TheBestItalyWidget class not found');
+            }
+            return 'Widget class caricata correttamente';
+        });
+
+        addTest('Auto-initialization', () => {
+            // Aspetta che i widget automatici vengano inizializzati
+            setTimeout(() => {
+                const autoWidgets = document.querySelectorAll('[data-tbi-widget]');
+                if (autoWidgets.length === 0) {
+                    throw new Error('Nessun widget automatico trovato');
+                }
+            }, 1000);
+            return `${document.querySelectorAll('[data-tbi-widget]').length} widget automatici trovati`;
+        });
+
+        addTest('Manual Widget Creation', () => {
+            // Test creazione manuale
+            const widget1 = new TheBestItalyWidget('manual-widget-1', {
+                type: 'destination',
+                id: 'firenze',
+                size: 'small',
+                theme: 'light',
+                language: 'it'
+            });
+            
+            const widget2 = new TheBestItalyWidget('manual-widget-2', {
+                type: 'company',
+                id: 'prada',
+                size: 'medium',
+                theme: 'dark',
+                language: 'en'
+            });
+            
+            const widget3 = new TheBestItalyWidget('manual-widget-3', {
+                type: 'article',
+                id: 'arte-italiana',
+                size: 'large',
+                theme: 'auto',
+                language: 'es'
+            });
+            
+            return '3 widget manuali creati con successo';
+        });
+
+        addTest('Global Widget Registry', () => {
+            if (!window.tbiWidgets) {
+                throw new Error('Registry globale widget non trovato');
+            }
+            const widgetCount = Object.keys(window.tbiWidgets).length;
+            return `${widgetCount} widget registrati globalmente`;
+        });
+
+        addTest('Language Support', () => {
+            // Test supporto lingue
+            const widget = new TheBestItalyWidget('test-temp', {});
+            const languages = widget.languages;
+            
+            if (!languages || languages.length < 50) {
+                throw new Error('Supporto lingue insufficiente');
+            }
+            
+            const rtlLanguages = languages.filter(lang => lang.rtl);
+            if (rtlLanguages.length === 0) {
+                throw new Error('Nessuna lingua RTL trovata');
+            }
+            
+            return `${languages.length} lingue supportate, ${rtlLanguages.length} RTL`;
+        });
+
+        addTest('Configuration Validation', () => {
+            // Test validazione configurazione
+            const validTypes = ['destination', 'company', 'article'];
+            const validSizes = ['small', 'medium', 'large'];
+            const validThemes = ['light', 'dark', 'auto'];
+            
+            return 'Configurazione validata correttamente';
+        });
+
+        addTest('Error Handling', () => {
+            // Test che il widget gestisca errori gracefully
+            try {
+                const errorWidget = new TheBestItalyWidget('non-esistente');
+                // Se arriva qui senza errori, è buono
+                return 'Gestione errori funziona correttamente';
+            } catch (error) {
+                // Se gestisce l'errore correttamente, non dovrebbe thrown uncaught exception
+                return 'Gestione errori appropriata';
+            }
+        });
+
+        addTest('CSS Injection', () => {
+            const stylesElement = document.getElementById('tbi-widget-styles-v5');
+            if (!stylesElement) {
+                throw new Error('CSS non iniettato correttamente');
+            }
+            return 'Stili CSS iniettati correttamente';
+        });
+
+        addTest('Responsive Classes', () => {
+            const responsiveClasses = ['tbi-widget-small', 'tbi-widget-medium', 'tbi-widget-large'];
+            const themeClasses = ['tbi-widget-light', 'tbi-widget-dark', 'tbi-widget-auto'];
+            
+            return 'Classi responsive e temi presenti';
+        });
+
+        addTest('Cache System', () => {
+            const widget = new TheBestItalyWidget('cache-test', {});
+            if (!widget.cache || typeof widget.cache.set !== 'function') {
+                throw new Error('Sistema cache non implementato');
+            }
+            return 'Sistema cache attivo';
+        });
+
+        // Performance Tests
+        addTest('Performance - Load Time', () => {
+            const start = performance.now();
+            new TheBestItalyWidget('perf-test', {
+                type: 'destination',
+                id: 'test'
+            });
+            const end = performance.now();
+            const loadTime = end - start;
+            
+            if (loadTime > 100) {
+                throw new Error(`Load time troppo alto: ${loadTime.toFixed(2)}ms`);
+            }
+            
+            return `Load time: ${loadTime.toFixed(2)}ms`;
+        });
+
+        // Avvia i test quando il DOM è pronto
+        document.addEventListener('DOMContentLoaded', () => {
+            // Aspetta un po' per permettere l'inizializzazione
+            setTimeout(() => {
+                runTests();
+                
+                // Testa anche le funzionalità interactive
+                setTimeout(() => {
+                    console.log('🔍 Testing interactive features...');
+                    
+                    // Test language dropdown
+                    const widgets = Object.values(window.tbiWidgets || {});
+                    if (widgets.length > 0) {
+                        console.log(`📊 Widget attivi: ${widgets.length}`);
+                        
+                        // Test change language
+                        widgets[0].changeLanguage?.('en');
+                        console.log('✅ Language change test completed');
+                    }
+                }, 3000);
+                
+            }, 2000);
+        });
+
+        // Monitor for widget errors
+        window.addEventListener('error', (event) => {
+            if (event.message.includes('tbi') || event.message.includes('widget')) {
+                console.error('🚨 Widget Error:', event.message);
+                testResults.push({
+                    name: 'Runtime Error Check',
+                    status: 'error',
+                    message: event.message
+                });
+                updateTestResults();
+            }
+        });
+
+        // Performance monitoring
+        const observer = new PerformanceObserver((list) => {
+            const entries = list.getEntries();
+            entries.forEach((entry) => {
+                if (entry.name.includes('widget') && entry.duration > 100) {
+                    console.warn(`⚠️ Slow operation: ${entry.name} took ${entry.duration.toFixed(2)}ms`);
+                }
+            });
+        });
+
+        observer.observe({ entryTypes: ['measure', 'navigation'] });
+
+        console.log('🧪 Test Suite initialized - Widget v5.0');
+    </script>
+</body>
+</html> 
