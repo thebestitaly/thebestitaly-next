@@ -1,63 +1,68 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Ottimizzazioni per le performance
+  // Ottimizzazioni prestazioni
+  swcMinify: true,
   compress: true,
-  poweredByHeader: false,
   
-  // Ottimizzazione bundle
-  compiler: {
-    removeConsole: false, // MANTIENI CONSOLE.LOG per debug middleware
-  },
-  
-  // Configurazione immagini
+  // Ottimizzazione immagini
   images: {
-    formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 31536000, // 1 anno
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 31536000,
     remotePatterns: [
-      // Railway Production Directus (priorità)
       {
         protocol: 'https',
         hostname: 'directus-production-93f0.up.railway.app',
-        pathname: '/assets/**',
-      },
-      // Server locale (fallback per sviluppo)
-      {
-        protocol: 'http',
-        hostname: '127.0.0.1',
-        port: '8055',
+        port: '',
         pathname: '/assets/**',
       },
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '8055',
-        pathname: '/assets/**',
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.getyourguide.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'thebestitaly.eu',
+        port: '',
+        pathname: '/**',
       },
     ],
   },
   
-  // Headers per performance
+  // Ottimizzazioni build
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+    serverComponentsExternalPackages: ['sharp']
+  },
+  
+  // Compressione gzip
+  compress: true,
+  
+  // Cache ottimizzata
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+  
+  // Redirects ottimizzati
+  async redirects() {
+    return []
+  },
+
+  // Headers per cache
   async headers() {
     return [
       {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-        ],
-      },
-      {
-        source: '/images/(.*)',
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -65,8 +70,17 @@ const nextConfig = {
           },
         ],
       },
-    ];
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000',
+          },
+        ],
+      },
+    ]
   },
-}
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig; 
