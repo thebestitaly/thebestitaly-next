@@ -627,38 +627,22 @@ class DirectusClient {
 
   async getCompanyBySlug(slug: string, lang: string) {
     try {
-      const response = await this.client.get('/items/companies', {
-        params: {
-          filter: {
-            slug_permalink: { _eq: slug }
-          },
-          fields: [
-            'id',
-            'featured_image',
-            'website',
-            'company_name',
-            'phone',
-            'lat',
-            'long',
-            'category_id',
-            'destination_id',
-            'images.id',
-            'images.directus_files_id',
-            'featured',
-            'socials',
-            'translations.*'
-          ],
-          deep: {
-            translations: {
-              _filter: {
-                languages_code: {
-                  _eq: lang
-                }
-              }
+      const filterParam = JSON.stringify({
+        slug_permalink: { _eq: slug }
+      });
+      
+      const deepParam = JSON.stringify({
+        translations: {
+          _filter: {
+            languages_code: {
+              _eq: lang
             }
           }
         }
       });
+
+      const response = await this.client.get(`/items/companies?filter=${encodeURIComponent(filterParam)}&deep=${encodeURIComponent(deepParam)}&fields=id,featured_image,website,company_name,phone,lat,long,category_id,destination_id,images.id,images.directus_files_id,featured,socials,translations.*`);
+      
       return response.data?.data[0] || null;
     } catch (error) {
       console.error('Error fetching company:', error);
@@ -702,46 +686,30 @@ class DirectusClient {
         return null;
       }
 
-      const response = await this.client.get('/items/articles', {
-        params: {
-          'filter': {
-            'translations': {
-              'slug_permalink': {
-                '_eq': slug
-              }
-            }
-          },
-          'fields': [
-            'id',
-            'uuid_id', // UUID dell'articolo
-            'image',
-            'category_id.id',
-            'category_id.uuid_id', // UUID della categoria
-            'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink',
-            'destination_id',
-            'date_created',
-            'translations.languages_code',
-            'translations.titolo_articolo',
-            'translations.description',
-            'translations.seo_summary',
-            'translations.slug_permalink'
-          ],
-          // OTTIMIZZAZIONE: Prova prima con la lingua richiesta
-          'deep': {
-            'translations': {
-              '_filter': {
-                'languages_code': { '_eq': languageCode }
-              }
-            },
-            'category_id.translations': {
-              '_filter': {
-                'languages_code': { '_eq': languageCode }
-              }
-            }
+      const filterParam = JSON.stringify({
+        'translations': {
+          'slug_permalink': {
+            '_eq': slug
           }
         }
       });
+      
+      const deepParam = JSON.stringify({
+        'translations': {
+          '_filter': {
+            'languages_code': { '_eq': languageCode }
+          }
+        },
+        'category_id.translations': {
+          '_filter': {
+            'languages_code': { '_eq': languageCode }
+          }
+        }
+      });
+      
+      const fieldsParam = 'id,uuid_id,image,category_id.id,category_id.uuid_id,category_id.translations.nome_categoria,category_id.translations.slug_permalink,destination_id,date_created,translations.languages_code,translations.titolo_articolo,translations.description,translations.seo_summary,translations.slug_permalink';
+
+      const response = await this.client.get(`/items/articles?filter=${encodeURIComponent(filterParam)}&deep=${encodeURIComponent(deepParam)}&fields=${fieldsParam}`);
 
       const article = response.data?.data?.[0];
       if (!article) return null;
@@ -754,45 +722,30 @@ class DirectusClient {
       if (!translation && languageCode !== 'it') {
         console.log(`[getArticleBySlug] No translation found for ${languageCode}, trying Italian fallback`);
         
-        const fallbackResponse = await this.client.get('/items/articles', {
-          params: {
-            'filter': {
-              'translations': {
-                'slug_permalink': {
-                  '_eq': slug
-                }
-              }
-            },
-            'fields': [
-              'id',
-              'uuid_id',
-              'image',
-              'category_id.id',
-              'category_id.uuid_id',
-              'category_id.translations.nome_categoria',
-              'category_id.translations.slug_permalink',
-              'destination_id',
-              'date_created',
-              'translations.languages_code',
-              'translations.titolo_articolo',
-              'translations.description',
-              'translations.seo_summary',
-              'translations.slug_permalink'
-            ],
-            'deep': {
-              'translations': {
-                '_filter': {
-                  'languages_code': { '_eq': 'it' }
-                }
-              },
-              'category_id.translations': {
-                '_filter': {
-                  'languages_code': { '_eq': 'it' }
-                }
-              }
+        const fallbackFilterParam = JSON.stringify({
+          'translations': {
+            'slug_permalink': {
+              '_eq': slug
             }
           }
         });
+        
+        const fallbackDeepParam = JSON.stringify({
+          'translations': {
+            '_filter': {
+              'languages_code': { '_eq': 'it' }
+            }
+          },
+          'category_id.translations': {
+            '_filter': {
+              'languages_code': { '_eq': 'it' }
+            }
+          }
+        });
+        
+        const fallbackFieldsParam = 'id,uuid_id,image,category_id.id,category_id.uuid_id,category_id.translations.nome_categoria,category_id.translations.slug_permalink,destination_id,date_created,translations.languages_code,translations.titolo_articolo,translations.description,translations.seo_summary,translations.slug_permalink';
+
+        const fallbackResponse = await this.client.get(`/items/articles?filter=${encodeURIComponent(fallbackFilterParam)}&deep=${encodeURIComponent(fallbackDeepParam)}&fields=${fallbackFieldsParam}`);
         
         const fallbackArticle = fallbackResponse.data?.data?.[0];
         if (fallbackArticle) {
