@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useParams, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import directusClient from "../../lib/directus";
+import { SUPPORTED_LANGUAGES, getLanguageByCode } from "@/lib/languages";
 
 interface Language {
   code: string;
@@ -49,19 +50,12 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 
   const pageInfo = getCollectionTypeAndSlug();
   
-  // Query per ottenere le lingue
-  const { data: languages } = useQuery<Language[]>({
-    queryKey: ["languages"],
-    queryFn: async () => {
-      const response = await directusClient.get("/items/languages", {
-        params: {
-          sort: ["name"],
-          fields: ["code", "name", "direction"],
-        },
-      });
-      return response.data.data;
-    },
-  });
+  // Usa le lingue unificate - ESATTAMENTE 50 lingue!
+  const languages = SUPPORTED_LANGUAGES.map(lang => ({
+    code: lang.code,
+    name: lang.nativeName, // USA IL NOME NATIVO
+    direction: lang.rtl ? 'rtl' : 'ltr'
+  }));
 
   // Query per ottenere l'ID del contenuto
   const { data: contentId } = useQuery({

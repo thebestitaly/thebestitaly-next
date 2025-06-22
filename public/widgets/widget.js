@@ -27,7 +27,7 @@ class TheBestItalyWidget {
         this.baseUrl = 'https://thebestitaly.eu';
         this.apiUrl = `${this.baseUrl}/api/directus`;
         
-        // All supported languages
+        // ESATTAMENTE 50 LINGUE SUPPORTATE!
         this.languages = [
             { code: 'af', name: 'Afrikaans', flag: '🇿🇦' },
             { code: 'am', name: 'አማርኛ', flag: '🇪🇹' },
@@ -79,8 +79,7 @@ class TheBestItalyWidget {
             { code: 'uk', name: 'Українська', flag: '🇺🇦' },
             { code: 'ur', name: 'اردو', flag: '🇵🇰' },
             { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
-            { code: 'zh', name: '中文', flag: '🇨🇳' },
-            { code: 'zh-tw', name: '繁體中文', flag: '🇹🇼' }
+            { code: 'zh', name: '中文', flag: '🇨🇳' }
         ];
 
         this.currentLanguage = this.config.language;
@@ -205,7 +204,7 @@ class TheBestItalyWidget {
                 /* NUOVO SELETTORE LINGUE COME NELL'IMMAGINE */
                 .tbi-widget-lang-selector {
                     position: relative;
-                    z-index: 1000;
+                    z-index: 9999;
                 }
 
                 .tbi-widget-lang-button {
@@ -284,24 +283,24 @@ class TheBestItalyWidget {
 
                 .tbi-widget-lang-dropdown {
                     position: absolute;
-                    top: calc(100% + 4px);
+                    bottom: calc(100% + 4px);
                     right: 0;
                     background: white;
                     border: 2px solid #e5e7eb;
                     border-radius: 12px;
-                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+                    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15);
                     max-height: 250px;
                     overflow-y: auto;
-                    z-index: 9999;
+                    z-index: 99999;
                     min-width: 200px;
                     display: none;
-                    animation: fadeInDown 0.2s ease;
+                    animation: fadeInUp 0.2s ease;
                 }
 
-                @keyframes fadeInDown {
+                @keyframes fadeInUp {
                     from {
                         opacity: 0;
-                        transform: translateY(-10px);
+                        transform: translateY(10px);
                     }
                     to {
                         opacity: 1;
@@ -758,6 +757,12 @@ class TheBestItalyWidget {
         this.currentLanguage = langCode;
         this.closeDropdown();
         this.render();
+        
+        // Aggiorna il link del pulsante "Visita sito"
+        const visitLink = this.container.querySelector('.tbi-widget-visit-link');
+        if (visitLink) {
+            visitLink.href = this.getUrl();
+        }
     }
 
     toggleLanguageDropdown() {
@@ -847,12 +852,11 @@ class TheBestItalyWidget {
         this.container.innerHTML = `
             <div class="tbi-widget ${sizeClass} ${themeClass}">
                 <div class="tbi-widget-header">
-                    <div class="tbi-widget-logo">
-                        <div class="tbi-widget-logo-icon">
-                            <img src="https://thebestitaly.eu/_next/image?url=%2Fimages%2Flogo-black.webp&w=256&q=75" alt="TheBestItaly" />
-                        </div>
-                        <span>TheBestItaly</span>
-                    </div>
+                                         <div class="tbi-widget-logo">
+                         <div class="tbi-widget-logo-icon">
+                             <img src="https://thebestitaly.eu/_next/image?url=%2Fimages%2Flogo-black.webp&w=256&q=75" alt="TheBestItaly" />
+                         </div>
+                     </div>
                     ${languageSelector}
                 </div>
                 <div class="tbi-widget-content">
@@ -860,10 +864,10 @@ class TheBestItalyWidget {
                     <div class="tbi-widget-title">${this.getTitle()}</div>
                     <div class="tbi-widget-description">${this.getDescription()}</div>
                     <div class="tbi-widget-footer">
-                        <div class="tbi-widget-status">
-                            <div class="tbi-widget-status-dot"></div>
-                            <span>50+ languages</span>
-                        </div>
+                                                 <div class="tbi-widget-status">
+                             <div class="tbi-widget-status-dot"></div>
+                             <span>50 languages</span>
+                         </div>
                         <a href="${this.getUrl()}" target="_blank" class="tbi-widget-visit-link">
                             ${this.config.size === 'small' ? 'Visita' : 'Visita sito'}
                         </a>

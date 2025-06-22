@@ -81,6 +81,13 @@ const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
+  // 🎯 WIDGET REDIRECT - FIX PER I WIDGET!
+  if (pathname.includes('/widgets/')) {
+    const widgetPath = pathname.replace(/^\/[a-z]{2}\/widgets\//, '/widgets/');
+    console.log(`🎯 WIDGET REDIRECT: ${pathname} -> ${widgetPath}`);
+    return NextResponse.redirect(new URL(widgetPath, request.url), 302);
+  }
+  
   // 🔄 Check for redirects first (old URLs without region -> new URLs with region)
   const redirectUrl = getRedirectUrl(pathname);
   if (redirectUrl) {
@@ -119,6 +126,6 @@ export const config = {
   matcher: [
     // Match ALL language paths and root paths for language detection
     '/(it|en|es|fr|de|pt|ru|zh|ja|ar|hi|bn|ur|ko|vi|th|tr|pl|nl|sv|da|no|fi|cs|sk|hu|ro|bg|hr|sr|sl|et|lv|lt|el|he|fa|am|az|ka|hy|tk|tl|sw|ms|id|is|mk|af)/:path*',
-    '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images|widgets).*)',
+    '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images).*)',
   ],
 };
