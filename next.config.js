@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Ottimizzazioni prestazioni
-  swcMinify: true,
   compress: true,
   
   // Ottimizzazione immagini
@@ -41,11 +40,19 @@ const nextConfig = {
   // Ottimizzazioni build
   experimental: {
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
-    serverComponentsExternalPackages: ['sharp']
+    optimizeCss: true,
+    gzipSize: true,
   },
+  
+  // Server external packages
+  serverExternalPackages: ['sharp'],
   
   // Compressione gzip
   compress: true,
+  
+  // Performance optimizations
+  poweredByHeader: false,
+  generateEtags: false,
   
   // Cache ottimizzata
   onDemandEntries: {

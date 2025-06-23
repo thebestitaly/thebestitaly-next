@@ -12,9 +12,16 @@ interface SitemapEntry {
 const sitemapCache = new Map<string, { data: string; timestamp: number }>();
 const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 ore
 
-// Funzione per escapare caratteri XML
+// Funzione per escapare caratteri XML e validare URL
 function escapeXml(unsafe: string): string {
-  return unsafe.replace(/[<>&'"]/g, function (c) {
+  if (!unsafe || typeof unsafe !== 'string') {
+    return '';
+  }
+  
+  // Rimuovi caratteri di controllo non validi in XML
+  const cleaned = unsafe.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+  return cleaned.replace(/[<>&'"]/g, function (c) {
     switch (c) {
       case '<': return '&lt;';
       case '>': return '&gt;';
@@ -75,9 +82,14 @@ async function generateSitemap(lang: string): Promise<string> {
 
     articles.forEach((article: any) => {
       const translation = article.translations?.[0];
-      if (translation?.slug_permalink && !translation.slug_permalink.includes('<') && !translation.slug_permalink.includes('>')) {
+      if (translation?.slug_permalink && 
+          typeof translation.slug_permalink === 'string' &&
+          translation.slug_permalink.length > 0 &&
+          !translation.slug_permalink.includes('<') && 
+          !translation.slug_permalink.includes('>') &&
+          !translation.slug_permalink.includes('&')) {
         entries.push({
-          url: `${baseUrl}/${lang}/magazine/${translation.slug_permalink}`,
+          url: `${baseUrl}/${lang}/magazine/${encodeURIComponent(translation.slug_permalink)}`,
           lastModified: article.date_created || currentDate,
           changeFrequency: 'monthly',
           priority: 0.7
@@ -105,9 +117,14 @@ async function generateSitemap(lang: string): Promise<string> {
     console.log(`🏢 Found ${companies.length} companies`);
 
     companies.forEach((company: any) => {
-      if (company.slug_permalink && !company.slug_permalink.includes('<') && !company.slug_permalink.includes('>')) {
+      if (company.slug_permalink && 
+          typeof company.slug_permalink === 'string' &&
+          company.slug_permalink.length > 0 &&
+          !company.slug_permalink.includes('<') && 
+          !company.slug_permalink.includes('>') &&
+          !company.slug_permalink.includes('&')) {
         entries.push({
-          url: `${baseUrl}/${lang}/poi/${company.slug_permalink}`,
+          url: `${baseUrl}/${lang}/poi/${encodeURIComponent(company.slug_permalink)}`,
           lastModified: currentDate,
           changeFrequency: 'monthly',
           priority: 0.7
@@ -246,7 +263,15 @@ async function generateSitemap(lang: string): Promise<string> {
           }
         }
 
-        if (url && url.length < 2000 && !url.includes('<') && !url.includes('>')) {
+        // Validazione URL più robusta
+        if (url && 
+            url.length < 2000 && 
+            url.startsWith('https://thebestitaly.eu/') &&
+            !url.includes('<') && 
+            !url.includes('>') &&
+            !url.includes('&') &&
+            !url.includes('"') &&
+            !url.includes("'")) {
           entries.push({
             url,
             lastModified: currentDate,
@@ -292,7 +317,7 @@ export async function GET(
     console.log(`💾 Serving cached sitemap for ${lang}`);
     return new Response(cached.data, {
       headers: {
-        'Content-Type': 'application/xml',
+        'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, max-age=21600, s-maxage=21600',
         'X-Cache-Status': 'HIT'
       },
@@ -324,7 +349,7 @@ export async function GET(
     
     return new Response(sitemap, {
       headers: {
-        'Content-Type': 'application/xml',
+        'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, max-age=21600, s-maxage=21600',
         'X-Cache-Status': 'MISS'
       },
@@ -332,7 +357,7 @@ export async function GET(
   } catch (error) {
     console.error(`💥 Error generating sitemap for ${lang}:`, error);
     
-    // Fallback sitemap
+    // Fallback sitemap più completo con pagine statiche
     const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -341,11 +366,29 @@ export async function GET(
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>https://thebestitaly.eu/${lang}/magazine</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thebestitaly.eu/${lang}/poi</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://thebestitaly.eu/${lang}/experience</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>`;
     
     return new Response(fallbackSitemap, {
       headers: {
-        'Content-Type': 'application/xml',
+        'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, max-age=300, s-maxage=300',
         'X-Cache-Status': 'ERROR'
       },

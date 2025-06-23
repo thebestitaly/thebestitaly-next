@@ -29,29 +29,45 @@ const ExperienceClientComponent: React.FC<ExperienceClientComponentProps> = ({ l
   const { translations: menuTranslations } = useSectionTranslations('menu', lang);
 
   useEffect(() => {
-    // Lazy load GetYourGuide script on user interaction
+    // Optimized lazy load GetYourGuide script
     const loadScript = () => {
       if (document.querySelector('script[src*="getyourguide"]')) return;
       
       const script = document.createElement('script');
       script.src = 'https://widget.getyourguide.com/dist/pa.umd.production.min.js';
       script.async = true;
+      script.defer = true;
+      // script.loading = 'lazy'; // Not supported on script elements
+      
+      // Add error handling
+      script.onerror = () => console.warn('GetYourGuide script failed to load');
+      
       document.body.appendChild(script);
     };
 
-    // Load on first user interaction
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    // Load on first meaningful user interaction
+    const events = ['mousedown', 'keypress', 'scroll', 'touchstart'];
+    let loaded = false;
+    
     const handleInteraction = () => {
-      loadScript();
-      events.forEach(event => document.removeEventListener(event, handleInteraction));
+      if (!loaded) {
+        loaded = true;
+        loadScript();
+        events.forEach(event => document.removeEventListener(event, handleInteraction));
+      }
     };
 
     events.forEach(event => {
       document.addEventListener(event, handleInteraction, { once: true, passive: true });
     });
 
-    // Fallback: load after 2 seconds
-    const timeout = setTimeout(loadScript, 2000);
+    // Fallback: load after 3 seconds if no interaction
+    const timeout = setTimeout(() => {
+      if (!loaded) {
+        loaded = true;
+        loadScript();
+      }
+    }, 3000);
 
     return () => {
       clearTimeout(timeout);

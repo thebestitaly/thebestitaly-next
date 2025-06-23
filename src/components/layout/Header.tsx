@@ -122,10 +122,9 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
   };
 
   return (
-    <header className={`sticky top-0 bg-white z-50 transition-all duration-300 ${isScrolled ? 'h-18' : 'h-20'}`}>
-      <div className="border-b border-gray-100">
-        <div className="container mx-auto px-4">
-          <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-18' : 'h-20'}`}>
+    <header className="sticky top-0 bg-white z-50 h-20 border-b border-gray-100" style={{ height: '80px' }}>
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-20" style={{ height: '80px' }}>
             {/* Logo */}
             <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
             <Image
@@ -133,9 +132,10 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
               alt={`The Best Italy ${lang}`}
               width={105}
               height={60}
-              style={{ width: "105px", height: "60px" }}
+              style={{ width: "105px", height: "60px", minWidth: "105px", minHeight: "60px" }}
               className="h-10 w-auto"
               priority
+              sizes="105px"
             />
             </Link>
 

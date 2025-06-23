@@ -2,9 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Critical CSS - Above the fold */
 @layer base {
   html {
     font-family: 'Poppins', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+  
+  /* Prevent layout shift */
+  * {
+    box-sizing: border-box;
+  }
+  
+  /* Performance optimizations */
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  
+  /* Optimize font loading */
+  @font-face {
+    font-family: 'Poppins';
+    font-display: swap;
   }
 }
 
@@ -14,6 +44,32 @@ body {
   line-height: 1.6;
   background-color: #f9f9f9;
   margin: 0;
+  /* Performance optimizations */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optimize animations for performance */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+/* Critical animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Stili generali per RTL */

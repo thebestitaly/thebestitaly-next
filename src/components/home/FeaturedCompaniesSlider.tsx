@@ -100,13 +100,13 @@ interface FeaturedCompaniesSliderProps {
   if (!isClient || isLoading) {
     return (
       <div className="relative">
-        <div className="animate-pulse bg-blue-50 rounded-2xl p-8 h-80">
+        <div className="animate-pulse bg-blue-50 rounded-2xl p-8" style={{ height: '320px', minHeight: '320px' }}>
           <div className="flex items-center justify-between h-full">
-            <div className="w-80 h-60 bg-blue-200 rounded-2xl"></div>
+            <div className="w-80 h-60 bg-blue-200 rounded-2xl" style={{ width: '320px', height: '240px', minWidth: '320px', minHeight: '240px' }}></div>
             <div className="flex-1 pl-8">
-              <div className="h-8 bg-blue-200 rounded mb-4 w-3/4"></div>
-              <div className="h-4 bg-blue-200 rounded mb-2 w-full"></div>
-              <div className="h-4 bg-blue-200 rounded w-2/3"></div>
+              <div className="h-8 bg-blue-200 rounded mb-4 w-3/4" style={{ height: '32px', minHeight: '32px' }}></div>
+              <div className="h-4 bg-blue-200 rounded mb-2 w-full" style={{ height: '16px', minHeight: '16px' }}></div>
+              <div className="h-4 bg-blue-200 rounded w-2/3" style={{ height: '16px', minHeight: '16px' }}></div>
             </div>
           </div>
         </div>

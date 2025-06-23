@@ -179,8 +179,8 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
               </div>
             </a>
           )) : (
-            <div className="p-3 text-center text-gray-500">
-              Nessuna informazione di destinazione disponibile
+            <div className="p-3 text-center text-gray-500 text-sm">
+              Nessuna destinazione disponibile
             </div>
           )}
         </div>

@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
 
-// Configurazione font ottimizzata
+// Configurazione font ottimizzata per performance
 const poppins = Poppins({
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   display: 'swap',
   preload: true,
   variable: '--font-poppins',
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 })
 
 export default function RootLayout({
@@ -29,6 +30,13 @@ export default function RootLayout({
         {/* Performance optimizations */}
         <link rel="preconnect" href="https://directus-production-93f0.up.railway.app" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://widget.getyourguide.com" />
+        <link rel="preload" href="/images/logo-black.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/images/logo-white.webp" as="image" type="image/webp" />
+        
+        {/* Preload critical CSS */}
+        <link rel="preload" href="/fonts/poppins-v20-latin-regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         
         {/* Google Tag Manager */}
         <script
