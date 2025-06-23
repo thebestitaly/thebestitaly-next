@@ -3,20 +3,20 @@ import directusClient from '@/lib/directus';
 
 interface DescriptionParams {
   type: 'articolo' | 'destinazione' | 'azienda';
-  id: string;
+  uuid: string;
   language: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: DescriptionParams = await request.json();
-    const { type, id, language } = body;
+    const { type, uuid, language } = body;
 
-    console.log('🔍 Widget Description Request:', { type, id, language });
+    console.log('🔍 Widget Description Request:', { type, uuid, language });
 
-    if (!type || !id || !language) {
+    if (!type || !uuid || !language) {
       return NextResponse.json(
-        { error: 'Parametri mancanti: type, id, language sono obbligatori' },
+        { error: 'Parametri mancanti: type, uuid, language sono obbligatori' },
         { status: 400 }
       );
     }
@@ -25,13 +25,13 @@ export async function POST(request: NextRequest) {
 
     switch (type) {
       case 'destinazione':
-        description = await getDestinationDescription(id, language);
+        description = await getDestinationDescription(uuid, language);
         break;
       case 'azienda':
-        description = await getCompanyDescription(id, language);
+        description = await getCompanyDescription(uuid, language);
         break;
       case 'articolo':
-        description = await getArticleDescription(id, language);
+        description = await getArticleDescription(uuid, language);
         break;
       default:
         return NextResponse.json(
@@ -55,12 +55,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function getDestinationDescription(id: string, language: string): Promise<string> {
+async function getDestinationDescription(uuid: string, language: string): Promise<string> {
   try {
-    // Query leggera solo per la description
+    // Query leggera solo per la description usando UUID
     const response = await directusClient.get('/items/destinations', {
       params: {
-        'filter[id][_eq]': id,
+        'filter[uuid_id][_eq]': uuid,
         'fields[]': [
           'translations.description'
         ],
@@ -79,11 +79,11 @@ async function getDestinationDescription(id: string, language: string): Promise<
   }
 }
 
-async function getCompanyDescription(id: string, language: string): Promise<string> {
+async function getCompanyDescription(uuid: string, language: string): Promise<string> {
   try {
     const response = await directusClient.get('/items/companies', {
       params: {
-        'filter[id][_eq]': id,
+        'filter[uuid_id][_eq]': uuid,
         'fields[]': [
           'description',
           'translations.description'
@@ -103,11 +103,11 @@ async function getCompanyDescription(id: string, language: string): Promise<stri
   }
 }
 
-async function getArticleDescription(id: string, language: string): Promise<string> {
+async function getArticleDescription(uuid: string, language: string): Promise<string> {
   try {
     const response = await directusClient.get('/items/articles', {
       params: {
-        'filter[id][_eq]': id,
+        'filter[uuid_id][_eq]': uuid,
         'fields[]': [
           'translations.description'
         ],

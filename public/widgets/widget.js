@@ -20,7 +20,7 @@ class TheBestItalyWidget {
         this.config = {
             // Core settings
             type: this.container.dataset.type || options.type || 'destination',
-            id: this.container.dataset.id || options.id || 'roma',
+            uuid: this.container.dataset.uuid || options.uuid || this.container.dataset.id || options.id || 'roma',
             size: this.container.dataset.size || options.size || 'medium',
             theme: this.container.dataset.theme || options.theme || 'auto',
             language: this.container.dataset.language || options.language || this.detectLanguage(),
@@ -767,68 +767,38 @@ class TheBestItalyWidget {
         this.render();
 
         try {
-            let endpoint = '';
-            let fields = [];
-
-            switch (this.config.type) {
-                case 'destination':
-                    endpoint = `items/destinations/${this.config.id}`;
-                    fields = [
-                        'id', 'type', 'image', 'region_id', 'province_id',
-                        'translations.destination_name',
-                        'translations.seo_title',
-                        'translations.seo_summary',
-                        'translations.slug_permalink',
-                        'translations.languages_code',
-                        'translations.content'
-                    ];
-                    break;
-
-                case 'company':
-                    // For companies, search by slug_permalink instead of ID
-                    endpoint = `items/companies`;
-                    fields = [
-                        'id', 'company_name', 'image', 'slug_permalink',
-                        'translations.seo_title',
-                        'translations.seo_summary',
-                        'translations.description',
-                        'translations.languages_code',
-                        'translations.content'
-                    ];
-                    break;
-
-                case 'article':
-                    endpoint = `items/articles/${this.config.id}`;
-                    fields = [
-                        'id', 'image', 'status', 'date_created',
-                        'translations.titolo_articolo',
-                        'translations.seo_title',
-                        'translations.seo_summary',
-                        'translations.slug_permalink',
-                        'translations.languages_code',
-                        'translations.content'
-                    ];
-                    break;
-            }
-
-            const languageCodes = this.languages.map(l => l.code).join(',');
-            let url = `${this.apiUrl}/${endpoint}?fields=${fields.join(',')}&deep[translations][_filter][languages_code][_in]=${languageCodes}`;
-            
-            // For companies, add filter by slug_permalink
-            if (this.config.type === 'company') {
-                url += `&filter[slug_permalink][_eq]=${this.config.id}`;
-            }
+            // Use the new widget search endpoint with UUID
+            const url = `${this.baseUrl}/api/widget/search?type=${this.getApiType()}&uuid=${this.config.uuid}&language=${this.currentLanguage}`;
 
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const data = await response.json();
             
-            // For companies, take the first result since we filtered by slug
-            this.content = this.config.type === 'company' ? data.data[0] : data.data;
-            
-            if (!this.content) {
+            if (!data) {
                 throw new Error('Content not found');
+            }
+
+            // Transform the response to match expected structure
+            this.content = {
+                id: data.id,
+                uuid_id: data.uuid,
+                slug_permalink: data.slug_permalink,
+                image: null, // Will be loaded separately if needed
+                translations: [{
+                    languages_code: this.currentLanguage,
+                    ...this.getTranslationFields(data)
+                }]
+            };
+
+            // For companies, description is already available
+            if (this.config.type === 'company') {
+                this.content.translations[0].description = data.description;
+            }
+
+            // For destinations in large mode, load full description separately
+            if (this.config.type === 'destination' && this.config.size === 'large') {
+                this.loadFullDescription(data.uuid);
             }
             
             this.isLoading = false;
@@ -842,6 +812,69 @@ class TheBestItalyWidget {
         }
     }
 
+    getApiType() {
+        switch (this.config.type) {
+            case 'destination': return 'destinazione';
+            case 'company': return 'azienda';
+            case 'article': return 'articolo';
+            default: return 'destinazione';
+        }
+    }
+
+    getTranslationFields(data) {
+        switch (this.config.type) {
+            case 'destination':
+                return {
+                    destination_name: data.title,
+                    seo_title: data.seo_title,
+                    seo_summary: data.seo_summary,
+                    slug_permalink: data.slug_permalink
+                };
+            case 'company':
+                return {
+                    seo_title: data.seo_title,
+                    seo_summary: data.seo_summary,
+                    description: data.description
+                };
+            case 'article':
+                return {
+                    titolo_articolo: data.title,
+                    seo_title: data.seo_title,
+                    seo_summary: data.seo_summary,
+                    description: data.description,
+                    slug_permalink: data.slug_permalink
+                };
+            default:
+                return {};
+        }
+    }
+
+    async loadFullDescription(uuid) {
+        try {
+            const response = await fetch(`${this.baseUrl}/api/widget/description`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    type: this.getApiType(),
+                    uuid: uuid,
+                    language: this.currentLanguage
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (this.content?.translations?.[0]) {
+                    this.content.translations[0].description = data.description;
+                    this.render(); // Re-render with full description
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to load full description:', error);
+        }
+    }
+
     createFallbackContent() {
         const fallbackTranslations = this.languages.map(lang => {
             switch (this.config.type) {
@@ -849,16 +882,16 @@ class TheBestItalyWidget {
                     return {
                         languages_code: lang.code,
                         destination_name: this.getFallbackDestinationName(lang.code),
-                        seo_title: `Discover ${this.config.id} - TheBestItaly`,
-                        seo_summary: `Explore the beauty and culture of ${this.config.id} with our premium travel guide.`,
-                        slug_permalink: this.config.id,
-                        content: `<p>Discover the authentic beauty of ${this.config.id}, one of Italy's most fascinating destinations.</p>`
+                        seo_title: `Discover ${this.config.uuid} - TheBestItaly`,
+                        seo_summary: `Explore the beauty and culture of ${this.config.uuid} with our premium travel guide.`,
+                        slug_permalink: this.config.uuid,
+                        content: `<p>Discover the authentic beauty of ${this.config.uuid}, one of Italy's most fascinating destinations.</p>`
                     };
 
                 case 'company':
                     return {
                         languages_code: lang.code,
-                        seo_title: `${this.config.id} - Italian Excellence`,
+                        seo_title: `${this.config.uuid} - Italian Excellence`,
                         seo_summary: `Discover authentic Italian craftsmanship and tradition.`,
                         description: `Premium Italian company specializing in excellence.`,
                         content: `<p>Experience the finest Italian craftsmanship and tradition with this exceptional company.</p>`
@@ -868,18 +901,19 @@ class TheBestItalyWidget {
                     return {
                         languages_code: lang.code,
                         titolo_articolo: this.getFallbackArticleTitle(lang.code),
-                        seo_title: `${this.config.id} - TheBestItaly Magazine`,
+                        seo_title: `${this.config.uuid} - TheBestItaly Magazine`,
                         seo_summary: `Read our latest insights about Italian culture, travel, and lifestyle.`,
-                        slug_permalink: this.config.id,
+                        slug_permalink: this.config.uuid,
                         content: `<p>Explore the rich culture and heritage of Italy through our comprehensive guide.</p>`
                     };
             }
         });
 
         this.content = {
-            id: this.config.id,
+            id: this.config.uuid,
+            uuid_id: this.config.uuid,
             image: null,
-            slug_permalink: this.config.id,
+            slug_permalink: this.config.uuid,
             translations: fallbackTranslations
         };
     }
@@ -926,13 +960,13 @@ class TheBestItalyWidget {
     getTitle() {
         switch (this.config.type) {
             case 'destination':
-                return this.getTranslation('destination_name') || this.config.id.charAt(0).toUpperCase() + this.config.id.slice(1);
+                return this.getTranslation('destination_name') || this.config.uuid.charAt(0).toUpperCase() + this.config.uuid.slice(1);
             case 'company':
-                return this.content?.company_name || this.getTranslation('seo_title') || this.config.id;
+                return this.content?.company_name || this.getTranslation('seo_title') || this.config.uuid;
             case 'article':
-                return this.getTranslation('titolo_articolo') || this.getTranslation('seo_title') || this.config.id;
+                return this.getTranslation('titolo_articolo') || this.getTranslation('seo_title') || this.config.uuid;
             default:
-                return this.config.id;
+                return this.config.uuid;
         }
     }
 

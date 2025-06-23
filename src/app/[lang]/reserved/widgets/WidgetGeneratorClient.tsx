@@ -74,7 +74,7 @@ const AVAILABLE_LANGUAGES = [
 export default function WidgetGeneratorClient({ lang }: WidgetGeneratorClientProps) {
   const [config, setConfig] = useState<WidgetConfig>({
     type: 'destination',
-    id: 'roma',
+    id: '',
     size: 'medium',
     theme: 'light',
     language: 'it',

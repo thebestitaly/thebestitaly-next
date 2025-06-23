@@ -78,13 +78,22 @@
 
 ### 2. Add Widget Container
 ```html
+<!-- Raccomandato: Usa UUID per identificare il contenuto -->
 <div id="my-widget" 
      data-tbi-widget
      data-type="destination"
-     data-id="roma"
+     data-uuid="550e8400-e29b-41d4-a716-446655440000"
      data-size="medium"
      data-theme="auto"
      data-language="it">
+</div>
+
+<!-- Alternativa: Usa ID (ancora supportato) -->
+<div id="legacy-widget" 
+     data-tbi-widget
+     data-type="destination"
+     data-id="roma"
+     data-size="medium">
 </div>
 ```
 
@@ -97,7 +106,8 @@
 | Attributo | Valori | Default | Descrizione |
 |-----------|--------|---------|-------------|
 | `data-type` | `destination` \| `company` \| `article` | `destination` | Tipo di contenuto da mostrare |
-| `data-id` | stringa | `roma` | ID univoco del contenuto |
+| `data-uuid` | UUID string | - | **Raccomandato**: UUID univoco del contenuto |
+| `data-id` | stringa | `roma` | **Deprecato**: ID del contenuto (ancora supportato) |
 | `data-size` | `small` \| `medium` \| `large` | `medium` | Dimensione del widget |
 | `data-theme` | `light` \| `dark` \| `auto` | `auto` | Tema colori (auto segue OS) |
 | `data-language` | codice ISO | auto-detect | Lingua iniziale |
@@ -124,7 +134,8 @@ const widget = new TheBestItalyWidget('container-id');
 const widget = new TheBestItalyWidget('container-id', {
     // Core settings
     type: 'destination',
-    id: 'firenze',
+    uuid: '550e8400-e29b-41d4-a716-446655440003', // Raccomandato
+    // id: 'firenze', // Alternativa deprecata
     size: 'large',
     theme: 'auto',
     language: 'en',
@@ -177,7 +188,7 @@ widget.exportData(); // Data export for integration
 ```html
 <div data-tbi-widget
      data-type="destination"
-     data-id="venezia"
+     data-uuid="550e8400-e29b-41d4-a716-446655440004"
      data-size="large"
      data-theme="light"
      data-language="it"
@@ -190,7 +201,7 @@ widget.exportData(); // Data export for integration
 ```html
 <div data-tbi-widget
      data-type="company" 
-     data-id="ferrari"
+     data-uuid="550e8400-e29b-41d4-a716-446655440005"
      data-size="medium"
      data-theme="dark"
      data-language="en"

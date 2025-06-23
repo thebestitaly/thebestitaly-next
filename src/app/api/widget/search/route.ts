@@ -56,6 +56,12 @@ interface SearchParams {
   limit?: number;
 }
 
+interface GetByUuidParams {
+  type: 'articolo' | 'destinazione' | 'azienda';
+  uuid: string;
+  language: string;
+}
+
 interface SearchResult {
   id: string;
   uuid?: string;
@@ -70,6 +76,65 @@ interface SearchResult {
   category?: string;
   slug_permalink: string;
   external_url: string; // URL completo per accesso esterno
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type') as 'articolo' | 'destinazione' | 'azienda';
+    const uuid = searchParams.get('uuid');
+    const language = searchParams.get('language') || 'it';
+
+    console.log('🔍 Widget GET by UUID:', { type, uuid, language });
+
+    if (!type || !uuid) {
+      return NextResponse.json(
+        { error: 'Parametri mancanti: type e uuid sono obbligatori' },
+        { status: 400 }
+      );
+    }
+
+    let result: SearchResult | null = null;
+
+    switch (type) {
+      case 'destinazione':
+        result = await getDestinationByUuid(uuid, language);
+        break;
+      case 'azienda':
+        result = await getCompanyByUuid(uuid, language);
+        break;
+      case 'articolo':
+        result = await getArticleByUuid(uuid, language);
+        break;
+      default:
+        return NextResponse.json(
+          { error: 'Tipo non valido. Usa: articolo, destinazione, azienda' },
+          { status: 400 }
+        );
+    }
+
+    if (!result) {
+      return NextResponse.json(
+        { error: 'Contenuto non trovato' },
+        { status: 404 }
+      );
+    }
+
+    console.log(`✅ Content found by UUID: ${result.title}`);
+
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200', // Cache 10 min
+      },
+    });
+
+  } catch (error) {
+    console.error('❌ Widget GET by UUID Error:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -177,7 +242,7 @@ async function searchArticles(query: string, language: string, limit: number): P
         type: 'articolo',
         language: language,
         slug_permalink: translation?.slug_permalink || '',
-        external_url: `${process.env.NEXT_PUBLIC_SITE_URL}/${language}/magazine/${translation?.slug_permalink || article.id}`
+        external_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu'}/${language}/magazine/${translation?.slug_permalink || article.id}`
       };
     });
 
@@ -293,7 +358,7 @@ async function searchDestinations(query: string, language: string, limit: number
         type: 'destinazione',
         language: language,
         slug_permalink: translation?.slug_permalink || '',
-        external_url: `${process.env.NEXT_PUBLIC_SITE_URL}/${language}/${urlPath}`
+        external_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu'}/${language}/${urlPath}`
       };
       
       // Debug URL per il primo elemento
@@ -367,7 +432,7 @@ async function searchCompanies(query: string, language: string, limit: number): 
         type: 'azienda',
         language: language,
         slug_permalink: company.slug_permalink || '',
-        external_url: `${process.env.NEXT_PUBLIC_SITE_URL}/${language}/poi/${company.slug_permalink || company.id}`
+        external_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu'}/${language}/poi/${company.slug_permalink || company.id}`
       };
     });
 
@@ -404,5 +469,100 @@ function getDestinationCategory(type: string): string {
       return 'Comune';
     default:
       return 'Destinazione';
+  }
+}
+
+// Funzioni per recuperare contenuti tramite UUID
+async function getDestinationByUuid(uuid: string, language: string): Promise<SearchResult | null> {
+  try {
+    const destination = await directusClient.getDestinationByUUID(uuid, language);
+    if (!destination) return null;
+
+    const translation = destination.translations?.[0];
+    if (!translation) return null;
+
+    // Costruisci URL path
+    let urlPath = '';
+    if (destination.type === 'region') {
+      urlPath = translation.slug_permalink || destination.id.toString();
+    } else if (destination.type === 'province') {
+      const regionSlug = destination.region_id?.translations?.[0]?.slug_permalink || 'italia';
+      urlPath = `${regionSlug}/${translation.slug_permalink || destination.id}`;
+    } else if (destination.type === 'municipality') {
+      const regionSlug = destination.region_id?.translations?.[0]?.slug_permalink || 'italia';
+      const provinceSlug = destination.province_id?.translations?.[0]?.slug_permalink || 'provincia';
+      urlPath = `${regionSlug}/${provinceSlug}/${translation.slug_permalink || destination.id}`;
+    }
+
+    return {
+      id: destination.id,
+      uuid: destination.uuid_id,
+      title: translation.destination_name || 'Destinazione senza nome',
+      description: '', // Sarà caricata separatamente
+      seo_summary: translation.seo_summary || 'Destinazione italiana di interesse',
+      seo_title: translation.seo_title || translation.seo_summary || 'Destinazione italiana',
+      type: 'destinazione',
+      language: language,
+      slug_permalink: translation.slug_permalink || '',
+      external_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu'}/${language}/${urlPath}`
+    };
+  } catch (error) {
+    console.error('❌ Error getting destination by UUID:', error);
+    return null;
+  }
+}
+
+async function getCompanyByUuid(uuid: string, language: string): Promise<SearchResult | null> {
+  try {
+    // Usa la funzione esistente getCompaniesForListing e filtra per UUID
+    const allCompanies = await directusClient.getCompaniesForListing(language, {});
+    const company = allCompanies.find((c: any) => c.uuid_id === uuid);
+    
+    if (!company) return null;
+
+    const translation = company.translations?.[0];
+    const finalDescription = translation?.description || company.description || 'Eccellenza italiana di qualità premium.';
+
+    return {
+      id: company.id,
+      uuid: company.uuid_id,
+      title: company.company_name || 'Azienda senza nome',
+      description: finalDescription,
+      seo_summary: translation?.seo_summary || company.seo_summary || 'Eccellenza italiana',
+      seo_title: translation?.seo_title || translation?.seo_summary || 'Eccellenza italiana',
+      type: 'azienda',
+      language: language,
+      slug_permalink: company.slug_permalink || '',
+      external_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu'}/${language}/poi/${company.slug_permalink || company.id}`
+    };
+  } catch (error) {
+    console.error('❌ Error getting company by UUID:', error);
+    return null;
+  }
+}
+
+async function getArticleByUuid(uuid: string, language: string): Promise<SearchResult | null> {
+  try {
+    const article = await directusClient.getArticleByUUID(uuid, language);
+    if (!article) return null;
+
+    const translation = article.translations?.[0];
+    if (!translation) return null;
+
+    return {
+      id: article.id,
+      uuid: article.uuid_id,
+      title: translation.titolo_articolo || 'Articolo senza titolo',
+      description: translation.description || 'Nessuna descrizione disponibile',
+      seo_summary: translation.seo_summary || translation.description || 'Articolo interessante',
+      seo_title: translation.seo_title || translation.seo_summary || 'Articolo interessante',
+      type: 'articolo',
+      language: language,
+      slug_permalink: translation.slug_permalink || '',
+      external_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu'}/${language}/magazine/${translation.slug_permalink || article.id}`
+    };
+  } catch (error) {
+    console.error('❌ Error getting article by UUID:', error);
+    return null;
   }
 } 

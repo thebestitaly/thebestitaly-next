@@ -51,7 +51,8 @@ iframe[title="Widget TheBestItaly"] {
 Ogni risultato include:
 - `slug_permalink`: Slug dell'elemento
 - `external_url`: URL completo per accesso esterno
-- `uuid`: ID univoco dell'elemento
+- `uuid`: **ID univoco dell'elemento (raccomandato per integrazioni)**
+- `id`: ID numerico (deprecato ma ancora supportato)
 
 #### ✅ Responsive Design
 - **Small**: 320px, compatto
@@ -70,6 +71,13 @@ Ricerca nel database:
   "language": "it",
   "limit": 5
 }
+```
+
+#### GET `/api/widget/search` (Nuovo - UUID)
+Recupera contenuto specifico tramite UUID:
+
+```
+GET /api/widget/search?type=destinazione&uuid=550e8400-e29b-41d4-a716-446655440000&language=it
 ```
 
 **Risposta:**
