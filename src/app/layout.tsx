@@ -24,7 +24,7 @@ export default function RootLayout({
         <meta name="color-scheme" content="light" />
         
         {/* NAVER Webmaster Tools Verification */}
-        <meta name="naver-site-verification" content="e2571caa9327a95f916ea243f54e9817" />
+        <meta name="naver-site-verification" content="456897315623611c6ab1dd38be219cded9a1cef6" />
         
         {/* Performance optimizations */}
         <link rel="preconnect" href="https://directus-production-93f0.up.railway.app" />
