@@ -200,7 +200,7 @@ widget.exportData(); // Data export for integration
 ### Azienda di Eccellenza
 ```html
 <div data-tbi-widget
-     data-type="company" 
+     data-type="company"
      data-uuid="550e8400-e29b-41d4-a716-446655440005"
      data-size="medium"
      data-theme="dark"
@@ -213,7 +213,7 @@ widget.exportData(); // Data export for integration
 ### Articolo Magazine
 ```html
 <div data-tbi-widget
-     data-type="article"
+     data-type="article" 
      data-id="arte-rinascimento"
      data-size="small"
      data-theme="auto"

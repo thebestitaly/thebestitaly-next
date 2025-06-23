@@ -321,14 +321,14 @@
 <body>
     <div class="test-container">
         <h1>🧪 Test Suite - TheBestItaly Widget v6.0</h1>
-        
+    
         <div id="test-results" class="test-section">
             <h2>📊 Risultati Test Suite</h2>
             <div id="results-content">
                 <p>Inizializzazione test suite...</p>
             </div>
         </div>
-
+    
         <!-- Test Performance -->
         <div class="test-section">
             <h2>⚡ Performance Tests</h2>
@@ -364,7 +364,7 @@
         </div>
 
         <!-- Test Widget Automatici v6.0 -->
-        <div class="test-section">
+    <div class="test-section">
             <h2>🤖 Widget Automatici v6.0</h2>
             <div class="feature-badges">
                 <span class="badge new">Auto-detect Language</span>
@@ -402,7 +402,7 @@
                 </div>
             </div>
             
-            <div class="test-grid">
+        <div class="test-grid">
                 <div class="test-item">
                     <h3>🏛️ Destinazione Roma - Enhanced</h3>
                     <div class="test-description">
@@ -419,10 +419,10 @@
                         Loading with skeleton...
                     </div>
                     
-                    <div id="auto-widget-1" 
-                         data-tbi-widget
-                         data-type="destination"
-                         data-id="roma"
+            <div id="auto-widget-1" 
+                 data-tbi-widget
+                 data-type="destination"
+                 data-id="roma"
                          data-size="medium"
                          data-theme="auto"
                          data-language="it"
@@ -446,14 +446,14 @@
                     <div class="test-status status-success">
                         <span class="status-dot"></span>
                         Enhanced UX Active
-                    </div>
-                    
-                    <div id="auto-widget-2" 
-                         data-tbi-widget
-                         data-type="company"
-                         data-id="ferrari"
-                         data-size="medium"
-                         data-theme="dark"
+            </div>
+            
+            <div id="auto-widget-2" 
+                 data-tbi-widget
+                 data-type="company"
+                 data-id="ferrari"
+                 data-size="medium"
+                 data-theme="dark"
                          data-language="en"
                          data-enable-analytics="true"
                          data-enable-swipe-gestures="true"
@@ -475,11 +475,11 @@
                     <div class="test-status status-warning">
                         <span class="status-dot"></span>
                         RTL Layout Test
-                    </div>
-                    
-                    <div id="auto-widget-3" 
-                         data-tbi-widget
-                         data-type="article"
+            </div>
+            
+            <div id="auto-widget-3" 
+                 data-tbi-widget
+                 data-type="article"
                          data-id="cultura-italiana"
                          data-size="medium"
                          data-theme="light"
@@ -507,17 +507,17 @@
                     <button class="test-button" onclick="destroyManualWidget()">🗑️ Distruggi Widget</button>
                     <button class="test-button" onclick="getWidgetMetrics()">📊 Mostra Metriche</button>
                     <button class="test-button" onclick="testWidgetAPI()">🧪 Test API Completa</button>
-                </div>
-            </div>
-            
-            <div class="test-grid">
+        </div>
+    </div>
+    
+        <div class="test-grid">
                 <div class="test-item">
                     <h3>🔧 Widget Programmabile</h3>
                     <div class="test-description">
                         Widget creato via JavaScript con configurazione avanzata, callbacks personalizzati 
                         e monitoraggio real-time delle performance.
                     </div>
-                    <div id="manual-widget-1"></div>
+            <div id="manual-widget-1"></div>
                 </div>
                 
                 <div class="test-item">
@@ -540,9 +540,9 @@
                 <span class="badge new">Retry Logic</span>
                 <span class="badge new">Graceful Fallback</span>
                 <span class="badge">Error Analytics</span>
-            </div>
-            
-            <div class="test-grid">
+    </div>
+    
+        <div class="test-grid">
                 <div class="test-item">
                     <h3>❌ Content Non Esistente</h3>
                     <div class="test-description">
@@ -554,9 +554,9 @@
                         Expected Error State
                     </div>
                     
-                    <div id="error-widget-1" 
-                         data-tbi-widget
-                         data-type="destination"
+            <div id="error-widget-1" 
+                 data-tbi-widget
+                 data-type="destination"
                          data-id="non-esistente-test"
                          data-size="medium"
                          data-retry-attempts="2"
@@ -573,12 +573,12 @@
                     <div class="test-status status-warning">
                         <span class="status-dot"></span>
                         Fallback Mode
-                    </div>
-                    
-                    <div id="error-widget-2" 
-                         data-tbi-widget
+            </div>
+            
+            <div id="error-widget-2" 
+                 data-tbi-widget
                          data-type="invalid-type-test"
-                         data-id="test"
+                 data-id="test"
                          data-size="medium"
                          data-enable-analytics="true">
                     </div>
@@ -602,10 +602,10 @@
                     <button class="test-button" onclick="testScreenReader()">📢 Test Screen Reader</button>
                     <button class="test-button" onclick="testHighContrast()">🔍 Test Contrasti</button>
                     <button class="test-button" onclick="testReducedMotion()">🎭 Test Reduced Motion</button>
-                </div>
-            </div>
-            
-            <div class="test-grid">
+        </div>
+    </div>
+    
+        <div class="test-grid">
                 <div class="test-item">
                     <h3>⌨️ Navigazione da Tastiera</h3>
                     <div class="test-description">
@@ -618,8 +618,8 @@
                     </div>
                     
                     <div id="accessibility-widget-1" 
-                         data-tbi-widget
-                         data-type="destination"
+                 data-tbi-widget
+                 data-type="destination"
                          data-id="firenze"
                          data-size="medium"
                          data-language="it">
@@ -925,7 +925,7 @@
             }
             
             addConsoleLog('✅ All caches cleared', 'success');
-        }
+            }
 
         // Accessibility tests
         function testKeyboardNavigation() {
@@ -1078,10 +1078,10 @@
         // Initialize tests
         document.addEventListener('DOMContentLoaded', () => {
             addConsoleLog('🎬 DOM loaded, initializing tests...', 'info');
-            
+                
             // Run initial tests
             setTimeout(runTests, 1000);
-            
+                    
             // Start performance monitoring
             setInterval(updatePerformanceMetrics, 5000);
             

@@ -23,6 +23,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#1e40af" />
         <meta name="color-scheme" content="light" />
         
+        {/* NAVER Webmaster Tools Verification */}
+        <meta name="naver-site-verification" content="e2571caa9327a95f916ea243f54e9817" />
+        
         {/* Performance optimizations */}
         <link rel="preconnect" href="https://directus-production-93f0.up.railway.app" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
