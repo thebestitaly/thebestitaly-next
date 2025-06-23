@@ -7,7 +7,7 @@ La migrazione dal vecchio sistema di traduzioni JSON al nuovo sistema normalizza
 ### 📊 Statistiche Migrazione
 
 - **1,557 traduzioni** migrate con successo
-- **51 lingue** supportate (da Afrikaans a Chinese Traditional)
+- **50 lingue** supportate (da Afrikaans a Chinese Traditional)
 - **7 sezioni** migrate:
   - `menu` (24 chiavi)
   - `infothebest` (3 chiavi)
@@ -99,7 +99,7 @@ curl "http://localhost:3000/api/admin/test-translations?section=menu&lang=xx"
 
 ### 🎉 Risultato Finale
 
-**Il sistema di traduzioni è ora completamente operativo** con il nuovo architecture normalizzato. Tutte le etichette del menù, footer, homepage e altre sezioni critiche utilizzano il nuovo sistema e sono disponibili in tutte le 51 lingue supportate.
+**Il sistema di traduzioni è ora completamente operativo** con il nuovo architecture normalizzato. Tutte le etichette del menù, footer, homepage e altre sezioni critiche utilizzano il nuovo sistema e sono disponibili in tutte le 50 lingue supportate.
 
 ---
 

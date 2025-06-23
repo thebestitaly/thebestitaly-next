@@ -3,669 +3,889 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🇮🇹 TheBestItaly Widget v5.0 - Il Migliore Widget per l'Italia</title>
-    <meta name="description" content="Widget definitivo per TheBestItaly - Responsive, multilingue (51+ lingue), performante e bellissimo. Perfetto per integrare contenuti italiani ovunque.">
-    
+    <title>Widget TheBestItaly - Dinamico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #1f2937;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
         }
-
-        .hero {
-            text-align: center;
-            padding: 80px 20px;
-            color: white;
+        
+        .font-script {
+            font-family: 'Georgia', serif;
+            font-style: italic;
         }
-
-        .hero h1 {
-            font-size: 4rem;
-            font-weight: 900;
-            margin-bottom: 24px;
-            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        
+        .dropdown-enter {
+            opacity: 0;
+            transform: translateY(-10px);
         }
-
-        .hero .subtitle {
-            font-size: 1.5rem;
-            opacity: 0.9;
-            margin-bottom: 40px;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
+        
+        .dropdown-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.2s ease-out;
         }
-
-        .hero .features {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            flex-wrap: wrap;
-            margin-bottom: 40px;
+        
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
         }
-
-        .feature {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .section {
-            background: white;
-            margin: 40px auto;
-            border-radius: 24px;
-            padding: 60px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        .section h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 32px;
-            text-align: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .widgets-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 40px;
-            margin: 40px 0;
-            align-items: start;
-        }
-
-        .widget-demo {
-            text-align: center;
-        }
-
-        .widget-demo h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: #374151;
-        }
-
-        .widget-demo p {
-            color: #6b7280;
-            margin-bottom: 24px;
-            font-size: 1.1rem;
-        }
-
-        .code-section {
-            background: #1f2937;
-            border-radius: 16px;
-            padding: 32px;
-            margin: 40px 0;
-            overflow-x: auto;
-        }
-
-        .code-section h3 {
-            color: #f9fafb;
-            font-size: 1.5rem;
-            margin-bottom: 16px;
-            font-weight: 700;
-        }
-
-        .code-section pre {
-            color: #e5e7eb;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            overflow-x: auto;
-            background: #111827;
-            padding: 24px;
-            border-radius: 12px;
-            border: 1px solid #374151;
-        }
-
-        .copy-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 16px;
-            transition: background 0.2s;
-        }
-
-        .copy-btn:hover {
-            background: #2563eb;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 32px;
-            margin: 40px 0;
-        }
-
-        .feature-card {
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 32px;
-            text-align: center;
-            transition: all 0.3s;
-        }
-
-        .feature-card:hover {
-            border-color: #667eea;
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
-        }
-
-        .feature-card .icon {
-            font-size: 3rem;
-            margin-bottom: 16px;
-        }
-
-        .feature-card h4 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: #1f2937;
-        }
-
-        .feature-card p {
-            color: #6b7280;
-            line-height: 1.6;
-        }
-
-        .languages-showcase {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 16px;
-            margin: 32px 0;
-        }
-
-        .lang-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px;
-            background: #f1f5f9;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .lang-item:hover {
-            background: #e2e8f0;
-            transform: scale(1.05);
-        }
-
-        .cta-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-align: center;
-            border-radius: 24px;
-            padding: 80px 40px;
-            margin: 60px auto;
-        }
-
-        .cta-section h2 {
-            font-size: 3rem;
-            font-weight: 900;
-            margin-bottom: 24px;
-            -webkit-text-fill-color: white;
-        }
-
-        .cta-section p {
-            font-size: 1.25rem;
-            opacity: 0.9;
-            margin-bottom: 40px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 24px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 32px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-decoration: none;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #667eea;
-        }
-
-        .btn-primary:hover {
-            background: #f8fafc;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border-color: rgba(255,255,255,0.3);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.5);
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero .features {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .section {
-                padding: 40px 24px;
-            }
-            
-            .widgets-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .status-bar {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(16, 185, 129, 0.9);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
     </style>
 </head>
-
-<body>
-    <!-- Status Bar -->
-    <div class="status-bar">
-        ✅ Widget v5.0 - Pronto all'uso!
-    </div>
-
+<body class="min-h-screen bg-gray-100">
+    <!-- Configuratore -->
     <!-- Hero Section -->
-    <div class="hero">
-        <div class="container">
-            <h1>🇮🇹 TheBestItaly Widget v5.0</h1>
-            <p class="subtitle">
-                Il widget più bello e performante per mostrare contenuti italiani. 
-                Responsive, multilingue, con cache intelligente e animazioni fluide.
-            </p>
+    <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 text-white">
+        <div class="max-w-6xl mx-auto px-4 py-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                🇮🇹 Widget <span class="font-script">theBest</span> Italy
+            </h1>
+            <p class="text-xl opacity-90 mb-8">Integra le eccellenze italiane nel tuo sito web</p>
             
-            <div class="features">
-                <div class="feature">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">🌍</div>
-                    <div><strong>51+ Lingue</strong><br>Supporto completo</div>
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+                <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+                    <div class="text-2xl font-bold">40+</div>
+                    <div class="text-sm opacity-80">Lingue</div>
                 </div>
-                <div class="feature">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">⚡</div>
-                    <div><strong>Super Veloce</strong><br>Cache intelligente</div>
+                <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+                    <div class="text-2xl font-bold">10k+</div>
+                    <div class="text-sm opacity-80">Aziende</div>
                 </div>
-                <div class="feature">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">📱</div>
-                    <div><strong>Responsive</strong><br>Perfetto su tutti i device</div>
+                <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+                    <div class="text-2xl font-bold">SEO</div>
+                    <div class="text-sm opacity-80">Ottimizzato</div>
                 </div>
-                <div class="feature">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">🎨</div>
-                    <div><strong>Bellissimo</strong><br>Design moderno</div>
+                <div class="bg-white/10 backdrop-blur rounded-lg p-4">
+                    <div class="text-2xl font-bold">Real</div>
+                    <div class="text-sm opacity-80">Time</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="container">
+    <div class="max-w-4xl mx-auto mb-8 mt-8 px-4">
         
-        <!-- Demo Widgets Section -->
-        <div class="section">
-            <h2>✨ Demo Live - Vedi il Widget in Azione</h2>
-            
-            <div class="widgets-grid">
-                <!-- Destinazione Roma -->
-                <div class="widget-demo">
-                    <h3>🏛️ Destinazione - Roma</h3>
-                    <p>Widget per mostrare una destinazione italiana con tutte le informazioni e traduzioni.</p>
-                    <div id="widget-roma" 
-                         data-tbi-widget
-                         data-type="destination"
-                         data-id="roma"
-                         data-size="medium"
-                         data-theme="light"
-                         data-language="it"
-                         data-show-selector="true"
-                         data-show-share="true">
-                    </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Widget Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo Widget</label>
+                    <select id="widgetType" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-300">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="full">Full</option>
+                    </select>
                 </div>
 
-                <!-- Azienda -->
-                <div class="widget-demo">
-                    <h3>🏢 Azienda di Eccellenza</h3>
-                    <p>Mostra aziende italiane di eccellenza con descrizioni multilingue.</p>
-                    <div id="widget-company" 
-                         data-tbi-widget
-                         data-type="company"
-                         data-id="ferrari"
-                         data-size="medium"
-                         data-theme="auto"
-                         data-language="en"
-                         data-show-selector="true"
-                         data-show-share="true">
-                    </div>
+                <!-- Content Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo Contenuto</label>
+                    <select id="contentType" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-300">
+                        <option value="articolo">Articolo</option>
+                        <option value="destinazione">Destinazione</option>
+                        <option value="azienda">Azienda</option>
+                    </select>
                 </div>
 
-                <!-- Articolo Magazine -->
-                <div class="widget-demo">
-                    <h3>📰 Articolo Magazine</h3>
-                    <p>Articoli dal magazine TheBestItaly con preview e link diretti.</p>
-                    <div id="widget-article" 
-                         data-tbi-widget
-                         data-type="article"
-                         data-id="cultura-italiana"
-                         data-size="medium"
-                         data-theme="dark"
-                         data-language="fr"
-                         data-show-selector="true"
-                         data-show-share="true">
-                    </div>
+                <!-- Search Term -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cerca</label>
+                    <input type="text" id="searchTerm" placeholder="es. Ferrari, Roma..." 
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-300">
                 </div>
-            </div>
-        </div>
 
-        <!-- Features Section -->
-        <div class="section">
-            <h2>🚀 Caratteristiche Principali</h2>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="icon">🌍</div>
-                    <h4>Multilingue Completo</h4>
-                    <p>Supporto nativo per 51+ lingue con RTL automatico per arabo, ebraico e persiano. Fallback intelligente e cache ottimizzata.</p>
+                <!-- Search Button -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+                    <button id="searchBtn" class="w-full bg-cyan-300 hover:bg-cyan-400 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                        🔍 Cerca
+                    </button>
                 </div>
-                
-                <div class="feature-card">
-                    <div class="icon">📱</div>
-                    <h4>Responsive Design</h4>
-                    <p>Si adatta perfettamente a qualsiasi dispositivo. Layout fluido che funziona da mobile a desktop senza compromessi.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="icon">⚡</div>
-                    <h4>Performance Ottimizzate</h4>
-                    <p>Cache intelligente, lazy loading, ottimizzazioni immagini automatiche. Caricamento sotto i 50ms con 95% cache hit rate.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="icon">🎨</div>
-                    <h4>Design Moderno</h4>
-                    <p>Interface bellissima con animazioni fluide, tema scuro/chiaro/auto, gradienti moderni e tipografia ottimizzata.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="icon">🔧</div>
-                    <h4>Facile Integrazione</h4>
-                    <p>Un semplice script tag e hai tutto pronto. Configurazione tramite data-attributes o JavaScript API completa.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="icon">🛡️</div>
-                    <h4>Robusto e Affidabile</h4>
-                    <p>Gestione errori avanzata, retry automatico, fallback graceful. Accessibilità completa e supporto keyboard navigation.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Installation Section -->
-        <div class="section">
-            <h2>⚙️ Installazione Super Semplice</h2>
-            
-            <div class="code-section">
-                <h3>1. Include lo Script</h3>
-                <pre>&lt;script src="https://thebestitaly.eu/widgets/widget.js"&gt;&lt;/script&gt;</pre>
-                <button class="copy-btn" onclick="copyCode(this)">📋 Copia Codice</button>
-            </div>
-            
-            <div class="code-section">
-                <h3>2. Aggiungi il Widget HTML</h3>
-                <pre>&lt;div id="my-widget" 
-     data-tbi-widget
-     data-type="destination"
-     data-id="roma"
-     data-size="medium"
-     data-theme="light"
-     data-language="it"
-     data-show-selector="true"
-     data-show-share="true"&gt;
-&lt;/div&gt;</pre>
-                <button class="copy-btn" onclick="copyCode(this)">📋 Copia Codice</button>
-            </div>
-            
-            <div class="code-section">
-                <h3>3. Oppure via JavaScript</h3>
-                <pre>// Inizializzazione manuale
-const widget = new TheBestItalyWidget('my-widget', {
-    type: 'destination',
-    id: 'roma',
-    size: 'large',
-    theme: 'auto',
-    language: 'en',
-    showLanguageSelector: true,
-    showShareButtons: true,
-    autoRotate: false,
-    cacheTime: 300000
-});</pre>
-                <button class="copy-btn" onclick="copyCode(this)">📋 Copia Codice</button>
-            </div>
-        </div>
-
-        <!-- Configuration Section -->
-        <div class="section">
-            <h2>⚙️ Configurazione Completa</h2>
-            
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
-                    <thead>
-                        <tr style="background: #f8fafc;">
-                            <th style="padding: 16px; text-align: left; border: 1px solid #e2e8f0;">Parametro</th>
-                            <th style="padding: 16px; text-align: left; border: 1px solid #e2e8f0;">Valori</th>
-                            <th style="padding: 16px; text-align: left; border: 1px solid #e2e8f0;">Default</th>
-                            <th style="padding: 16px; text-align: left; border: 1px solid #e2e8f0;">Descrizione</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0; font-weight: 600;">type</td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>destination | company | article</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>destination</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;">Tipo di contenuto da mostrare</td>
-                        </tr>
-                        <tr style="background: #f8fafc;">
-                            <td style="padding: 16px; border: 1px solid #e2e8f0; font-weight: 600;">size</td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>small | medium | large</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>medium</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;">Dimensione del widget</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0; font-weight: 600;">theme</td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>light | dark | auto</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>light</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;">Tema colori (auto segue sistema)</td>
-                        </tr>
-                        <tr style="background: #f8fafc;">
-                            <td style="padding: 16px; border: 1px solid #e2e8f0; font-weight: 600;">language</td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>it | en | es | fr | de | ...</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>it</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;">Lingua iniziale (51+ supportate)</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0; font-weight: 600;">showLanguageSelector</td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>true | false</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>true</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;">Mostra selettore lingue</td>
-                        </tr>
-                        <tr style="background: #f8fafc;">
-                            <td style="padding: 16px; border: 1px solid #e2e8f0; font-weight: 600;">showShareButtons</td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>true | false</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;"><code>true</code></td>
-                            <td style="padding: 16px; border: 1px solid #e2e8f0;">Mostra pulsanti condivisione</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Languages Section -->
-        <div class="section">
-            <h2>🌍 Lingue Supportate (51+)</h2>
-            <p style="text-align: center; font-size: 1.1rem; color: #6b7280; margin-bottom: 32px;">
-                Supporto completo con traduzioni native, RTL automatico e fallback intelligente
-            </p>
-            
-            <div class="languages-showcase">
-                <div class="lang-item">🇮🇹 Italiano</div>
-                <div class="lang-item">🇬🇧 English</div>
-                <div class="lang-item">🇪🇸 Español</div>
-                <div class="lang-item">🇫🇷 Français</div>
-                <div class="lang-item">🇩🇪 Deutsch</div>
-                <div class="lang-item">🇵🇹 Português</div>
-                <div class="lang-item">🇷🇺 Русский</div>
-                <div class="lang-item">🇨🇳 中文</div>
-                <div class="lang-item">🇯🇵 日本語</div>
-                <div class="lang-item">🇸🇦 العربية</div>
-                <div class="lang-item">🇮🇳 हिन्दी</div>
-                <div class="lang-item">🇹🇷 Türkçe</div>
-                <div class="lang-item">🇰🇷 한국어</div>
-                <div class="lang-item">🇳🇱 Nederlands</div>
-                <div class="lang-item">🇵🇱 Polski</div>
-                <div class="lang-item">🇸🇪 Svenska</div>
-                <div class="lang-item">🇩🇰 Dansk</div>
-                <div class="lang-item">🇳🇴 Norsk</div>
-                <div class="lang-item">🇫🇮 Suomi</div>
-                <div class="lang-item">🇭🇺 Magyar</div>
-                <div class="lang-item">🇨🇿 Čeština</div>
-                <div class="lang-item">🇸🇰 Slovenčina</div>
-                <div class="lang-item">🇷🇴 Română</div>
-                <div class="lang-item">🇧🇬 Български</div>
-                <div class="lang-item">🇭🇷 Hrvatski</div>
-                <div class="lang-item">🇷🇸 Српски</div>
-                <div class="lang-item">🇸🇮 Slovenščina</div>
-                <div class="lang-item">🇪🇪 Eesti</div>
-                <div class="lang-item">🇱🇻 Latviešu</div>
-                <div class="lang-item">🇱🇹 Lietuvių</div>
-                <div class="lang-item">🇬🇷 Ελληνικά</div>
-                <div class="lang-item">🇮🇱 עברית</div>
-                <div class="lang-item">🇮🇷 فارسی</div>
-                <div class="lang-item">🇵🇰 اردو</div>
-                <div class="lang-item">🇧🇩 বাংলা</div>
-                <div class="lang-item">🇻🇳 Tiếng Việt</div>
-                <div class="lang-item">🇹🇭 ไทย</div>
-                <div class="lang-item">🇮🇩 Bahasa Indonesia</div>
-                <div class="lang-item">🇲🇾 Bahasa Melayu</div>
-                <div class="lang-item">🇵🇭 Filipino</div>
-                <div class="lang-item">🇹🇿 Kiswahili</div>
-                <div class="lang-item">🇪🇹 አማርኛ</div>
-                <div class="lang-item">🇿🇦 Afrikaans</div>
-                <div class="lang-item">🇮🇸 Íslenska</div>
-                <div class="lang-item">🇲🇰 Македонски</div>
-                <div class="lang-item">🇦🇿 Azərbaycan</div>
-                <div class="lang-item">🇬🇪 ქართული</div>
-                <div class="lang-item">🇦🇲 Հայերեն</div>
-                <div class="lang-item">🇹🇲 Türkmençe</div>
-                <div class="lang-item">🏴󠁥󠁳󠁣󠁴󠁿 Català</div>
-                <div class="lang-item">🇹🇼 繁體中文</div>
-            </div>
-        </div>
-
-        <!-- CTA Section -->
-        <div class="cta-section">
-            <h2>Inizia Subito!</h2>
-            <p>
-                Integra il widget più bello per contenuti italiani sul tuo sito. 
-                Facile, veloce e con risultati garantiti.
-            </p>
-            
-            <div class="cta-buttons">
-                <a href="https://thebestitaly.eu" class="btn btn-primary">
-                    🚀 Prova Ora
-                </a>
-                <a href="https://github.com/thebestitaly" class="btn btn-secondary">
-                    📚 Documentazione
-                </a>
             </div>
         </div>
     </div>
 
-    <!-- Widget Script -->
-    <script src="widget.js"></script>
-    
+    <!-- Widget Preview -->
+    <div class="flex justify-center mb-8 px-4">
+        <div id="widgetContainer">
+            <!-- Widget verrà generato qui -->
+        </div>
+    </div>
+
+    <!-- Results List -->
+    <div id="resultsList" class="max-w-4xl mx-auto hidden px-4">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">🎯 Risultati Trovati:</h3>
+        <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Risultati verranno inseriti qui -->
+        </div>
+    </div>
+
     <script>
-        // Copy code functionality
-        function copyCode(button) {
-            const pre = button.previousElementSibling;
-            const code = pre.textContent;
+        // Languages database
+        const languages = [
+        { code: 'af', name: 'Afrikaans', nativeName: 'Afrikaans', flag: '🇿🇦', rtl: false },
+  { code: 'am', name: 'Amharic', nativeName: 'አማርኛ', flag: '🇪🇹', rtl: false },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', rtl: true },
+  { code: 'az', name: 'Azerbaijani', nativeName: 'Azərbaycan', flag: '🇦🇿', rtl: false },
+  { code: 'bg', name: 'Bulgarian', nativeName: 'Български', flag: '🇧🇬', rtl: false },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩', rtl: false },
+  { code: 'ca', name: 'Catalan', nativeName: 'Català', flag: '🇪🇸', rtl: false },
+  { code: 'cs', name: 'Czech', nativeName: 'Čeština', flag: '🇨🇿', rtl: false },
+  { code: 'da', name: 'Danish', nativeName: 'Dansk', flag: '🇩🇰', rtl: false },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', rtl: false },
+  { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷', rtl: false },
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', rtl: false },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', rtl: false },
+  { code: 'et', name: 'Estonian', nativeName: 'Eesti', flag: '🇪🇪', rtl: false },
+  { code: 'fa', name: 'Persian', nativeName: 'فارسی', flag: '🇮🇷', rtl: true },
+  { code: 'fi', name: 'Finnish', nativeName: 'Suomi', flag: '🇫🇮', rtl: false },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', rtl: false },
+  { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱', rtl: true },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳', rtl: false },
+  { code: 'hr', name: 'Croatian', nativeName: 'Hrvatski', flag: '🇭🇷', rtl: false },
+  { code: 'hu', name: 'Hungarian', nativeName: 'Magyar', flag: '🇭🇺', rtl: false },
+  { code: 'hy', name: 'Armenian', nativeName: 'Հայերեն', flag: '🇦🇲', rtl: false },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩', rtl: false },
+  { code: 'is', name: 'Icelandic', nativeName: 'Íslenska', flag: '🇮🇸', rtl: false },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹', rtl: false },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', rtl: false },
+  { code: 'ka', name: 'Georgian', nativeName: 'ქართული', flag: '🇬🇪', rtl: false },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', rtl: false },
+  { code: 'lt', name: 'Lithuanian', nativeName: 'Lietuvių', flag: '🇱🇹', rtl: false },
+  { code: 'lv', name: 'Latvian', nativeName: 'Latviešu', flag: '🇱🇻', rtl: false },
+  { code: 'mk', name: 'Macedonian', nativeName: 'Македонски', flag: '🇲🇰', rtl: false },
+  { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾', rtl: false },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱', rtl: false },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱', rtl: false },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹', rtl: false },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română', flag: '🇷🇴', rtl: false },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺', rtl: false },
+  { code: 'sk', name: 'Slovak', nativeName: 'Slovenčina', flag: '🇸🇰', rtl: false },
+  { code: 'sl', name: 'Slovenian', nativeName: 'Slovenščina', flag: '🇸🇮', rtl: false },
+  { code: 'sr', name: 'Serbian', nativeName: 'Српски', flag: '🇷🇸', rtl: false },
+  { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪', rtl: false },
+  { code: 'sw', name: 'Swahili', nativeName: 'Kiswahili', flag: '🇹🇿', rtl: false },
+  { code: 'th', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭', rtl: false },
+  { code: 'tl', name: 'Filipino', nativeName: 'Filipino', flag: '🇵🇭', rtl: false },
+  { code: 'tk', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷', rtl: false },
+  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦', rtl: false },
+  { code: 'ur', name: 'Urdu', nativeName: 'اردو', flag: '🇵🇰', rtl: true },
+  { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳', rtl: false },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳', rtl: false },
+  { code: 'zh-tw', name: 'Traditional Chinese', nativeName: '繁體中文', flag: '🇹🇼', rtl: false }
+        ];
+
+        // State
+        let state = {
+            widgetType: 'medium',
+            contentType: 'azienda',
+            searchTerm: '',
+            selectedLanguage: 'it',
+            isDropdownOpen: false,
+            searchResults: [],
+            selectedContent: null
+        };
+
+        // Funzione per renderizzare markdown semplice
+        function renderMarkdown(text) {
+            if (!text) return '';
             
-            navigator.clipboard.writeText(code).then(() => {
-                const originalText = button.textContent;
-                button.textContent = '✅ Copiato!';
-                button.style.background = '#10b981';
-                
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = '#3b82f6';
-                }, 2000);
-            });
+            return text
+                // Headings (devono essere prima dei paragrafi)
+                .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold text-gray-800 mt-4 mb-2">$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold text-gray-900 mt-6 mb-3">$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold text-gray-900 mt-6 mb-4">$1</h1>')
+                // Grassetto **text** o __text__
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/__(.*?)__/g, '<strong>$1</strong>')
+                // Corsivo *text* o _text_
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/_(.*?)_/g, '<em>$1</em>')
+                // Link [text](url)
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">$1</a>')
+                // Paragrafi (doppi a capo)
+                .replace(/\n\s*\n/g, '</p><p class="mb-3">')
+                // Singoli a capo
+                .replace(/\n/g, '<br>')
+                // Wrappa tutto in un paragrafo (ma non gli heading)
+                .replace(/^(?!<h[1-6])(.*?)$/gm, '<p class="mb-3">$1</p>')
+                // Pulisci paragrafi vuoti
+                .replace(/<p class="mb-3"><\/p>/g, '')
+                // Pulisci paragrafi che contengono solo <br>
+                .replace(/<p class="mb-3"><br><\/p>/g, '');
         }
 
-        // Demo code for manual widget creation
-        setTimeout(() => {
-            // Test manual creation after page load
-            console.log('🎉 TheBestItaly Widget v5.0 caricato con successo!');
-            console.log('📊 Widget attivi:', Object.keys(window.tbiWidgets || {}).length);
-        }, 2000);
+        // Get widget sizes
+        function getWidgetSize(type) {
+            switch (type) {
+                case 'small': return 'w-80 h-auto min-h-32';
+                case 'medium': return 'w-96 h-auto min-h-40';
+                case 'full': return 'w-full h-auto min-h-[600px]';
+                default: return 'w-96 h-auto min-h-40';
+            }
+        }
+
+        function getContentSize(type) {
+            switch (type) {
+                case 'small': return 'text-xs';
+                case 'medium': return 'text-sm';
+                case 'full': return 'text-base';
+                default: return 'text-sm';
+            }
+        }
+
+        function getTitleSize(type) {
+            switch (type) {
+                case 'small': return 'text-base';
+                case 'medium': return 'text-lg';
+                case 'full': return 'text-2xl';
+                default: return 'text-lg';
+            }
+        }
+
+        function getDropdownSize(type) {
+            switch (type) {
+                case 'small': return 'max-h-32 text-xs';
+                case 'medium': return 'max-h-40 text-sm';
+                case 'full': return 'max-h-60 text-base';
+                default: return 'max-h-40 text-sm';
+            }
+        }
+
+        function getButtonSize(type) {
+            switch (type) {
+                case 'small': return 'px-2 py-1 text-xs';
+                case 'medium': return 'px-3 py-2 text-sm';
+                case 'full': return 'px-4 py-3 text-base';
+                default: return 'px-3 py-2 text-sm';
+            }
+        }
+
+                        // API Functions - RICERCA REALE DAL DATABASE
+        async function searchContent(type, term, language) {
+            console.log(`🔍 [WIDGET] Iniziando ricerca: ${type} - "${term}" in ${language}`);
+            
+            // Mostra loading
+            showLoadingSkeleton();
+            
+            try {
+                const requestData = { 
+                    type, 
+                    query: term, 
+                    language,
+                    limit: 5 
+                };
+                
+                console.log(`📤 [WIDGET] Dati richiesta:`, requestData);
+                console.log(`🌐 [WIDGET] URL chiamata: /api/widget/search`);
+                
+                const response = await fetch('/api/widget/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log(`📡 [WIDGET] Response status: ${response.status}`);
+                console.log(`📋 [WIDGET] Response headers:`, Object.fromEntries(response.headers.entries()));
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`❌ [WIDGET] Response error: ${response.status} - ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
+                
+                const results = await response.json();
+                console.log(`✅ [WIDGET] Ricevuti ${results.length} risultati dal server`);
+                console.log(`📊 [WIDGET] Risultati completi:`, results);
+                
+                if (results.length === 0) {
+                    console.log(`⚠️ [WIDGET] Nessun risultato trovato per "${term}" in ${language}`);
+                    
+                    // Mostra messaggio "Nessun risultato"
+                    state.searchResults = [{
+                        id: 'no-results',
+                        title: '🔍 Nessun risultato',
+                        description: `Non sono stati trovati risultati per "${term}" in ${language}. Prova con termini diversi.`,
+                        type: type,
+                        language: language,
+                        slug_permalink: '',
+                        external_url: '#'
+                    }];
+                } else {
+                    state.searchResults = results;
+                    console.log(`🎯 [WIDGET] Primo risultato: ${results[0].title} - ${results[0].external_url}`);
+                    
+                    // Se avevamo un contenuto selezionato, troviamo la sua versione nella nuova lingua
+                    if (state.selectedContent) {
+                        const newContent = results.find(r => r.id === state.selectedContent.id);
+                        if (newContent) {
+                            console.log(`🔄 [WIDGET] Aggiornando contenuto selezionato nella nuova lingua: ${newContent.title} - ${newContent.external_url}`);
+                            console.log(`🔍 [WIDGET] Nuovo content seo_title:`, newContent.seo_title);
+                            console.log(`🔍 [WIDGET] Nuovo content completo:`, newContent);
+                            state.selectedContent = newContent;
+                        } else {
+                            console.log(`⚠️ [WIDGET] Non trovato content con ID ${state.selectedContent.id} nella nuova lingua`);
+                        }
+                    }
+                }
+                
+                renderResults();
+                updateWidget();
+                
+            } catch (error) {
+                console.error('❌ [WIDGET] Errore completo ricerca database:', error);
+                console.error('📋 [WIDGET] Stack trace:', error.stack);
+                
+                // Fallback con messaggio di errore dettagliato
+                state.searchResults = [{
+                    id: 'error',
+                    title: '⚠️ Errore di ricerca',
+                    description: `Errore: ${error.message}. Controlla la console per dettagli.`,
+                    type: type,
+                    language: language,
+                    slug_permalink: '',
+                    external_url: '#'
+                }];
+                
+                renderResults();
+                updateWidget();
+            }
+        }
+
+        // UI Rendering Functions
+        function renderWidget(content = null) {
+            const currentLanguage = languages.find(lang => lang.code === state.selectedLanguage);
+            const widgetSize = getWidgetSize(state.widgetType);
+            const contentSize = getContentSize(state.widgetType);
+            const titleSize = getTitleSize(state.widgetType);
+            const dropdownSize = getDropdownSize(state.widgetType);
+            const buttonSize = getButtonSize(state.widgetType);
+            
+            const title = content ? content.title : `${state.contentType.charAt(0).toUpperCase() + state.contentType.slice(1)}`;
+            const description = content ? content.description : 'Eccellenza italiana di qualità premium.';
+            const padding = state.widgetType === 'small' ? 'p-3' : state.widgetType === 'medium' ? 'p-4' : 'p-6';
+            
+            return `
+                <div class="${widgetSize} bg-gradient-to-br from-gray-50 to-white rounded-3xl shadow-lg border border-gray-200 ${padding} mx-auto relative overflow-visible ${state.widgetType === 'full' ? 'flex flex-col' : ''}">
+                    ${state.widgetType === 'full' ? `
+                        <!-- Language Selector - Top Right nel Full -->
+                        <div class="absolute top-4 right-4">
+                            <div class="relative w-60">
+                                <button data-dropdown-toggle 
+                                        class="w-full bg-white border-2 border-cyan-300 rounded-2xl ${getButtonSize('medium')} flex items-center justify-between hover:border-cyan-400 transition-colors">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-base">${currentLanguage?.flag}</span>
+                                        <span class="font-medium text-gray-800 text-sm truncate">${currentLanguage?.nativeName}</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-gray-600 transition-transform ${state.isDropdownOpen ? 'rotate-180' : ''}" 
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+
+                                <!-- Dropdown -->
+                                ${state.isDropdownOpen ? `
+                                    <div class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 ${getDropdownSize('medium')} overflow-y-auto">
+                                        ${languages.map(lang => `
+                                            <button data-lang-select="${lang.code}" 
+                                                    class="w-full px-3 py-2 flex items-center gap-2 hover:bg-gray-50 text-left transition-colors text-sm">
+                                                <span class="text-sm">${lang.flag}</span>
+                                                <span class="font-medium text-gray-800 truncate">${lang.nativeName}</span>
+                                                <span class="text-xs text-gray-500 ml-auto">${lang.name}</span>
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Content Centrato -->
+                        <div class="flex-1 flex flex-col justify-center">
+                    ` : ''}
+                    
+                    <!-- Header -->
+                    <div class="flex items-center justify-center ${state.widgetType === 'small' ? 'mb-2' : 'mb-4'}">
+                        <div class="text-center">
+                            <div class="font-bold text-blue-900 mb-1">
+                                <span class="font-script text-blue-800">the</span>
+                                <span class="ml-1 font-bold">Best</span>
+                                <span class="text-red-600 ml-1">🇮🇹</span>
+                            </div>
+                            <div class="flex items-center justify-center">
+                                <div class="w-6 h-0.5 bg-green-500 mr-1"></div>
+                                <span class="text-xs font-semibold text-gray-700 tracking-wider">I T A L Y</span>
+                                <div class="w-6 h-0.5 bg-red-500 ml-1"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="text-center ${state.widgetType === 'small' ? 'mb-2' : state.widgetType === 'full' ? 'mb-8' : 'mb-4'}">
+                        <h2 class="${titleSize} font-light text-gray-800 mb-1">${title}</h2>
+                        ${state.widgetType === 'small' ? '' : `
+                            <p class="${contentSize} text-gray-600 font-light">${content && content.seo_summary ? content.seo_summary : (content && content.description ? content.description.substring(0, 100) + '...' : description)}</p>
+                        `}
+                        ${state.widgetType === 'full' && content ? `
+                            <div class="mt-4 p-4 bg-gray-50 rounded-2xl text-left" id="fullDescription">
+                                <div class="text-gray-700 leading-relaxed">
+                                    <div class="animate-pulse">Caricamento descrizione completa...</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    ${state.widgetType === 'full' ? `
+                        <!-- View Content Button - Centrato nel Full -->
+                        <div class="text-center mt-6">
+                            <button data-view-content="${content ? content.id : 'null'}" 
+                                    class="bg-cyan-300 hover:bg-cyan-400 rounded-2xl px-8 py-4 text-lg font-medium text-gray-800 transition-colors">
+                                Visualizza ${content ? content.title : 'Contenuto'}
+                            </button>
+                        </div>
+                        </div> <!-- Chiudi content centrato -->
+                    ` : `
+                        <!-- Language Selector and Action - Small/Medium -->
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <button data-dropdown-toggle 
+                                        class="w-full bg-white border-2 border-cyan-300 rounded-2xl ${buttonSize} flex items-center justify-between hover:border-cyan-400 transition-colors">
+                                    <div class="flex items-center gap-2">
+                                        <span class="${state.widgetType === 'small' ? 'text-sm' : 'text-base'}">${currentLanguage?.flag}</span>
+                                        <span class="font-medium text-gray-800 ${contentSize} truncate">${state.widgetType === 'small' ? currentLanguage?.code.toUpperCase() : currentLanguage?.nativeName}</span>
+                                    </div>
+                                    <svg class="w-4 h-4 text-gray-600 transition-transform ${state.isDropdownOpen ? 'rotate-180' : ''}" 
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+
+                                <!-- Dropdown -->
+                                ${state.isDropdownOpen ? `
+                                    <div class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 ${dropdownSize} overflow-y-auto">
+                                        ${languages.map(lang => `
+                                            <button data-lang-select="${lang.code}" 
+                                                    class="w-full px-3 py-2 flex items-center gap-2 hover:bg-gray-50 text-left transition-colors ${dropdownSize.includes('text-xs') ? 'text-xs' : dropdownSize.includes('text-sm') ? 'text-sm' : 'text-base'}">
+                                                <span class="text-sm">${lang.flag}</span>
+                                                <span class="font-medium text-gray-800 truncate">${lang.nativeName}</span>
+                                                ${state.widgetType !== 'small' ? `<span class="text-xs text-gray-500 ml-auto">${lang.name}</span>` : ''}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <button data-view-content="${content ? content.id : 'null'}" 
+                                    class="bg-cyan-300 hover:bg-cyan-400 rounded-2xl ${state.widgetType === 'small' ? 'p-2' : 'p-3'} transition-colors flex-shrink-0">
+                                <svg class="${state.widgetType === 'small' ? 'w-4 h-4' : 'w-5 h-5'} text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5-5 5M6 12l5 5-5 5"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function showLoadingSkeleton() {
+            const widgetContainer = document.getElementById('widgetContainer');
+            const widgetSize = getWidgetSize(state.widgetType);
+            const padding = state.widgetType === 'small' ? 'p-3' : state.widgetType === 'medium' ? 'p-4' : 'p-6';
+            
+            widgetContainer.innerHTML = `
+                <div class="${widgetSize} bg-white rounded-3xl shadow-lg border border-gray-200 ${padding} mx-auto">
+                    <div class="animate-pulse">
+                        <div class="h-3 bg-gray-200 rounded mb-3"></div>
+                        <div class="h-6 bg-gray-200 rounded mb-3"></div>
+                        <div class="h-3 bg-gray-200 rounded mb-3"></div>
+                        <div class="h-8 bg-gray-200 rounded"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderResults() {
+            const resultsList = document.getElementById('resultsList');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            if (state.searchResults.length === 0) {
+                resultsList.classList.add('hidden');
+                return;
+            }
+            
+            resultsList.classList.remove('hidden');
+            
+            resultsContainer.innerHTML = state.searchResults.map(result => {
+                const typeIcon = result.type === 'azienda' ? '🏢' : 
+                               result.type === 'destinazione' ? '🏛️' : 
+                               '📰';
+                const typeColor = result.type === 'azienda' ? 'blue' : 
+                                result.type === 'destinazione' ? 'purple' : 
+                                'green';
+                
+                return `
+                    <div class="bg-white rounded-xl shadow-md p-4 hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer border border-gray-100 group" 
+                         onclick="selectContent(${result.id})">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="bg-${typeColor}-100 text-${typeColor}-600 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                                ${typeIcon} ${result.type.charAt(0).toUpperCase() + result.type.slice(1)}
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400 group-hover:text-${typeColor}-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                        <h4 class="font-semibold text-gray-800 group-hover:text-${typeColor}-600 transition-colors line-clamp-2 mb-2">${result.title}</h4>
+                        <p class="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded truncate">
+                            ${result.external_url.replace('https://thebestitaly.eu', '')}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateWidget() {
+            const widgetContainer = document.getElementById('widgetContainer');
+            widgetContainer.innerHTML = renderWidget(state.selectedContent);
+            
+            // Riattacca gli event listeners dopo aver aggiornato l'HTML
+            attachWidgetEventListeners();
+            
+            // Se è modalità full, carica la descrizione separatamente
+            if (state.widgetType === 'full' && state.selectedContent) {
+                loadFullDescription(state.selectedContent);
+            }
+        }
+
+        function attachWidgetEventListeners() {
+            // Language dropdown toggle
+            const dropdownBtn = document.querySelector('#widgetContainer button[data-dropdown-toggle]');
+            if (dropdownBtn) {
+                dropdownBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleDropdown();
+                });
+            }
+            
+            // Language selection buttons
+            const langButtons = document.querySelectorAll('#widgetContainer [data-lang-select]');
+            langButtons.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectLanguage(btn.dataset.langSelect);
+                });
+            });
+            
+            // View content button
+            const viewBtn = document.querySelector('#widgetContainer [data-view-content]');
+            if (viewBtn) {
+                viewBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    viewContent(viewBtn.dataset.viewContent);
+                });
+            }
+        }
+
+        // Event Handlers
+        function toggleDropdown() {
+            console.log('Toggle dropdown:', state.isDropdownOpen ? 'close' : 'open');
+            state.isDropdownOpen = !state.isDropdownOpen;
+            updateWidget();
+        }
+
+        function selectLanguage(langCode) {
+            console.log('Selected language:', langCode);
+            const oldLanguage = state.selectedLanguage;
+            state.selectedLanguage = langCode;
+            state.isDropdownOpen = false;
+            
+            // Se c'è un contenuto selezionato e la lingua è cambiata, rifai la ricerca
+            if (state.selectedContent && oldLanguage !== langCode && state.searchTerm) {
+                console.log(`🔄 Lingua cambiata da ${oldLanguage} a ${langCode}, rifaccio la ricerca per "${state.searchTerm}"`);
+                console.log(`🔍 Content prima del cambio lingua:`, state.selectedContent);
+                searchContent(state.contentType, state.searchTerm, langCode);
+            } else {
+                updateWidget();
+            }
+        }
+
+        function selectContent(id) {
+            const content = state.searchResults.find(r => r.id === id);
+            if (content) {
+                console.log('Selected content:', content.title, 'URL:', content.external_url);
+                state.selectedContent = content;
+                updateWidget();
+            }
+        }
+
+        // Carica la descrizione completa solo per modalità full
+        async function loadFullDescription(content) {
+            const descriptionContainer = document.getElementById('fullDescription');
+            if (!descriptionContainer || !content) return;
+            
+            try {
+                console.log('📖 Loading full description for:', content.title);
+                
+                const response = await fetch('/api/widget/description', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: content.type,
+                        id: content.id,
+                        language: state.selectedLanguage
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const descriptionDiv = descriptionContainer.querySelector('.text-gray-700');
+                    if (descriptionDiv && data.description) {
+                        descriptionDiv.innerHTML = renderMarkdown(data.description);
+                        console.log('✅ Full description loaded successfully');
+                    } else {
+                        descriptionDiv.innerHTML = 'Descrizione non disponibile.';
+                    }
+                } else {
+                    console.error('❌ Failed to load description:', response.status);
+                    const descriptionDiv = descriptionContainer.querySelector('.text-gray-700');
+                    if (descriptionDiv) {
+                        descriptionDiv.innerHTML = 'Errore nel caricamento della descrizione.';
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error loading full description:', error);
+                const descriptionDiv = descriptionContainer.querySelector('.text-gray-700');
+                if (descriptionDiv) {
+                    descriptionDiv.innerHTML = 'Errore nel caricamento della descrizione.';
+                }
+            }
+        }
+
+        function viewContent(id) {
+            if (id && id !== 'null' && state.selectedContent) {
+                const url = state.selectedContent.external_url;
+                console.log(`🔗 Aprendo contenuto: ${state.selectedContent.title} → ${url}`);
+                
+                if (url && url !== '#') {
+                    // Apri il contenuto nell'URL esterno
+                    window.open(url, '_blank');
+                } else {
+                    alert(`Contenuto selezionato: ${state.selectedContent.title}\nURL non disponibile`);
+                }
+            } else {
+                alert('Seleziona prima un contenuto dalla ricerca');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log(`🌐 Widget caricato con ${languages.length} lingue supportate (esattamente 50)!`);
+            console.log('🔍 Prova a cercare: "Ferrari", "Roma", "Venezia", "Prada"');
+            
+            // Event listeners
+            document.getElementById('widgetType').addEventListener('change', function(e) {
+                state.widgetType = e.target.value;
+                state.isDropdownOpen = false; // Chiudi dropdown quando cambi tipo
+                updateWidget();
+            });
+
+            document.getElementById('contentType').addEventListener('change', function(e) {
+                state.contentType = e.target.value;
+                state.selectedContent = null;
+                state.isDropdownOpen = false; // Chiudi dropdown
+                updateWidget();
+            });
+
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                const term = document.getElementById('searchTerm').value.trim();
+                if (!term) {
+                    alert('Inserisci un termine di ricerca');
+                    return;
+                }
+                state.searchTerm = term;
+                state.isDropdownOpen = false; // Chiudi dropdown durante ricerca
+                searchContent(state.contentType, term, state.selectedLanguage);
+            });
+
+            document.getElementById('searchTerm').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('searchBtn').click();
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#widgetContainer') && state.isDropdownOpen) {
+                    state.isDropdownOpen = false;
+                    updateWidget();
+                }
+            });
+
+            // Initial render
+            updateWidget();
+        });
     </script>
+
+    <!-- Implementation Section -->
+    <div class="max-w-6xl mx-auto px-4 py-16 bg-white">
+        <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">💻 Guida all'Implementazione</h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- HTML Integration -->
+            <div class="bg-gray-900 rounded-xl p-6 text-white">
+                <h3 class="text-xl font-semibold mb-4 text-cyan-300">🔧 Integrazione HTML</h3>
+                <p class="text-gray-300 mb-4">Copia e incolla nel tuo sito:</p>
+                <div class="bg-black rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-green-400 text-sm"><code>&lt;!-- Widget theBest Italy --&gt;
+&lt;div id="thebestitaly-widget"&gt;&lt;/div&gt;
+&lt;script&gt;
+(function() {
+    var script = document.createElement('script');
+    script.src = 'https://thebestitaly.eu/widgets/widget.js';
+    script.async = true;
+    script.onload = function() {
+        TheBestItaly.init({
+            container: '#thebestitaly-widget',
+            type: 'azienda', // articolo | destinazione | azienda
+            size: 'medium',  // small | medium | full
+            language: 'it'   // auto-detect o codice lingua
+        });
+    };
+    document.head.appendChild(script);
+})();
+&lt;/script&gt;</code></pre>
+                </div>
+            </div>
+
+            <!-- API Structure -->
+            <div class="bg-blue-50 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4 text-blue-800">🔗 Struttura URL</h3>
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                        <h4 class="font-semibold text-blue-800 mb-2">🏢 Aziende</h4>
+                        <code class="text-sm text-blue-600">/{lingua}/poi/{slug}</code>
+                        <p class="text-xs text-blue-600 mt-1">es: /it/poi/ferrari-spa</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg p-4 border-l-4 border-green-500">
+                        <h4 class="font-semibold text-green-800 mb-2">📰 Articoli</h4>
+                        <code class="text-sm text-green-600">/{lingua}/magazine/{slug}</code>
+                        <p class="text-xs text-green-600 mt-1">es: /it/magazine/cucina-italiana</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg p-4 border-l-4 border-purple-500">
+                        <h4 class="font-semibold text-purple-800 mb-2">🏛️ Destinazioni</h4>
+                        <code class="text-sm text-purple-600">/{lingua}/{regione}/{provincia}/{municipalità}</code>
+                        <p class="text-xs text-purple-600 mt-1">es: /it/lombardia/milano/milano</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- React Integration -->
+            <div class="bg-gray-900 rounded-xl p-6 text-white">
+                <h3 class="text-xl font-semibold mb-4 text-cyan-300">⚛️ React/Next.js</h3>
+                <div class="bg-black rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-blue-400 text-sm"><code>import { useEffect } from 'react';
+
+function TheBestItalyWidget() {
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://thebestitaly.eu/widgets/widget.js';
+        script.async = true;
+        
+        script.onload = () => {
+            window.TheBestItaly.init({
+                container: '#widget-container',
+                type: 'azienda',
+                size: 'medium',
+                language: 'it'
+            });
+        };
+        
+        document.head.appendChild(script);
+        
+        return () => {
+            document.head.removeChild(script);
+        };
+    }, []);
+
+    return &lt;div id="widget-container"&gt;&lt;/div&gt;;
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- API Direct -->
+            <div class="bg-purple-50 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4 text-purple-800">🛠️ API Diretta</h3>
+                <p class="text-purple-700 mb-4">Endpoint per integrazioni personalizzate:</p>
+                <div class="bg-white rounded-lg p-4 border border-purple-200">
+                    <pre class="text-purple-600 text-sm"><code>POST /api/widget/search
+
+{
+  "type": "azienda",
+  "query": "Ferrari", 
+  "language": "it",
+  "limit": 5
+}</code></pre>
+                </div>
+                <div class="mt-4 p-3 bg-purple-100 rounded-lg">
+                    <p class="text-xs text-purple-700">
+                        <strong>✨ Caratteristiche:</strong> Cache 5min, slug_permalink, URL esterni, 40+ lingue
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="mt-16">
+            <h3 class="text-2xl font-bold text-center mb-8 text-gray-800">🚀 Caratteristiche Premium</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl">
+                    <div class="text-4xl mb-4">🌐</div>
+                    <h4 class="font-semibold text-gray-800 mb-2">Multilingua</h4>
+                    <p class="text-sm text-gray-600">Supporto completo per 50 lingue con traduzione automatica</p>
+                </div>
+                
+                <div class="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+                    <div class="text-4xl mb-4">⚡</div>
+                    <h4 class="font-semibold text-gray-800 mb-2">Performance</h4>
+                    <p class="text-sm text-gray-600">Cache intelligente, caricamento asincrono, ottimizzato per mobile</p>
+                </div>
+                
+                <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+                    <div class="text-4xl mb-4">🎯</div>
+                    <h4 class="font-semibold text-gray-800 mb-2">SEO Boost</h4>
+                    <p class="text-sm text-gray-600">Backlink di qualità da thebestitaly.eu per migliorare il ranking</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="mt-16 text-center">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-8">
+                <h3 class="text-2xl font-bold mb-4">Pronto per iniziare?</h3>
+                <p class="text-lg opacity-90 mb-6">Integra il widget in meno di 2 minuti</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="/widgets/widget.js" target="_blank" 
+                       class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
+                        📥 Scarica Widget.js
+                    </a>
+                    <a href="/widgets/integration.md" target="_blank"
+                       class="bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        📖 Guida Completa
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

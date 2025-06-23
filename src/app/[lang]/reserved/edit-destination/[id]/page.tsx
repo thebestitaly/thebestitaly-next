@@ -41,7 +41,6 @@ const LANGUAGE_NAMES: Record<string, string> = {
   'he': 'Hebrew',
   'nl': 'Dutch',
   'sv': 'Swedish',
-  'no': 'Norwegian',
   'da': 'Danish',
   'fi': 'Finnish',
   'pl': 'Polish',

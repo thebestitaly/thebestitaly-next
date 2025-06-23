@@ -54,7 +54,6 @@ const LANGUAGE_NAMES: Record<string, string> = {
   'he': 'Hebrew',
   'nl': 'Dutch',
   'sv': 'Swedish',
-  'no': 'Norwegian',
   'da': 'Danish',
   'fi': 'Finnish',
   'pl': 'Polish',
@@ -84,8 +83,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
   'mt': 'Maltese',
   'sq': 'Albanian',
   'bs': 'Bosnian',
-  'me': 'Montenegrin',
-  'tk': 'Turkmen'
+  'me': 'Montenegrin'
 };
 
 export default function TranslationsManagementPage() {
