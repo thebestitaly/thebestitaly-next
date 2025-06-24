@@ -12,8 +12,7 @@ export default async function DirectusTestPage() {
   try {
     if (directusUrl) {
       const url = `${directusUrl}/items/destinations?limit=1`;
-      console.log('🔍 Making request to:', url);
-      console.log('🔑 Using token:', directusToken ? `${directusToken.substring(0, 8)}...` : 'NONE');
+          // Debug request info
       
       const response = await fetch(url, {
         headers: directusToken ? {
@@ -24,14 +23,13 @@ export default async function DirectusTestPage() {
         },
       });
       
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+              // Response info logged
       
       if (response.ok) {
         apiTest = await response.json();
       } else {
         const responseText = await response.text();
-        console.log('❌ Response body:', responseText);
+                  // Error response logged
         errorMessage = `HTTP ${response.status}: ${response.statusText} - ${responseText}`;
       }
     }

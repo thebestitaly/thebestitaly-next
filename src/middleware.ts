@@ -86,7 +86,7 @@ export function middleware(request: NextRequest) {
   if (redirectUrl) {
     // Log only in development now that we know it works
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 MIDDLEWARE REDIRECT: ${pathname} -> ${redirectUrl}`);
+      // Redirect applicato
     }
     return NextResponse.redirect(new URL(redirectUrl, request.url), 301);
   }

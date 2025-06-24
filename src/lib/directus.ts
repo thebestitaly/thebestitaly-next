@@ -1818,10 +1818,7 @@ class DirectusClient {
 
   async getCompaniesByDestination(destinationId: string, lang: string, destinationType: 'region' | 'province' | 'municipality') {
     try {
-      // Validazione e logging per debug
-      console.log('🔍 getCompaniesByDestination called with:', { destinationId, lang, destinationType, typeOfId: typeof destinationId });
-      
-      // Assicuriamoci che destinationId sia una stringa valida
+      // Validazione destinationId
       if (!destinationId || typeof destinationId !== 'string') {
         console.error('❌ Invalid destinationId:', destinationId);
         return [];
@@ -1831,8 +1828,6 @@ class DirectusClient {
       
       if (destinationType === 'region') {
         // Per le regioni, dobbiamo prendere tutte le companies delle province di quella regione
-        console.log('🏛️ Fetching provinces for region:', destinationId);
-        
         // Prima otteniamo tutte le province di questa regione
         const provincesResponse = await this.client.get('/items/destinations', {
           params: {
@@ -1844,24 +1839,18 @@ class DirectusClient {
           }
         });
         
-        console.log('📋 Provinces response:', provincesResponse.data?.data);
         const provinceIds = provincesResponse.data?.data?.map((p: any) => p.id) || [];
-        console.log('🗂️ Province IDs found:', provinceIds);
         
         if (provinceIds.length > 0) {
           filter.destination_id = { _in: provinceIds };
         } else {
           // Se non ci sono province, non ci sono companies
-          console.log('⚠️ No provinces found for region:', destinationId);
           return [];
         }
       } else {
         // Per province e municipality, usiamo direttamente l'ID
-        console.log('🏙️ Using direct destination ID:', destinationId);
         filter.destination_id = { _eq: destinationId };
       }
-
-      console.log('🔧 Final filter for companies:', JSON.stringify(filter, null, 2));
 
       const response = await this.client.get('/items/companies', {
         params: {

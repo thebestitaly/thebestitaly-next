@@ -58,16 +58,6 @@ export function generateMetadata({
   noindex = false
 }: SEOProps): Metadata {
   
-  // Debug logging per verificare che i metadata vengano generati
-  console.log('🔍 SEO Debug:', {
-    title: title.substring(0, 50) + '...',
-    description: description.substring(0, 50) + '...',
-    type,
-    canonicalUrl,
-    hasHreflangs: Object.keys(hreflangs).length > 0,
-    noindex
-  });
-
   // Metadata base ottimizzati per PageSpeed Insights
   const metadata: Metadata = {
     title,

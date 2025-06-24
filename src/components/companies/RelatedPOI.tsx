@@ -66,8 +66,13 @@ export default function RelatedPOI({ currentCompanyId, destinationId, lang }: Re
     queryFn: async () => {
       if (!currentDestination?.region_id) return [];
       
+      // Estrai l'ID della regione correttamente
+      const regionId = typeof currentDestination.region_id === 'object' && currentDestination.region_id?.id 
+        ? currentDestination.region_id.id.toString()
+        : currentDestination.region_id?.toString() || '';
+        
       const companies = await directusClient.getCompaniesByDestination(
-        currentDestination.region_id.toString(), 
+        regionId, 
         lang, 
         'region'
       );
