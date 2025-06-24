@@ -7,6 +7,18 @@ interface DescriptionParams {
   language: string;
 }
 
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: DescriptionParams = await request.json();
@@ -17,7 +29,14 @@ export async function POST(request: NextRequest) {
     if (!type || !uuid || !language) {
       return NextResponse.json(
         { error: 'Parametri mancanti: type, uuid, language sono obbligatori' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        }
       );
     }
 
@@ -36,13 +55,23 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { error: 'Tipo non valido' },
-          { status: 400 }
+          { 
+            status: 400,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
+          }
         );
     }
 
     return NextResponse.json({ description }, {
       headers: {
         'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200', // Cache 10 min
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
 
@@ -50,7 +79,14 @@ export async function POST(request: NextRequest) {
     console.error('❌ Widget Description Error:', error);
     return NextResponse.json(
       { error: 'Errore interno del server' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      }
     );
   }
 }

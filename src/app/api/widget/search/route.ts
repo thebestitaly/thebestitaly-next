@@ -78,6 +78,18 @@ interface SearchResult {
   external_url: string; // URL completo per accesso esterno
 }
 
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
+    },
+  });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -90,7 +102,14 @@ export async function GET(request: NextRequest) {
     if (!type || !uuid) {
       return NextResponse.json(
         { error: 'Parametri mancanti: type e uuid sono obbligatori' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        }
       );
     }
 
@@ -109,14 +128,28 @@ export async function GET(request: NextRequest) {
       default:
         return NextResponse.json(
           { error: 'Tipo non valido. Usa: articolo, destinazione, azienda' },
-          { status: 400 }
+          { 
+            status: 400,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
+          }
         );
     }
 
     if (!result) {
       return NextResponse.json(
         { error: 'Contenuto non trovato' },
-        { status: 404 }
+        { 
+          status: 404,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        }
       );
     }
 
@@ -125,6 +158,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, {
       headers: {
         'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200', // Cache 10 min
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
 
@@ -132,7 +168,14 @@ export async function GET(request: NextRequest) {
     console.error('❌ Widget GET by UUID Error:', error);
     return NextResponse.json(
       { error: 'Errore interno del server' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      }
     );
   }
 }
@@ -156,7 +199,14 @@ export async function POST(request: NextRequest) {
       console.log('❌ Missing parameters:', { type, query, language });
       return NextResponse.json(
         { error: 'Parametri mancanti: type, query, language sono obbligatori' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          }
+        }
       );
     }
 
@@ -181,7 +231,14 @@ export async function POST(request: NextRequest) {
         console.log('❌ Invalid type:', type);
         return NextResponse.json(
           { error: 'Tipo non valido. Usa: articolo, destinazione, azienda' },
-          { status: 400 }
+          { 
+            status: 400,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
+          }
         );
     }
 
@@ -191,6 +248,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(results, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600', // Cache 5 min
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
 
@@ -198,7 +258,14 @@ export async function POST(request: NextRequest) {
     console.error('❌ Widget Search Error:', error);
     return NextResponse.json(
       { error: 'Errore interno del server' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      }
     );
   }
 }
