@@ -30,11 +30,14 @@ const RegionsList = () => {
           return (
             <div key={region.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               {region.image && (
-                <div className="relative h-48">
+                <div className="relative aspect-[4/3] h-48">
                   <img 
-                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}`}
+                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}?width=400&height=300&fit=cover&quality=85`}
                     alt={translation?.destination_name}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    width="400"
+                    height="300"
                   />
                 </div>
               )}

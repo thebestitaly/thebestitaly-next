@@ -1,0 +1,146 @@
+{
+  "timestamp": "2025-06-24T17:17:49.158Z",
+  "totalPages": 23,
+  "successful": 23,
+  "errors": [],
+  "results": [
+    {
+      "url": "https://thebestitaly.eu/it",
+      "status": 200,
+      "duration": 658,
+      "size": 61012
+    },
+    {
+      "url": "https://thebestitaly.eu/en",
+      "status": 200,
+      "duration": 600,
+      "size": 60868
+    },
+    {
+      "url": "https://thebestitaly.eu/fr",
+      "status": 200,
+      "duration": 607,
+      "size": 60956
+    },
+    {
+      "url": "https://thebestitaly.eu/de",
+      "status": 200,
+      "duration": 582,
+      "size": 61127
+    },
+    {
+      "url": "https://thebestitaly.eu/es",
+      "status": 200,
+      "duration": 591,
+      "size": 60987
+    },
+    {
+      "url": "https://thebestitaly.eu/it/lazio",
+      "status": 200,
+      "duration": 626,
+      "size": 35850
+    },
+    {
+      "url": "https://thebestitaly.eu/it/toscana",
+      "status": 200,
+      "duration": 669,
+      "size": 35993
+    },
+    {
+      "url": "https://thebestitaly.eu/it/lombardia",
+      "status": 200,
+      "duration": 634,
+      "size": 36266
+    },
+    {
+      "url": "https://thebestitaly.eu/it/campania",
+      "status": 200,
+      "duration": 689,
+      "size": 36190
+    },
+    {
+      "url": "https://thebestitaly.eu/it/sicilia",
+      "status": 200,
+      "duration": 667,
+      "size": 36019
+    },
+    {
+      "url": "https://thebestitaly.eu/it/veneto",
+      "status": 200,
+      "duration": 671,
+      "size": 35888
+    },
+    {
+      "url": "https://thebestitaly.eu/it/emilia-romagna",
+      "status": 200,
+      "duration": 603,
+      "size": 36836
+    },
+    {
+      "url": "https://thebestitaly.eu/it/piemonte",
+      "status": 200,
+      "duration": 604,
+      "size": 36220
+    },
+    {
+      "url": "https://thebestitaly.eu/it/lazio/roma",
+      "status": 200,
+      "duration": 717,
+      "size": 36760
+    },
+    {
+      "url": "https://thebestitaly.eu/it/toscana/firenze",
+      "status": 200,
+      "duration": 769,
+      "size": 37575
+    },
+    {
+      "url": "https://thebestitaly.eu/it/lombardia/milano",
+      "status": 200,
+      "duration": 778,
+      "size": 37491
+    },
+    {
+      "url": "https://thebestitaly.eu/it/campania/napoli",
+      "status": 200,
+      "duration": 718,
+      "size": 37397
+    },
+    {
+      "url": "https://thebestitaly.eu/it/sicilia/palermo",
+      "status": 200,
+      "duration": 881,
+      "size": 37426
+    },
+    {
+      "url": "https://thebestitaly.eu/it/veneto/venezia",
+      "status": 200,
+      "duration": 718,
+      "size": 37272
+    },
+    {
+      "url": "https://thebestitaly.eu/it/magazine",
+      "status": 200,
+      "duration": 347,
+      "size": 39524
+    },
+    {
+      "url": "https://thebestitaly.eu/en/magazine",
+      "status": 200,
+      "duration": 343,
+      "size": 39402
+    },
+    {
+      "url": "https://thebestitaly.eu/it/poi",
+      "status": 200,
+      "duration": 254,
+      "size": 29000
+    },
+    {
+      "url": "https://thebestitaly.eu/en/poi",
+      "status": 200,
+      "duration": 226,
+      "size": 28909
+    }
+  ]
+}
