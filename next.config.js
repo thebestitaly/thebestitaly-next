@@ -23,24 +23,44 @@ const nextConfig = {
   // Compressione
   compress: true,
   
-  // Headers di performance - SOLO QUELLI STABILI
+  // Configurazione cache aggressiva
+  experimental: {
+    staleTimes: {
+      dynamic: 30, // 30 secondi per contenuti dinamici
+      static: 180, // 3 minuti per contenuti statici
+    },
+  },
+  
+  // Headers per caching
   async headers() {
     return [
       {
-        source: '/images/:path*',
+        // Cache per assets statici (immagini, CSS, JS)
+        source: '/public/(.*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=31536000, immutable', // 1 anno
           },
         ],
       },
       {
-        source: '/_next/static/:path*',
+        // Cache per API di contenuti (non admin)
+        source: '/api/((?!admin|auth|widget/generate-static).*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, s-maxage=3600, stale-while-revalidate=86400', // 1 ora + 1 giorno stale
+          },
+        ],
+      },
+      {
+        // Cache per pagine contenuti
+        source: '/((?!reserved|admin).*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=1800, stale-while-revalidate=3600', // 30 min + 1 ora stale
           },
         ],
       },
