@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import Head from "next/head";
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import directusClient, { getSlugsAndBreadcrumbs } from "@/lib/directus";
@@ -16,6 +17,7 @@ import {
   GoogleMapsSkeleton, 
   WidgetSkeleton 
 } from "@/components/layout/LoadingSkeleton";
+import CriticalCSS from "./CriticalCSS";
 
 // Lazy load dei componenti non critici
 const GetYourGuideWidget = lazy(() => import("@/components/widgets/GetYourGuideWidget"));
@@ -188,8 +190,41 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
   // Contenuto per il Table of Contents - usa il contenuto reale della descrizione
   const tocContent = translation?.description || "";
 
+  // CRITICAL: Preload hero image for LCP optimization
+  const heroImageMobile = destination.image 
+    ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=400&height=240&fit=cover&quality=80`
+    : null;
+  const heroImageDesktop = destination.image 
+    ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=400&fit=cover&quality=85`
+    : null;
+
   return (
     <div className="min-h-screen">
+      {/* CRITICAL: Inline CSS per LCP */}
+      <CriticalCSS />
+      
+      {/* CRITICAL: Preload hero images for LCP performance */}
+      <Head>
+        {heroImageMobile && (
+          <link 
+            rel="preload" 
+            as="image" 
+            href={heroImageMobile}
+            media="(max-width: 768px)"
+            fetchPriority="high"
+          />
+        )}
+        {heroImageDesktop && (
+          <link 
+            rel="preload" 
+            as="image" 
+            href={heroImageDesktop}
+            media="(min-width: 769px)"
+            fetchPriority="high"
+          />
+        )}
+      </Head>
+
       {/* Schema.org structured data */}
       <script
         type="application/ld+json"
@@ -204,14 +239,14 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
       
       {/* Header Section - Responsive */}
       <div className="container mx-auto px-4 pt-4 pb-0 ">
-        {/* Responsive title */}
-        <h1 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 mt-3 tracking-tighter">
+        {/* Responsive title con critical CSS */}
+        <h1 className="destination-title">
           {translation?.destination_name}
         </h1>
         
-        {/* SEO Summary responsive */}
+        {/* SEO Summary responsive con critical CSS */}
         {translation?.seo_summary && (
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-4">
+          <p className="destination-summary">
             {translation.seo_summary}
           </p>
         )}
@@ -220,25 +255,25 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
       {/* Hero Image - Responsive con dimensioni fisse per evitare CLS */}
       {destination.image && (
         <div className="px-4 mt-6 md:mt-12">
-          <div className="container mx-auto relative mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
-            {/* Mobile: aspect-ratio fisso per evitare layout shift */}
-            <div className="block md:hidden w-full h-[240px] relative">
+          <div className="container mx-auto destination-hero">
+            {/* Mobile: dimensioni fisse per evitare layout shift */}
+            <div className="block md:hidden w-full h-full relative">
               <Image
                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=400&height=240&fit=cover&quality=80`}
                 alt={translation?.destination_name || ""}
                 fill
-                className="object-cover"
+                className="destination-image"
                 priority
                 sizes="100vw"
               />
             </div>
             {/* Desktop: aspect-ratio più largo */}
-            <div className="hidden md:block relative aspect-[21/9] lg:aspect-[5/2]">
+            <div className="hidden md:block relative w-full h-full">
               <Image
                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=400&fit=cover&quality=85`}
                 alt={translation?.destination_name || ""}
                 fill
-                className="object-cover"
+                className="destination-image"
                 priority
                 sizes="(max-width: 1200px) 80vw, 60vw"
               />
@@ -260,9 +295,9 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </Suspense>
             </div>
 
-            {/* Video Section */}
+            {/* Video Section - SOLO DESKTOP per performance mobile */}
             {destination.video_url && (
-              <div className="mb-8">
+              <div className="hidden md:block mb-8">
                 <VideoEmbed 
                   src={destination.video_url} 
                   title={translation?.destination_name || 'Video della destinazione'} 
@@ -277,9 +312,9 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </article>
             )}
 
-            {/* Google Maps Widget */}
+            {/* Google Maps Widget - SOLO DESKTOP per performance mobile */}
             {destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
-              <div className="my-6 md:my-8">
+              <div className="hidden md:block my-6 md:my-8">
                 <Suspense fallback={<GoogleMapsSkeleton />}>
                   <GoogleMaps 
                     lat={destination.lat} 
@@ -332,23 +367,13 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </Suspense>
             </div>
             
-            {/* Mobile sidebar content */}
-            <div className="md:hidden space-y-6">
-              <Suspense fallback={<DestinationSidebarSkeleton />}>
-                <DestinationSidebar
-                  currentDestinationId={destination.id}
-                  regionSlug={slugData.regionSlug}
-                  provinceSlug={slugData.provinceSlug}
-                  currentSlug={translation?.slug_permalink || ""}
-                  provinceId={provinceId || undefined}
-                  regionId={regionId || undefined}  // Passa l'ID della regione
-                  lang={lang}
-                  type={destination.type}
-                />
-              </Suspense>
-              <Suspense fallback={<ArticlesSidebarSkeleton />}>
-                <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
-              </Suspense>
+            {/* Mobile: Solo contenuto essenziale, niente sidebar pesanti */}
+            <div className="md:hidden">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  📱 Per una migliore esperienza e più contenuti, visita questa pagina da desktop.
+                </p>
+              </div>
             </div>
           </div>
         </div>
