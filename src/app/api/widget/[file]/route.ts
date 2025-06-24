@@ -10,7 +10,7 @@ export async function GET(
     const { file } = await params;
     
     // Security: only allow specific widget files
-    const allowedFiles = ['example.html', 'test.html', 'widget.js'];
+    const allowedFiles = ['example.html', 'test.html', 'widget.js', 'widget-static.js'];
     
     if (!allowedFiles.includes(file)) {
       return new NextResponse('File not found', { status: 404 });

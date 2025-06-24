@@ -908,10 +908,22 @@ class TheBestItalyWidget {
             const results = await response.json();
             
             if (!results || results.length === 0) {
-                throw new Error('Content not found');
+                console.warn('No results found for widget content, using fallback');
+                this.createFallbackContent();
+                this.isLoading = false;
+                this.render();
+                return;
             }
 
             const data = results[0]; // Take first result
+            
+            if (!data) {
+                console.warn('Invalid data received, using fallback');
+                this.createFallbackContent();
+                this.isLoading = false;
+                this.render();
+                return;
+            }
 
             // Transform the response to match expected structure
             this.content = {
@@ -1046,8 +1058,18 @@ class TheBestItalyWidget {
                         slug_permalink: this.config.uuid,
                         content: `<p>Explore the rich culture and heritage of Italy through our comprehensive guide.</p>`
                     };
+                    
+                default:
+                    return {
+                        languages_code: lang.code,
+                        seo_title: `${this.config.uuid} - TheBestItaly`,
+                        seo_summary: `Discover the best of Italy with our premium content.`,
+                        description: `Premium Italian content and experiences.`,
+                        slug_permalink: this.config.uuid,
+                        content: `<p>Discover the best of Italy with TheBestItaly.</p>`
+                    };
             }
-        });
+        }).filter(Boolean); // Remove any undefined entries
 
         this.content = {
             id: this.config.uuid,
@@ -1091,9 +1113,9 @@ class TheBestItalyWidget {
     }
 
     getTranslation(field) {
-        if (!this.content?.translations) return '';
+        if (!this.content?.translations || !Array.isArray(this.content.translations)) return '';
         
-        const translation = this.content.translations.find(t => t.languages_code === this.currentLanguage);
+        const translation = this.content.translations.find(t => t && t.languages_code === this.currentLanguage);
         return translation?.[field] || '';
     }
 
