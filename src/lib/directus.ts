@@ -1254,9 +1254,9 @@ class DirectusClient {
     lang,
   }: {
     type: string;
-    region_id?: string;
-    province_id?: string;
-    exclude_id?: string;
+    region_id?: string | number | { id: string | number };
+    province_id?: string | number | { id: string | number };
+    exclude_id?: string | number;
     lang: string;
   }): Promise<Destination[]> {
     try {
@@ -1264,8 +1264,15 @@ class DirectusClient {
         'filter[type][_eq]': type,
       };
   
-      if (region_id) filterParams['filter[region_id][_eq]'] = region_id;
-      if (province_id) filterParams['filter[province_id][_eq]'] = province_id;
+      // Estrai l'ID se viene passato un oggetto
+      if (region_id) {
+        const regionIdValue = typeof region_id === 'object' && region_id.id ? region_id.id : region_id;
+        filterParams['filter[region_id][_eq]'] = regionIdValue;
+      }
+      if (province_id) {
+        const provinceIdValue = typeof province_id === 'object' && province_id.id ? province_id.id : province_id;
+        filterParams['filter[province_id][_eq]'] = provinceIdValue;
+      }
       if (exclude_id) filterParams['filter[id][_neq]'] = exclude_id;
   
       const response = await this.client.get('/items/destinations', {
