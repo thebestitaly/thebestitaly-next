@@ -348,9 +348,12 @@ async function searchDestinations(query: string, language: string, limit: number
         });
       }
 
+      // Se uuid_id è null, genera un UUID temporaneo basato su tipo, ID e slug
+      const finalUuid = destination.uuid_id || `destination-${destination.type}-${destination.id}-${translation?.slug_permalink || 'no-slug'}`;
+
       const result = {
         id: destination.id,
-        uuid: destination.uuid_id,
+        uuid: finalUuid,
         title: translation?.destination_name || 'Destinazione senza nome',
         description: translation?.description || 'Scopri questa meravigliosa destinazione italiana.',
         seo_summary: translation?.seo_summary || translation?.seo_title || 'Destinazione italiana di interesse',
@@ -422,9 +425,14 @@ async function searchCompanies(query: string, language: string, limit: number): 
       // Per le aziende, manteniamo la logica che funzionava: description completa nel campo description
       const finalDescription = translation?.description || company.description || 'Eccellenza italiana di qualità premium.';
 
+      console.log(`🔍 Company ${company.company_name}: uuid_id=${company.uuid_id}, slug=${company.slug_permalink}`);
+
+      // Se uuid_id è null, genera un UUID temporaneo basato su ID e slug
+      const finalUuid = company.uuid_id || `company-${company.id}-${company.slug_permalink}`;
+
       return {
         id: company.id,
-        uuid: company.uuid_id,
+        uuid: finalUuid, // Restituisce uuid_id o un identificatore temporaneo
         title: company.company_name || 'Azienda senza nome',
         description: finalDescription, // Manteniamo la description completa qui per le aziende
         seo_summary: translation?.seo_summary || company.seo_summary || 'Eccellenza italiana',

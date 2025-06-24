@@ -161,7 +161,7 @@ class TheBestItalyWidget {
             this.injectStyles();
             
             // Show loading skeleton
-            this.renderLoadingSkeleton();
+            this.showLoadingSkeleton();
             
             // Setup intersection observer for lazy loading
             this.setupIntersectionObserver();
@@ -190,6 +190,47 @@ class TheBestItalyWidget {
             console.error('Widget initialization failed:', error);
             this.handleError(error);
         }
+    }
+
+    showLoadingSkeleton() {
+        this.isLoading = true;
+        this.render();
+    }
+
+    setupIntersectionObserver() {
+        // Placeholder for intersection observer setup
+        // Can be implemented later for lazy loading optimization
+    }
+
+    loadContentWithRetry() {
+        this.loadContent();
+    }
+
+    setupEventListeners() {
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.closeDropdown();
+            }
+        });
+    }
+
+    setupAutoRotation() {
+        // Placeholder for auto-rotation functionality
+        // Can be implemented later if needed
+    }
+
+    trackEvent(eventName, data) {
+        // Placeholder for analytics tracking
+        if (this.config.enableAnalytics) {
+            console.log(`📊 Analytics: ${eventName}`, data);
+        }
+    }
+
+    handleError(error) {
+        this.error = error.message || 'Unknown error';
+        this.isLoading = false;
+        this.render();
     }
 
     // Performance-optimized style injection
@@ -271,15 +312,79 @@ class TheBestItalyWidget {
                 }
 
                 /* ============= RTL SUPPORT ============= */
-                .tbi-widget[dir="rtl"] {
-                    direction: rtl;
+                .tbi-widget[dir="rtl"], .tbi-widget-rtl {
+                    direction: rtl !important;
+                    text-align: right !important;
                 }
-                .tbi-widget[dir="rtl"] .tbi-widget-header {
-                    flex-direction: row-reverse;
+                
+                /* Header RTL */
+                .tbi-widget[dir="rtl"] .tbi-widget-header,
+                .tbi-widget-rtl .tbi-widget-header {
+                    flex-direction: row-reverse !important;
                 }
-                .tbi-widget[dir="rtl"] .tbi-language-dropdown {
-                    left: auto;
-                    right: 0;
+                
+                /* Language selector RTL */
+                .tbi-widget[dir="rtl"] .tbi-widget-lang-dropdown,
+                .tbi-widget-rtl .tbi-widget-lang-dropdown {
+                    left: 0 !important;
+                    right: auto !important;
+                }
+                .tbi-widget[dir="rtl"] .tbi-widget-lang-current,
+                .tbi-widget-rtl .tbi-widget-lang-current {
+                    flex-direction: row-reverse !important;
+                }
+                .tbi-widget[dir="rtl"] .tbi-widget-lang-option,
+                .tbi-widget-rtl .tbi-widget-lang-option {
+                    flex-direction: row-reverse !important;
+                    text-align: right !important;
+                }
+                .tbi-widget[dir="rtl"] .tbi-widget-lang-arrow,
+                .tbi-widget-rtl .tbi-widget-lang-arrow {
+                    transform: scaleX(-1) !important;
+                }
+                
+                /* Content RTL - FORZA MASSIMA */
+                .tbi-widget[dir="rtl"] .tbi-widget-content,
+                .tbi-widget-rtl .tbi-widget-content {
+                    text-align: right !important;
+                    direction: rtl !important;
+                }
+                .tbi-widget[dir="rtl"] .tbi-widget-title,
+                .tbi-widget-rtl .tbi-widget-title {
+                    text-align: right !important;
+                    direction: rtl !important;
+                }
+                .tbi-widget[dir="rtl"] .tbi-widget-description,
+                .tbi-widget-rtl .tbi-widget-description {
+                    text-align: right !important;
+                    direction: rtl !important;
+                }
+                
+                /* Footer RTL */
+                .tbi-widget[dir="rtl"] .tbi-widget-footer,
+                .tbi-widget-rtl .tbi-widget-footer {
+                    flex-direction: row-reverse !important;
+                    text-align: right !important;
+                }
+                .tbi-widget[dir="rtl"] .tbi-widget-status,
+                .tbi-widget-rtl .tbi-widget-status {
+                    flex-direction: row-reverse !important;
+                }
+                .tbi-widget[dir="rtl"] .tbi-widget-visit-link,
+                .tbi-widget-rtl .tbi-widget-visit-link {
+                    text-align: right !important;
+                }
+                
+                /* Logo RTL */
+                .tbi-widget[dir="rtl"] .tbi-widget-logo,
+                .tbi-widget-rtl .tbi-widget-logo {
+                    flex-direction: row-reverse !important;
+                }
+                
+                /* OVERRIDE SPECIFICO PER TESTO ARABO */
+                .tbi-widget[dir="rtl"] * {
+                    text-align: right !important;
+                    direction: rtl !important;
                 }
 
                 /* ============= HEADER SECTION ============= */
@@ -388,12 +493,12 @@ class TheBestItalyWidget {
                 }
 
                 /* ============= LANGUAGE SELECTOR ============= */
-                .tbi-language-selector {
+                .tbi-widget-lang-selector {
                     position: relative;
                     z-index: 1000;
                 }
 
-                .tbi-language-button {
+                .tbi-widget-lang-button {
                     background: rgba(255, 255, 255, 0.2);
                     backdrop-filter: blur(10px);
                     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -410,22 +515,22 @@ class TheBestItalyWidget {
                     outline: none;
                 }
 
-                .tbi-language-button:hover {
+                .tbi-widget-lang-button:hover {
                     background: rgba(255, 255, 255, 0.3);
                     transform: translateY(-1px);
                     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
                 }
 
-                .tbi-language-button:focus {
+                .tbi-widget-lang-button:focus {
                     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
                 }
 
-                .tbi-language-button.open {
+                .tbi-widget-lang-button.open {
                     background: rgba(255, 255, 255, 0.3);
                     transform: translateY(-1px);
                 }
 
-                .tbi-language-dropdown {
+                .tbi-widget-lang-dropdown {
                     position: absolute;
                     top: calc(100% + 8px);
                     right: 0;
@@ -443,19 +548,19 @@ class TheBestItalyWidget {
                     pointer-events: none;
                 }
 
-                .tbi-language-dropdown.open {
+                .tbi-widget-lang-dropdown.show {
                     opacity: 1;
                     transform: translateY(0) scale(1);
                     pointer-events: all;
                 }
 
-                .tbi-widget-dark .tbi-language-dropdown {
+                .tbi-widget-dark .tbi-widget-lang-dropdown {
                     background: #374151;
                     border-color: #4b5563;
                     color: white;
                 }
 
-                .tbi-language-option {
+                .tbi-widget-lang-option {
                     padding: 12px 16px;
                     cursor: pointer;
                     display: flex;
@@ -470,46 +575,63 @@ class TheBestItalyWidget {
                     color: inherit;
                 }
 
-                .tbi-language-option:hover {
+                .tbi-widget-lang-option:hover {
                     background: #f3f4f6;
                 }
 
-                .tbi-widget-dark .tbi-language-option:hover {
+                .tbi-widget-dark .tbi-widget-lang-option:hover {
                     background: #4b5563;
                 }
 
-                .tbi-language-option.selected {
+                .tbi-widget-lang-option.active {
                     background: #eff6ff;
                     color: #2563eb;
                     font-weight: 600;
                 }
 
-                .tbi-widget-dark .tbi-language-option.selected {
+                .tbi-widget-dark .tbi-widget-lang-option.active {
                     background: #1e3a8a;
                     color: #93c5fd;
                 }
 
-                .tbi-language-option:first-child {
+                .tbi-widget-lang-option:first-child {
                     border-radius: 12px 12px 0 0;
                 }
 
-                .tbi-language-option:last-child {
+                .tbi-widget-lang-option:last-child {
                     border-radius: 0 0 12px 12px;
                 }
 
-                .tbi-language-flag {
+                .tbi-widget-lang-current {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .tbi-widget-lang-flag {
                     font-size: 18px;
                     width: 24px;
                     text-align: center;
                 }
 
-                .tbi-language-name {
+                .tbi-widget-lang-name {
                     flex: 1;
                 }
 
-                .tbi-language-native {
+                .tbi-widget-lang-arrow {
                     font-size: 12px;
                     opacity: 0.7;
+                    transition: transform 0.2s ease;
+                }
+
+                .tbi-widget-lang-button.open .tbi-widget-lang-arrow {
+                    transform: rotate(180deg);
+                }
+
+                .tbi-widget-lang-option-flag {
+                    font-size: 16px;
+                    width: 20px;
+                    text-align: center;
                 }
 
                 /* ============= CONTENT SECTION ============= */
@@ -767,22 +889,34 @@ class TheBestItalyWidget {
         this.render();
 
         try {
-            // Use the new widget search endpoint with UUID
-            const url = `${this.baseUrl}/api/widget/search?type=${this.getApiType()}&uuid=${this.config.uuid}&language=${this.currentLanguage}`;
+            // Use the new widget search endpoint with POST method and search by the uuid slug
+            const response = await fetch(`${this.baseUrl}/api/widget/search`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    type: this.getApiType(),
+                    query: this.config.uuid, // The uuid config is actually the search term (company name/slug)
+                    language: this.currentLanguage,
+                    limit: 1
+                })
+            });
 
-            const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-            const data = await response.json();
+            const results = await response.json();
             
-            if (!data) {
+            if (!results || results.length === 0) {
                 throw new Error('Content not found');
             }
+
+            const data = results[0]; // Take first result
 
             // Transform the response to match expected structure
             this.content = {
                 id: data.id,
-                uuid_id: data.uuid,
+                uuid_id: data.uuid, // This is now the proper UUID (real or generated)
                 slug_permalink: data.slug_permalink,
                 image: null, // Will be loaded separately if needed
                 translations: [{
@@ -791,14 +925,20 @@ class TheBestItalyWidget {
                 }]
             };
 
-            // For companies, description is already available
+            // For companies, description is already available - no need to load separately
             if (this.config.type === 'company') {
                 this.content.translations[0].description = data.description;
             }
 
-            // For destinations in large mode, load full description separately
+            // For destinations in large mode, load full description separately using the proper UUID
             if (this.config.type === 'destination' && this.config.size === 'large') {
                 this.loadFullDescription(data.uuid);
+            }
+
+            // For companies in large mode, description is already loaded from search, no need to reload
+            if (this.config.type === 'company' && this.config.size === 'large') {
+                // Description is already available from search results
+                console.log('Company description already loaded from search results');
             }
             
             this.isLoading = false;
@@ -986,6 +1126,19 @@ class TheBestItalyWidget {
             return 'Discover this beautiful Italian destination';
         }
         
+        // For large widgets of companies, use the full description that comes from API
+        if (this.config.size === 'large' && this.config.type === 'company') {
+            const description = this.getTranslation('description');
+            const seoSummary = this.getTranslation('seo_summary');
+            
+            if (description) {
+                return description;
+            } else if (seoSummary) {
+                return seoSummary;
+            }
+            return 'Italian excellence and craftsmanship';
+        }
+        
         // For large widgets of other types, get full content
         if (this.config.size === 'large') {
             const content = this.getTranslation('content');
@@ -1036,15 +1189,16 @@ class TheBestItalyWidget {
     }
 
     changeLanguage(langCode) {
+        console.log(`🌍 Changing language from ${this.currentLanguage} to ${langCode}`);
         this.currentLanguage = langCode;
         this.closeDropdown();
-        this.render();
         
-        // Aggiorna il link del pulsante "Visita sito"
-        const visitLink = this.container.querySelector('.tbi-widget-visit-link');
-        if (visitLink) {
-            visitLink.href = this.getUrl();
-        }
+        // Salva la lingua selezionata
+        localStorage.setItem('tbi-widget-language', langCode);
+        
+        console.log(`🔄 Reloading content in ${langCode}`);
+        // Ricarica il contenuto nella nuova lingua
+        this.loadContent();
     }
 
     toggleLanguageDropdown() {
@@ -1080,10 +1234,13 @@ class TheBestItalyWidget {
         const sizeClass = `tbi-widget-${this.config.size}`;
         const themeClass = `tbi-widget-${this.config.theme}`;
         const currentLang = this.getCurrentLanguage();
+        const isRTL = currentLang.rtl;
+        const directionClass = isRTL ? 'tbi-widget-rtl' : 'tbi-widget-ltr';
+        const direction = isRTL ? 'rtl' : 'ltr';
 
         if (this.isLoading) {
             this.container.innerHTML = `
-                <div class="tbi-widget ${sizeClass} ${themeClass}">
+                <div class="tbi-widget ${sizeClass} ${themeClass} ${directionClass}" dir="${direction}">
                     <div class="tbi-widget-loading">
                         <div class="tbi-widget-spinner"></div>
                         Loading...
@@ -1095,7 +1252,7 @@ class TheBestItalyWidget {
 
         if (this.error) {
             this.container.innerHTML = `
-                <div class="tbi-widget ${sizeClass} ${themeClass}">
+                <div class="tbi-widget ${sizeClass} ${themeClass} ${directionClass}" dir="${direction}">
                     <div class="tbi-widget-error">
                         ⚠️ Unable to load content<br>
                         <small>${this.error}</small>
@@ -1131,8 +1288,21 @@ class TheBestItalyWidget {
             <img src="${image}" alt="${this.getTitle()}" class="tbi-widget-image" />
         ` : '';
 
+        // Stili inline per RTL - FORZA BRUTA
+        const rtlStyles = isRTL ? `
+            text-align: right !important; 
+            direction: rtl !important; 
+            unicode-bidi: embed !important;
+        ` : '';
+        
+        const rtlContentStyles = isRTL ? `
+            text-align: right !important; 
+            direction: rtl !important; 
+            unicode-bidi: embed !important;
+        ` : '';
+
         this.container.innerHTML = `
-            <div class="tbi-widget ${sizeClass} ${themeClass}">
+            <div class="tbi-widget ${sizeClass} ${themeClass} ${directionClass}" dir="${direction}" style="${rtlStyles}">
                 <div class="tbi-widget-header">
                                          <div class="tbi-widget-logo">
                          <div class="tbi-widget-logo-icon">
@@ -1141,10 +1311,10 @@ class TheBestItalyWidget {
                      </div>
                     ${languageSelector}
                 </div>
-                <div class="tbi-widget-content">
+                <div class="tbi-widget-content" style="${rtlContentStyles}">
                     ${imageHtml}
-                    <div class="tbi-widget-title">${this.getTitle()}</div>
-                    <div class="tbi-widget-description">${this.getDescription()}</div>
+                    <div class="tbi-widget-title" style="${rtlContentStyles}">${this.getTitle()}</div>
+                    <div class="tbi-widget-description" style="${rtlContentStyles}">${this.getDescription()}</div>
                     <div class="tbi-widget-footer">
                                                  <div class="tbi-widget-status">
                              <div class="tbi-widget-status-dot"></div>

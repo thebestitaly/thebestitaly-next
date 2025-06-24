@@ -893,12 +893,12 @@
                 '</div>';
 
             // Generate JavaScript code
-            const jsCode = '<script src="https://thebestitaly.eu/api/widget/widget.js"><\/script>' + '\n' +
+            const jsCode = '<script src="https://thebestitaly.eu/api/widget/widget.js"></script>' + '\n' +
                 '<script>' + '\n' +
                 'document.addEventListener("DOMContentLoaded", function() {' + '\n' +
                 '    new TheBestItalyWidget("tbi-widget-1");' + '\n' +
                 '});' + '\n' +
-                '<\/script>';
+                '</script>';
 
             // Generate full code
             const fullCode = htmlCode + '\n' + '\n' + jsCode;
