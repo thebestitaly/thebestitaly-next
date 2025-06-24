@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ExternalLink, Phone, Mail, Globe, ArrowLeft } from 'lucide-react';
+import { Phone, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import directusClient, { getCompanyHreflang } from '../../../../lib/directus';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
@@ -226,6 +226,15 @@ export default async function CompanyPage({ params }: PageProps) {
 
     return (
       <div className="min-h-screen">
+        {/* Skip to content link for accessibility */}
+        <a 
+          href="#main-content" 
+          className="skip-link"
+          aria-label="Salta al contenuto principale"
+        >
+          Salta al contenuto
+        </a>
+        
         {/* JSON-LD Schema */}
         <JsonLdSchema schema={pageSchema} />
         
@@ -292,10 +301,11 @@ export default async function CompanyPage({ params }: PageProps) {
                 href={company.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center text-white font-semibold px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl transition-all duration-300 hover:opacity-90 text-sm md:text-base"
+                className="inline-flex items-center text-white font-semibold px-4 md:px-6 py-2 md:py-3 rounded-lg md:rounded-xl transition-all duration-300 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm md:text-base"
                 style={{ backgroundColor: '#0066cc' }}
+                aria-label={`Visita il sito web di ${company.company_name} (si apre in una nuova finestra)`}
               >
-                <Globe className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                <Globe className="w-4 h-4 md:w-5 md:h-5 mr-2" aria-hidden="true" />
                 Visita Sito Web
               </Link>
             )}
@@ -303,9 +313,10 @@ export default async function CompanyPage({ params }: PageProps) {
             {company.phone && (
               <a
                 href={`tel:${company.phone}`}
-                className="inline-flex items-center px-4 md:px-6 py-2 md:py-3 border-2 border-gray-300 md:border-gray-400 text-gray-700 font-semibold rounded-lg md:rounded-xl hover:bg-gray-50 transition-all duration-300 text-sm md:text-base"
+                className="inline-flex items-center px-4 md:px-6 py-2 md:py-3 border-2 border-gray-300 md:border-gray-400 text-gray-700 font-semibold rounded-lg md:rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-300 text-sm md:text-base"
+                aria-label={`Chiama ${company.company_name} al numero ${company.phone}`}
               >
-                <Phone className="w-4 h-4 mr-2" />
+                <Phone className="w-4 h-4 mr-2" aria-hidden="true" />
                 Chiama
               </a>
             )}
@@ -315,21 +326,23 @@ export default async function CompanyPage({ params }: PageProps) {
         {/* Hero Image - Responsive */}
         {company.featured_image && (
           <div className="px-4 mt-6 md:mt-12">
-            <div className="container mx-auto relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[5/2] mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
+            <div className="container mx-auto relative poi-hero-image mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
               <Image
                 src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
-                alt={company.company_name}
+                alt={`${company.company_name} - Immagine principale che mostra l'ambiente e l'atmosfera`}
                 fill
                 className="object-cover"
                 priority
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
               />
             </div>
           </div>
         )}
 
         {/* Main Content */}
-        <div className="container mx-auto py-6 md:py-12">
+        <div id="main-content" className="container mx-auto py-6 md:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
            
             {/* Main Content */}

@@ -16,7 +16,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   lng, 
   name, 
   className = '', 
-  height = '400px' 
+  height = '300px' 
 }) => {
   // Converti le coordinate in numeri e valida
   const numLat = typeof lat === 'string' ? parseFloat(lat) : lat;
@@ -26,23 +26,30 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   if (isNaN(numLat) || isNaN(numLng) || numLat === 0 || numLng === 0) {
     return (
       <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${className}`}>
-        <div className="p-8 text-center text-gray-900">
-          <MapPin className="mx-auto mb-2 text-gray-300" size={40} />
+        <div 
+          className="p-8 text-center text-gray-900"
+          style={{ height, minHeight: height }}
+          role="img"
+          aria-label="Mappa non disponibile"
+        >
+          <MapPin className="mx-auto mb-2 text-gray-300" size={40} aria-hidden="true" />
           <p>Coordinate non disponibili per questa destinazione</p>
         </div>
       </div>
     );
   }
 
-  // URL per l'embed di Google Maps
-  const embedUrl = `https://www.google.com/maps/embed/v1/place?key=&q=${numLat},${numLng}&zoom=12&maptype=roadmap`;
-  
-  // URL alternativo senza API key (più semplice)
+  // URL per l'embed di Google Maps (senza API key per semplicità)
   const simpleEmbedUrl = `https://maps.google.com/maps?q=${numLat},${numLng}&hl=it&z=12&output=embed`;
 
   return (
     <div className={`bg-white rounded-lg overflow-hidden ${className}`}>
-      <div className="relative" style={{ height }}>
+      <div 
+        className="relative" 
+        style={{ height, minHeight: height }}
+        role="application"
+        aria-label={`Mappa interattiva che mostra la posizione di ${name}`}
+      >
         <iframe
           src={simpleEmbedUrl}
           width="100%"
@@ -52,6 +59,8 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
           className="rounded-b-lg"
+          title={`Mappa di ${name}`}
+          aria-label={`Mappa interattiva di ${name} alle coordinate ${numLat}, ${numLng}`}
         />
       </div>
       
@@ -61,7 +70,8 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
             href={`https://www.google.com/maps/search/?api=1&query=${numLat},${numLng}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 underline"
+            className="text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+            aria-label={`Apri ${name} in Google Maps in una nuova finestra`}
           >
             Visualizza su Google Maps
           </a>
