@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Ottimizzazioni immagini
+  // OTTIMIZZAZIONI IMMAGINI AGGRESSIVE per ridurre Egress
   images: {
     formats: ['image/webp', 'image/avif'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // Dimensioni più conservative per ridurre traffico
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 31536000, // 1 anno
     dangerouslyAllowSVG: true,
@@ -31,7 +32,7 @@ const nextConfig = {
     },
   },
   
-  // Headers per caching
+  // Headers per caching e compressione AGGRESSIVA
   async headers() {
     return [
       {
@@ -42,25 +43,59 @@ const nextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable', // 1 anno
           },
-        ],
-      },
-      {
-        // Cache per API di contenuti (non admin)
-        source: '/api/((?!admin|auth|widget/generate-static).*)',
-        headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, s-maxage=3600, stale-while-revalidate=86400', // 1 ora + 1 giorno stale
+            key: 'Content-Encoding',
+            value: 'gzip',
           },
         ],
       },
       {
-        // Cache per pagine contenuti
+        // Cache per API di contenuti (non admin) + compressione
+        source: '/api/((?!admin|auth|widget/generate-static).*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=7200, stale-while-revalidate=86400', // 2 ore + 1 giorno stale
+          },
+          {
+            key: 'Content-Encoding',
+            value: 'gzip',
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      {
+        // Cache per pagine contenuti + compressione
         source: '/((?!reserved|admin).*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, s-maxage=1800, stale-while-revalidate=3600', // 30 min + 1 ora stale
+            value: 'public, s-maxage=3600, stale-while-revalidate=7200', // 1 ora + 2 ore stale
+          },
+          {
+            key: 'Content-Encoding',
+            value: 'gzip',
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      {
+        // Compressione aggressiva per immagini
+        source: '/api/directus/assets/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable', // 1 anno
+          },
+          {
+            key: 'Content-Encoding',
+            value: 'gzip',
           },
         ],
       },

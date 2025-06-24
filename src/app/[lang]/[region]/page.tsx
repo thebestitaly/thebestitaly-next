@@ -7,7 +7,7 @@ interface RegionPageProps {
   params: Promise<{ lang: string; region: string }>;
 }
 
-// Generate metadata for region pages
+// Generate metadata for region pages with CRITICAL PERFORMANCE OPTIMIZATIONS
 export async function generateMetadata({ params }: RegionPageProps): Promise<Metadata> {
   const { lang, region } = await params;
   

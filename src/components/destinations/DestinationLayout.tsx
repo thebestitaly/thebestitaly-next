@@ -1,30 +1,22 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import Head from "next/head";
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import directusClient, { getSlugsAndBreadcrumbs } from "@/lib/directus";
 import Breadcrumb from "@/components/layout/Breadcrumb";
+import { getOptimizedImageUrl } from "@/lib/directus-optimization";
 
 import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
-import { lazy, Suspense } from "react";
-import { 
-  DestinationSidebarSkeleton, 
-  ArticlesSidebarSkeleton, 
-  CompanyGridSkeleton, 
-  GoogleMapsSkeleton, 
-  WidgetSkeleton 
-} from "@/components/layout/LoadingSkeleton";
-import CriticalCSS from "./CriticalCSS";
+import { Suspense } from "react";
 
-// Lazy load dei componenti non critici
-const GetYourGuideWidget = lazy(() => import("@/components/widgets/GetYourGuideWidget"));
-const DestinationSidebar = lazy(() => import("@/components/destinations/DestinationSidebar"));
-const DestinationArticlesSidebar = lazy(() => import("@/components/destinations/DestinationArticlesSidebar"));
-const GoogleMaps = lazy(() => import("@/components/widgets/GoogleMaps"));
-const DestinationCompanies = lazy(() => import("@/components/destinations/DestinationCompanies"));
+// Componenti importati normalmente per evitare problemi
+import GetYourGuideWidget from "@/components/widgets/GetYourGuideWidget";
+import DestinationSidebar from "@/components/destinations/DestinationSidebar";
+import DestinationArticlesSidebar from "@/components/destinations/DestinationArticlesSidebar";
+import GoogleMaps from "@/components/widgets/GoogleMaps";
+import DestinationCompanies from "@/components/destinations/DestinationCompanies";
 
 // Custom components for ReactMarkdown
 const markdownComponents = {
@@ -190,40 +182,10 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
   // Contenuto per il Table of Contents - usa il contenuto reale della descrizione
   const tocContent = translation?.description || "";
 
-  // CRITICAL: Preload hero image for LCP optimization
-  const heroImageMobile = destination.image 
-    ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=400&height=240&fit=cover&quality=80`
-    : null;
-  const heroImageDesktop = destination.image 
-    ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=400&fit=cover&quality=85`
-    : null;
+
 
   return (
     <div className="min-h-screen">
-      {/* CRITICAL: Inline CSS per LCP */}
-      <CriticalCSS />
-      
-      {/* CRITICAL: Preload hero images for LCP performance */}
-      <Head>
-        {heroImageMobile && (
-          <link 
-            rel="preload" 
-            as="image" 
-            href={heroImageMobile}
-            media="(max-width: 768px)"
-            fetchPriority="high"
-          />
-        )}
-        {heroImageDesktop && (
-          <link 
-            rel="preload" 
-            as="image" 
-            href={heroImageDesktop}
-            media="(min-width: 769px)"
-            fetchPriority="high"
-          />
-        )}
-      </Head>
 
       {/* Schema.org structured data */}
       <script
@@ -239,41 +201,41 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
       
       {/* Header Section - Responsive */}
       <div className="container mx-auto px-4 pt-4 pb-0 ">
-        {/* Responsive title con critical CSS */}
-        <h1 className="destination-title">
+        {/* Responsive title */}
+        <h1 className="text-2xl md:text-5xl font-bold mb-4 text-gray-900">
           {translation?.destination_name}
         </h1>
         
-        {/* SEO Summary responsive con critical CSS */}
+        {/* SEO Summary responsive */}
         {translation?.seo_summary && (
-          <p className="destination-summary">
+          <p className="text-lg text-gray-600 mb-6 leading-relaxed">
             {translation.seo_summary}
           </p>
         )}
       </div>
       
-      {/* Hero Image - Responsive con dimensioni fisse per evitare CLS */}
+      {/* Hero Image - OTTIMIZZATO per ridurre Egress */}
       {destination.image && (
         <div className="px-4 mt-6 md:mt-12">
-          <div className="container mx-auto destination-hero">
-            {/* Mobile: dimensioni fisse per evitare layout shift */}
+          <div className="container mx-auto relative h-60 md:h-96 rounded-lg overflow-hidden">
+            {/* Mobile: immagine più piccola */}
             <div className="block md:hidden w-full h-full relative">
               <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=400&height=240&fit=cover&quality=80`}
+                src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, destination.image, 'HERO_MOBILE')}
                 alt={translation?.destination_name || ""}
                 fill
-                className="destination-image"
+                className="object-cover"
                 priority
                 sizes="100vw"
               />
             </div>
-            {/* Desktop: aspect-ratio più largo */}
-            <div className="hidden md:block relative w-full h-full">
+            {/* Desktop: immagine ottimizzata */}
+            <div className="hidden md:block w-full h-full relative">
               <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=400&fit=cover&quality=85`}
+                src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, destination.image, 'HERO_DESKTOP')}
                 alt={translation?.destination_name || ""}
                 fill
-                className="destination-image"
+                className="object-cover"
                 priority
                 sizes="(max-width: 1200px) 80vw, 60vw"
               />
@@ -290,7 +252,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
           <div className="lg:col-span-2">
             {/* Widget solo su desktop per performance mobile */}
             <div className="hidden md:block mb-6 md:mb-8">
-              <Suspense fallback={<WidgetSkeleton />}>
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>}>
                 <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
               </Suspense>
             </div>
@@ -315,7 +277,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Google Maps Widget - SOLO DESKTOP per performance mobile */}
             {destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
               <div className="hidden md:block my-6 md:my-8">
-                <Suspense fallback={<GoogleMapsSkeleton />}>
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>}>
                   <GoogleMaps 
                     lat={destination.lat} 
                     lng={destination.long} 
@@ -327,7 +289,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
             {/* Destination Companies/Points of Interest */}
             <div className="my-6 md:my-8">
-              <Suspense fallback={<CompanyGridSkeleton />}>
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
                 <DestinationCompanies 
                   destinationId={destination.id}
                   destinationType={type}
@@ -339,7 +301,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
             {/* Widget finale solo su desktop */}
             <div className="hidden md:block my-6 md:my-8">
-              <Suspense fallback={<WidgetSkeleton />}>
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>}>
                 <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
               </Suspense>
             </div>
@@ -350,7 +312,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Table of Contents - Sticky - Desktop only */}
             <div className="hidden md:block sticky top-16 z-10 mb-10">
               <TableOfContents content={tocContent} />
-              <Suspense fallback={<DestinationSidebarSkeleton />}>
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-lg mb-4"></div>}>
                 <DestinationSidebar
                   currentDestinationId={destination.id}
                   regionSlug={slugData.regionSlug}
@@ -362,7 +324,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                   type={destination.type}
                 />
               </Suspense>
-              <Suspense fallback={<ArticlesSidebarSkeleton />}>
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
                 <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
               </Suspense>
             </div>
