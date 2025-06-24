@@ -9,6 +9,13 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
 import { lazy, Suspense } from "react";
+import { 
+  DestinationSidebarSkeleton, 
+  ArticlesSidebarSkeleton, 
+  CompanyGridSkeleton, 
+  GoogleMapsSkeleton, 
+  WidgetSkeleton 
+} from "@/components/layout/LoadingSkeleton";
 
 // Lazy load dei componenti non critici
 const GetYourGuideWidget = lazy(() => import("@/components/widgets/GetYourGuideWidget"));
@@ -210,18 +217,32 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
         )}
       </div>
       
-      {/* Hero Image - Responsive */}
+      {/* Hero Image - Responsive con dimensioni fisse per evitare CLS */}
       {destination.image && (
         <div className="px-4 mt-6 md:mt-12">
-          <div className="container mx-auto relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[5/2] mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
-            <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=500&fit=cover&quality=85`}
-              alt={translation?.destination_name || ""}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 80vw, (max-width: 1200px) 60vw, 50vw"
-            />
+          <div className="container mx-auto relative mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
+            {/* Mobile: aspect-ratio fisso per evitare layout shift */}
+            <div className="block md:hidden w-full h-[240px] relative">
+              <Image
+                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=400&height=240&fit=cover&quality=80`}
+                alt={translation?.destination_name || ""}
+                fill
+                className="object-cover"
+                priority
+                sizes="100vw"
+              />
+            </div>
+            {/* Desktop: aspect-ratio più largo */}
+            <div className="hidden md:block relative aspect-[21/9] lg:aspect-[5/2]">
+              <Image
+                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=1200&height=400&fit=cover&quality=85`}
+                alt={translation?.destination_name || ""}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 1200px) 80vw, 60vw"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -232,8 +253,9 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-20">
           {/* Content Column */}
           <div className="lg:col-span-2">
-            <div className="mb-6 md:mb-8">
-              <Suspense fallback={<div className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>}>
+            {/* Widget solo su desktop per performance mobile */}
+            <div className="hidden md:block mb-6 md:mb-8">
+              <Suspense fallback={<WidgetSkeleton />}>
                 <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
               </Suspense>
             </div>
@@ -258,7 +280,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Google Maps Widget */}
             {destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
               <div className="my-6 md:my-8">
-                <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center"><span className="text-gray-900">Caricamento mappa...</span></div>}>
+                <Suspense fallback={<GoogleMapsSkeleton />}>
                   <GoogleMaps 
                     lat={destination.lat} 
                     lng={destination.long} 
@@ -270,7 +292,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
             {/* Destination Companies/Points of Interest */}
             <div className="my-6 md:my-8">
-              <Suspense fallback={<div className="h-48 bg-gray-100 rounded-lg animate-pulse"></div>}>
+              <Suspense fallback={<CompanyGridSkeleton />}>
                 <DestinationCompanies 
                   destinationId={destination.id}
                   destinationType={type}
@@ -280,8 +302,9 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </Suspense>
             </div>
 
-            <div className="my-6 md:my-8">
-              <Suspense fallback={<div className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>}>
+            {/* Widget finale solo su desktop */}
+            <div className="hidden md:block my-6 md:my-8">
+              <Suspense fallback={<WidgetSkeleton />}>
                 <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
               </Suspense>
             </div>
@@ -292,7 +315,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Table of Contents - Sticky - Desktop only */}
             <div className="hidden md:block sticky top-16 z-10 mb-10">
               <TableOfContents content={tocContent} />
-              <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse mb-6"></div>}>
+              <Suspense fallback={<DestinationSidebarSkeleton />}>
                 <DestinationSidebar
                   currentDestinationId={destination.id}
                   regionSlug={slugData.regionSlug}
@@ -304,14 +327,14 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                   type={destination.type}
                 />
               </Suspense>
-              <Suspense fallback={<div className="h-48 bg-gray-100 rounded-lg animate-pulse"></div>}>
+              <Suspense fallback={<ArticlesSidebarSkeleton />}>
                 <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
               </Suspense>
             </div>
             
             {/* Mobile sidebar content */}
             <div className="md:hidden space-y-6">
-              <Suspense fallback={<div className="h-64 bg-gray-100 rounded-lg animate-pulse"></div>}>
+              <Suspense fallback={<DestinationSidebarSkeleton />}>
                 <DestinationSidebar
                   currentDestinationId={destination.id}
                   regionSlug={slugData.regionSlug}
@@ -323,7 +346,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                   type={destination.type}
                 />
               </Suspense>
-              <Suspense fallback={<div className="h-48 bg-gray-100 rounded-lg animate-pulse"></div>}>
+              <Suspense fallback={<ArticlesSidebarSkeleton />}>
                 <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
               </Suspense>
             </div>

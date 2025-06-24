@@ -78,6 +78,9 @@ export const CACHE_DURATIONS = {
   LANGUAGES: 60 * 60 * 24 * 365, // 1 anno
   CATEGORIES: 60 * 60 * 24 * 180, // 6 mesi
   
+  // Menu navigation - cache a vita (praticamente immutabile)
+  MENU_DESTINATIONS: 60 * 60 * 24 * 365, // 1 anno (menu regioni)
+  
   // Homepage e liste - cache media
   HOMEPAGE_DESTINATIONS: 60 * 60 * 24, // 1 giorno
   FEATURED_COMPANIES: 60 * 60 * 24, // 1 giorno
@@ -383,6 +386,9 @@ export const CacheKeys = {
   // Utility
   languages: () => 'languages:supported',
   categories: (lang: string) => `categories:${lang}`,
+  
+  // Menu navigation
+  menuDestinations: (type: string, lang: string) => `menu:${type}:${lang}`,
 } as const;
 
 // Wrapper per funzioni con cache automatica

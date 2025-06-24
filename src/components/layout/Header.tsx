@@ -24,16 +24,20 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
   // Hook per le traduzioni del menu con il nuovo sistema
   const { translations: menuTranslations, loading: menuLoading } = useSectionTranslations('menu', lang);
 
-  // Query per le destinazioni
+  // Query per le destinazioni con cache aggressiva (1 anno)
   const { data: destinations } = useQuery({
-    queryKey: ['destinations', 'region', lang],
+    queryKey: ['menu-destinations', 'region', lang],
     queryFn: () => directusClient.getDestinationsByType('region', lang),
+    staleTime: 1000 * 60 * 60 * 24 * 30, // 30 giorni client-side
+    gcTime: 1000 * 60 * 60 * 24 * 365, // 1 anno in memoria
   });
 
-  // Query per le categorie
+  // Query per le categorie con cache aggressiva
   const { data: categories } = useQuery({
-    queryKey: ['categories', lang],
+    queryKey: ['menu-categories', lang],
     queryFn: () => directusClient.getCategories(lang),
+    staleTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni client-side
+    gcTime: 1000 * 60 * 60 * 24 * 180, // 6 mesi in memoria
   });
 
   // Gestione scroll

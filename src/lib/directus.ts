@@ -972,6 +972,24 @@ class DirectusClient {
   }
 
   public async getDestinationsByType(type: string, languageCode: string): Promise<Destination[]> {
+    // Try Redis cache first for menu destinations (server-side only)
+    await loadRedisCache();
+    
+    if (withCache && CacheKeys && CACHE_DURATIONS && type === 'region') {
+      return await withCache(
+        CacheKeys.menuDestinations(type, languageCode),
+        CACHE_DURATIONS.MENU_DESTINATIONS,
+        async () => {
+          return await this._getDestinationsByTypeDirect(type, languageCode);
+        }
+      );
+    }
+    
+    // For non-menu destinations, use direct call
+    return await this._getDestinationsByTypeDirect(type, languageCode);
+  }
+
+  private async _getDestinationsByTypeDirect(type: string, languageCode: string): Promise<Destination[]> {
     try {
       const response = await this.client.get('/items/destinations', {
         params: {
