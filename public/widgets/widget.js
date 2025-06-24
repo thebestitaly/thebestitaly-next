@@ -432,13 +432,13 @@ class TheBestItalyWidget {
                 this.content.translations[0].description = data.description;
             }
 
-            // For destinations in large mode, load full description separately using the proper UUID
-            if (this.config.type === 'destination' && this.config.size === 'large') {
+            // For destinations in FULL mode, load full description separately using the proper UUID
+            if (this.config.type === 'destination' && this.config.size === 'full') {
                 this.loadFullDescription(data.uuid);
             }
 
-            // For companies in large mode, description is already loaded from search, no need to reload
-            if (this.config.type === 'company' && this.config.size === 'large') {
+            // For companies in FULL mode, description is already loaded from search, no need to reload
+            if (this.config.type === 'company' && this.config.size === 'full') {
                 // Description is already available from search results
             }
             
@@ -496,27 +496,27 @@ class TheBestItalyWidget {
 
     async loadFullDescription(uuid) {
         try {
-            const response = await fetch(`${this.baseUrl}/api/widget/description`, {
+            // Use exact same API call as example.html
+            const response = await fetch('/api/widget/description', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: this.getApiType(),
-                    uuid: uuid,
+                    uuid: uuid || this.content?.uuid_id,
                     language: this.currentLanguage
                 })
             });
 
             if (response.ok) {
                 const data = await response.json();
-                if (this.content?.translations?.[0]) {
+                if (data.description && this.content?.translations?.[0]) {
+                    // Store the full description from API
                     this.content.translations[0].description = data.description;
                     this.render(); // Re-render with full description
                 }
             }
         } catch (error) {
-            console.warn('Failed to load full description:', error);
+            // Silent error handling like in example.html
         }
     }
 
@@ -639,16 +639,16 @@ class TheBestItalyWidget {
                 return seoSummary || 'Scopri questa destinazione italiana';
                 
             case 'full':
-                // FULL: seo_summary + description (per markdown)
-                const fullSeoSummary = this.getTranslation('seo_summary');
+                // FULL: Use description from API if available, otherwise seo_summary
                 const description = this.getTranslation('description');
+                const fullSeoSummary = this.getTranslation('seo_summary');
                 
-                if (fullSeoSummary && description) {
-                    return `${fullSeoSummary}\n\n${description}`;
-                } else if (fullSeoSummary) {
-                    return fullSeoSummary;
-                } else if (description) {
+                // If we have full description from API, use it (like example.html)
+                if (description && description.length > 100) {
                     return description;
+                } else if (fullSeoSummary) {
+                    // Fallback to seo_summary while loading full description
+                    return fullSeoSummary;
                 }
                 return 'Scopri questa meravigliosa destinazione italiana';
                 
