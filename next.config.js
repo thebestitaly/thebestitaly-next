@@ -23,29 +23,11 @@ const nextConfig = {
   // Compressione
   compress: true,
   
-  // FORZA RENDERING STATICO DEI METADATA per PageSpeed
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@heroicons/react'],
-    // optimizeCss: true, // Disabilitato temporaneamente per problemi con critters
-    gzipSize: true,
-    // Forza rendering statico dei metadata
-    staticWorkerRequestDeduping: true,
-  },
-
-  // Headers di performance
+  // Headers di performance - SOLO QUELLI STABILI
   async headers() {
     return [
       {
         source: '/images/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/_next/image',
         headers: [
           {
             key: 'Cache-Control',
@@ -62,17 +44,24 @@ const nextConfig = {
           },
         ],
       },
-      // Headers SEO per metadata statici
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Robots-Tag',
-            value: 'index, follow',
-          },
-        ],
-      },
     ];
+  },
+
+  // Ottimizzazioni build - SOLO QUELLE STABILI
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+    // Rimosso optimizeCss che causava problemi
+  },
+
+  // Configurazione webpack per performance
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    return config;
   },
 
   // Ottimizzazioni build
@@ -82,21 +71,6 @@ const nextConfig = {
   // Forza generazione statica per SEO
   output: 'standalone',
   
-  // Webpack ottimizzazioni
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Ottimizzazioni per metadata statici
-    if (!dev && !isServer) {
-      config.optimization.splitChunks.cacheGroups.metadata = {
-        name: 'metadata',
-        test: /[\\/]node_modules[\\/](next[\\/]dist[\\/]shared[\\/]lib[\\/]head\.js|react-dom[\\/]server)/,
-        chunks: 'all',
-        priority: 20,
-      };
-    }
-    
-    return config;
-  },
-
   // Configurazione per il rewrite dei path
   async rewrites() {
     return [
