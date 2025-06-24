@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
             success: true,
             filename: filename,
             widgetId: widgetId,
-            path: `/widget-data/${filename}`
+            path: `/api/widget-data/${filename}`
         });
 
     } catch (error) {
