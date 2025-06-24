@@ -45,7 +45,7 @@ class TheBestItalyStaticWidget {
 
     async loadWidgetData() {
         try {
-            const widgetUrl = `${this.options.baseUrl}/api/widget-data/${this.options.widgetId}.json`;
+            const widgetUrl = `https://thebestitaly.eu/api/widget-data/${this.options.widgetId}.json`;
             
             console.log('📁 Loading widget data from:', widgetUrl);
             

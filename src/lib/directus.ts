@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { withCache, CacheKeys, CACHE_DURATIONS } from './redis-cache';
 
 // Interfaces
 export interface Translation {
