@@ -871,7 +871,7 @@
         }
 
         // Function to generate integration code
-        function generateCode() {
+        async function generateCode() {
             if (!state.selectedContent) return;
 
             const size = document.getElementById('codeWidgetSize').value;
@@ -889,26 +889,55 @@
             // Use search term instead of UUID for simplicity
             const searchTerm = state.searchTerm || state.selectedContent.title;
 
+            // Genera un ID univoco per questo widget basato sui parametri
+            const widgetId = btoa(`${widgetType}-${state.selectedContent.id || state.selectedContent.uuid}-${language}`).replace(/[^a-zA-Z0-9]/g, '');
+
+            try {
+                // Chiamata API per generare il file JSON statico
+                console.log('🔄 Generando dati statici per il widget...');
+                
+                const response = await fetch('/api/widget/generate-static', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        widgetId: widgetId,
+                        type: widgetType,
+                        contentId: state.selectedContent.id || state.selectedContent.uuid,
+                        language: language,
+                        size: size,
+                        theme: theme,
+                        searchTerm: searchTerm,
+                        contentData: state.selectedContent
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ File JSON generato:', result.filename);
+                } else {
+                    console.error('❌ Errore nella generazione del file JSON:', response.status);
+                }
+            } catch (error) {
+                console.error('❌ Errore nella chiamata API:', error);
+            }
+
             // Generate HTML code - Simple container
             const htmlCode = '<!-- Container per Widget TheBestItaly -->\n' +
                 '<div id="thebestitaly-widget"></div>';
 
-            // Generate JavaScript code - Robust constructor approach with error handling
+            // Generate JavaScript code - Usa widget statico con ID specifico
             const jsCode = '<!-- Script del Widget -->' + '\n' +
-                '<script src="' + window.location.origin + '/api/widget/widget.js"><\/script>' + '\n' +
+                '<script src="' + window.location.origin + '/api/widget/widget-static.js"><\/script>' + '\n' +
                 '' + '\n' +
-                '<!-- Inizializzazione con controlli di sicurezza -->' + '\n' +
+                '<!-- Inizializzazione con dati statici -->' + '\n' +
                 '<script>' + '\n' +
                 'function initializeWidget() {' + '\n' +
-                '    if (typeof TheBestItalyWidget !== "undefined") {' + '\n' +
+                '    if (typeof TheBestItalyStaticWidget !== "undefined") {' + '\n' +
                 '        try {' + '\n' +
-                '            new TheBestItalyWidget("thebestitaly-widget", {' + '\n' +
-                '                type: "' + widgetType + '",' + '\n' +
-                '                query: "' + searchTerm + '",' + '\n' +
+                '            new TheBestItalyStaticWidget("thebestitaly-widget", {' + '\n' +
+                '                widgetId: "' + widgetId + '",' + '\n' +
                 '                size: "' + size + '",' + '\n' +
-                '                language: "' + language + '",' + '\n' +
-                '                theme: "' + theme + '",' + '\n' +
-                '                showSelector: true' + '\n' +
+                '                theme: "' + theme + '"' + '\n' +
                 '            });' + '\n' +
                 '        } catch (error) {' + '\n' +
                 '            console.error("Errore inizializzazione widget:", error);' + '\n' +

@@ -496,8 +496,8 @@ class TheBestItalyWidget {
 
     async loadFullDescription(uuid) {
         try {
-            // Use exact same API call as example.html
-            const response = await fetch('/api/widget/description', {
+            // Use absolute URL to work both locally and on server
+            const response = await fetch(`${this.baseUrl}/api/widget/description`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

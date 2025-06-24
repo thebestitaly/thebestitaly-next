@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Widget TheBestItaly</title>
+</head>
+<body>
+    <h1>Test Widget TheBestItaly</h1>
+    
+    <!-- Container per Widget TheBestItaly -->
+    <!-- Container per Widget TheBestItaly -->
+<div id="thebestitaly-widget"></div>
+
+<!-- Script del Widget -->
+<script src="http://localhost:3000/api/widget/widget.js"></script>
+
+<!-- Inizializzazione con controlli di sicurezza -->
+<script>
+function initializeWidget() {
+    if (typeof TheBestItalyWidget !== "undefined") {
+        try {
+            new TheBestItalyWidget("thebestitaly-widget", {
+                type: "destination",
+                query: "LUBRENSE",
+                size: "full",
+                language: "it",
+                theme: "auto",
+                showSelector: true
+            });
+        } catch (error) {
+            console.error("Errore inizializzazione widget:", error);
+        }
+    } else {
+        setTimeout(initializeWidget, 100);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", initializeWidget);
+window.addEventListener("load", function() {
+    if (document.getElementById("thebestitaly-widget").innerHTML.trim() === "") {
+        initializeWidget();
+    }
+});
+</script>
+ 
+</body>
+</html>

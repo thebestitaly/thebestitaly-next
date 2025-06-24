@@ -9,19 +9,15 @@ class TheBestItalyStaticWidget {
         this.containerId = containerId;
         this.container = document.getElementById(containerId);
         this.options = {
-            type: options.type || 'azienda', // azienda, destinazione, articolo
-            uuid: options.uuid || null,
-            size: options.size || 'medium', // small, medium, large
-            language: options.language || 'it',
+            widgetId: options.widgetId || null, // ID del widget specifico
+            size: options.size || 'medium', // small, medium, full
             theme: options.theme || 'auto', // auto, light, dark
-            showSelector: options.showSelector !== false,
-            baseUrl: options.baseUrl || 'https://thebestitaly.eu',
+            baseUrl: options.baseUrl || window.location.origin,
             ...options
         };
         
         this.data = null;
-        this.searchIndex = null;
-        this.selectedLanguage = this.options.language;
+        this.selectedLanguage = 'it';
         this.isDropdownOpen = false;
         
         console.log('🚀 TheBestItaly Static Widget initialized:', this.options);
@@ -33,15 +29,12 @@ class TheBestItalyStaticWidget {
         try {
             this.showLoadingSkeleton();
             
-            // Carica i dati statici
-            await this.loadStaticData();
-            
-            if (this.options.uuid) {
-                // Modalità widget specifico
-                await this.loadSpecificContent();
+            if (this.options.widgetId) {
+                // Carica i dati specifici del widget
+                await this.loadWidgetData();
+                this.renderWidget();
             } else {
-                // Modalità ricerca/selezione
-                this.renderSearchInterface();
+                this.handleError('Widget ID non specificato');
             }
             
         } catch (error) {
@@ -50,70 +43,44 @@ class TheBestItalyStaticWidget {
         }
     }
 
-    async loadStaticData() {
+    async loadWidgetData() {
         try {
-            const lang = this.selectedLanguage;
-            const indexUrl = `${this.options.baseUrl}/widget-data/${lang}-index.json`;
+            const widgetUrl = `${this.options.baseUrl}/widget-data/${this.options.widgetId}.json`;
             
-            console.log('📁 Loading static data from:', indexUrl);
+            console.log('📁 Loading widget data from:', widgetUrl);
             
-            const response = await fetch(indexUrl);
+            const response = await fetch(widgetUrl);
             if (!response.ok) {
-                throw new Error(`Failed to load static data: ${response.status}`);
+                throw new Error(`Failed to load widget data: ${response.status}`);
             }
             
-            const staticData = await response.json();
-            this.data = staticData;
-            this.searchIndex = staticData.searchIndex;
+            this.data = await response.json();
+            this.selectedLanguage = this.data.defaultLanguage;
             
-            console.log('✅ Static data loaded:', {
-                companies: staticData.companies.length,
-                destinations: staticData.destinations.length,
-                articles: staticData.articles.length,
-                totalItems: staticData.totalItems,
-                lastUpdated: staticData.lastUpdated
+            console.log('✅ Widget data loaded:', {
+                id: this.data.id,
+                type: this.data.type,
+                defaultLanguage: this.data.defaultLanguage,
+                title: this.data.content.title,
+                hasAllLanguages: !!this.data.content.allLanguages
             });
             
         } catch (error) {
-            console.error('❌ Error loading static data:', error);
+            console.error('❌ Error loading widget data:', error);
             throw error;
         }
     }
 
-    async loadSpecificContent() {
-        try {
-            const content = this.findContentByUuid(this.options.uuid);
-            if (content) {
-                this.renderWidget(content);
-            } else {
-                this.handleError('Contenuto non trovato');
-            }
-        } catch (error) {
-            console.error('❌ Error loading specific content:', error);
-            this.handleError('Errore durante il caricamento del contenuto');
-        }
-    }
 
-    findContentByUuid(uuid) {
-        if (!this.data) return null;
-        
-        // Cerca in tutti i tipi di contenuto
-        const allContent = [
-            ...this.data.companies,
-            ...this.data.destinations,
-            ...this.data.articles
-        ];
-        
-        return allContent.find(item => item.uuid === uuid);
-    }
 
-    renderWidget(content) {
-        if (!content) {
+    renderWidget() {
+        if (!this.data || !this.data.content) {
             this.handleError('Nessun contenuto da visualizzare');
             return;
         }
 
-        const { size, theme, showSelector } = this.options;
+        const content = this.data.content;
+        const { size, theme } = this.options;
         const sizeClass = `tbi-widget-${size}`;
         const themeClass = theme === 'dark' ? 'tbi-widget-dark' : 
                           theme === 'light' ? 'tbi-widget-light' : 
@@ -123,9 +90,9 @@ class TheBestItalyStaticWidget {
         const direction = isRTL ? 'rtl' : 'ltr';
         const directionClass = isRTL ? 'tbi-widget-rtl' : 'tbi-widget-ltr';
 
-        const languageSelector = showSelector ? this.renderLanguageSelector() : '';
         const imageHtml = this.renderImage(content);
         const descriptionHtml = this.renderDescription(content);
+        const languageSelector = this.renderLanguageSelector();
 
         this.container.innerHTML = `
             ${this.getWidgetStyles()}
@@ -142,14 +109,10 @@ class TheBestItalyStaticWidget {
                 </div>
                 <div class="tbi-widget-content" ${isRTL ? 'style="text-align: right !important; direction: rtl !important;"' : ''}>
                     ${imageHtml}
-                    <div class="tbi-widget-title" ${isRTL ? 'style="text-align: right !important; direction: rtl !important;"' : ''}>${content.title}</div>
+                    <div class="tbi-widget-title" ${isRTL ? 'style="text-align: right !important; direction: rtl !important;"' : ''}>${this.getLocalizedContent(content).title}</div>
                     <div class="tbi-widget-description" ${isRTL ? 'style="text-align: right !important; direction: rtl !important;"' : ''}>${descriptionHtml}</div>
                     <div class="tbi-widget-footer">
-                        <div class="tbi-widget-meta">
-                            ${content.location ? `<span class="tbi-widget-location">📍 ${content.location}</span>` : ''}
-                            ${content.category ? `<span class="tbi-widget-category">${this.getCategoryIcon(content.type)} ${content.category}</span>` : ''}
-                        </div>
-                        <a href="${content.external_url}" target="_blank" class="tbi-widget-cta" data-view-content="${content.uuid}">
+                        <a href="${content.external_url}" target="_blank" class="tbi-widget-cta" data-view-content="${content.id}">
                             ${this.getTranslation('view_more')} →
                         </a>
                     </div>
@@ -160,32 +123,14 @@ class TheBestItalyStaticWidget {
         this.attachEventListeners();
     }
 
-    renderSearchInterface() {
-        // Per ora renderizza un placeholder
-        this.container.innerHTML = `
-            ${this.getWidgetStyles()}
-            <div class="tbi-widget tbi-widget-medium tbi-widget-auto">
-                <div class="tbi-widget-content">
-                    <div class="tbi-widget-title">🔍 Cerca contenuti</div>
-                    <div class="tbi-widget-description">
-                        Utilizza il generatore di widget per selezionare il contenuto da visualizzare.
-                    </div>
-                    <div class="tbi-widget-footer">
-                        <a href="${this.options.baseUrl}/api/widget/example.html" target="_blank" class="tbi-widget-cta">
-                            Genera Widget →
-                        </a>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
+
 
     renderImage(content) {
-        if (!content.image || this.options.size === 'small') return '';
+        if (!content.image_url || this.options.size === 'small') return '';
         
-        const imageUrl = content.image.startsWith('http') ? 
-            content.image : 
-            `${this.options.baseUrl}/_next/image?url=${encodeURIComponent('/images/' + content.image)}&w=400&q=75`;
+        const imageUrl = content.image_url.startsWith('http') ? 
+            content.image_url : 
+            `${this.options.baseUrl}/_next/image?url=${encodeURIComponent('/images/' + content.image_url)}&w=400&q=75`;
             
         return `<div class="tbi-widget-image">
             <img src="${imageUrl}" alt="${content.title}" loading="lazy" />
@@ -195,26 +140,66 @@ class TheBestItalyStaticWidget {
     renderDescription(content) {
         const { size } = this.options;
         
+        // Cerca i dati nella lingua corrente se disponibili
+        const localizedContent = this.getLocalizedContent(content);
+        
         if (size === 'small') {
-            return content.seo_summary || content.description.substring(0, 100) + '...';
-        } else if (size === 'large') {
-            return content.full_description || content.description;
+            return (localizedContent.seo_title || localizedContent.title);
+        } else if (size === 'medium') {
+            return (localizedContent.seo_summary || localizedContent.description?.substring(0, 150) + '...' || '');
+        } else if (size === 'full') {
+            return localizedContent.description || localizedContent.seo_summary || '';
         } else {
-            return content.description.length > 200 ? 
-                content.description.substring(0, 200) + '...' : 
-                content.description;
+            const desc = localizedContent.description || '';
+            return desc.length > 200 ? desc.substring(0, 200) + '...' : desc;
         }
     }
 
+    getLocalizedContent(content) {
+        // Se non abbiamo dati multilingue, usa i dati di default
+        if (!content.allLanguages) {
+            return content;
+        }
+
+        const allData = content.allLanguages;
+        
+        // Per le aziende, cerca nelle traduzioni
+        if (allData.translations && Array.isArray(allData.translations)) {
+            const translation = allData.translations.find(t => t.languages_code === this.selectedLanguage);
+            if (translation) {
+                return {
+                    title: allData.company_name || content.title,
+                    seo_title: translation.seo_title || content.seo_title,
+                    seo_summary: translation.seo_summary || content.seo_summary,
+                    description: translation.description || content.description,
+                    external_url: content.external_url // URL rimane lo stesso
+                };
+            }
+        }
+
+        // Per le destinazioni, logica simile
+        if (allData.destination_name) {
+            // Implementare logica per destinazioni se necessario
+        }
+
+        // Fallback ai dati di default
+        return content;
+    }
+
+
+
     renderLanguageSelector() {
+        // Solo se abbiamo dati per tutte le lingue
+        if (!this.data.content.allLanguages) return '';
+        
         const languages = this.getSupportedLanguages();
         const currentLang = languages.find(lang => lang.code === this.selectedLanguage) || languages[0];
         
         return `
             <div class="tbi-widget-lang">
                 <button class="tbi-widget-lang-current" data-dropdown-toggle>
-                    <img src="${this.options.baseUrl}/images/flags/${currentLang.code}.svg" alt="${currentLang.name}" />
-                    <span>${currentLang.name}</span>
+                    <span class="tbi-flag">${this.getFlagDisplay(currentLang.code)}</span>
+                    <span>${currentLang.nativeName}</span>
                     <svg class="tbi-widget-lang-arrow" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
@@ -222,8 +207,8 @@ class TheBestItalyStaticWidget {
                 <div class="tbi-widget-lang-dropdown ${this.isDropdownOpen ? 'tbi-widget-lang-dropdown-open' : ''}">
                     ${languages.map(lang => `
                         <button class="tbi-widget-lang-option" data-lang-select="${lang.code}">
-                            <img src="${this.options.baseUrl}/images/flags/${lang.code}.svg" alt="${lang.name}" />
-                            <span>${lang.name}</span>
+                            <span class="tbi-flag">${this.getFlagDisplay(lang.code)}</span>
+                            <span>${lang.nativeName}</span>
                         </button>
                     `).join('')}
                 </div>
@@ -231,23 +216,16 @@ class TheBestItalyStaticWidget {
         `;
     }
 
-    async changeLanguage(langCode) {
+    getFlagDisplay(langCode) {
+        const lang = this.getSupportedLanguages().find(l => l.code === langCode);
+        return lang ? lang.flag : langCode.toUpperCase();
+    }
+
+    changeLanguage(langCode) {
         console.log('🌐 Changing language to:', langCode);
         this.selectedLanguage = langCode;
         this.isDropdownOpen = false;
-        
-        try {
-            // Ricarica i dati nella nuova lingua
-            await this.loadStaticData();
-            
-            if (this.options.uuid) {
-                await this.loadSpecificContent();
-            } else {
-                this.renderSearchInterface();
-            }
-        } catch (error) {
-            console.error('❌ Error changing language:', error);
-        }
+        this.renderWidget(); // Re-render con nuova lingua
     }
 
     attachEventListeners() {
@@ -275,7 +253,7 @@ class TheBestItalyStaticWidget {
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.tbi-widget-lang') && this.isDropdownOpen) {
                 this.isDropdownOpen = false;
-                this.renderWidget(this.findContentByUuid(this.options.uuid));
+                this.renderWidget();
             }
         });
     }
@@ -325,15 +303,57 @@ class TheBestItalyStaticWidget {
 
     getSupportedLanguages() {
         return [
-            { code: 'it', name: 'Italiano', rtl: false },
-            { code: 'en', name: 'English', rtl: false },
-            { code: 'fr', name: 'Français', rtl: false },
-            { code: 'de', name: 'Deutsch', rtl: false },
-            { code: 'es', name: 'Español', rtl: false },
-            { code: 'ar', name: 'العربية', rtl: true },
-            { code: 'he', name: 'עברית', rtl: true },
-            { code: 'fa', name: 'فارسی', rtl: true },
-            { code: 'ur', name: 'اردو', rtl: true }
+            { code: 'af', name: 'Afrikaans', nativeName: 'Afrikaans', flag: '🇿🇦', rtl: false },
+            { code: 'am', name: 'Amharic', nativeName: 'አማርኛ', flag: '🇪🇹', rtl: false },
+            { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', rtl: true },
+            { code: 'az', name: 'Azerbaijani', nativeName: 'Azərbaycan', flag: '🇦🇿', rtl: false },
+            { code: 'bg', name: 'Bulgarian', nativeName: 'Български', flag: '🇧🇬', rtl: false },
+            { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩', rtl: false },
+            { code: 'ca', name: 'Catalan', nativeName: 'Català', flag: '🇪🇸', rtl: false },
+            { code: 'cs', name: 'Czech', nativeName: 'Čeština', flag: '🇨🇿', rtl: false },
+            { code: 'da', name: 'Danish', nativeName: 'Dansk', flag: '🇩🇰', rtl: false },
+            { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', rtl: false },
+            { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷', rtl: false },
+            { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', rtl: false },
+            { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', rtl: false },
+            { code: 'et', name: 'Estonian', nativeName: 'Eesti', flag: '🇪🇪', rtl: false },
+            { code: 'fa', name: 'Persian', nativeName: 'فارسی', flag: '🇮🇷', rtl: true },
+            { code: 'fi', name: 'Finnish', nativeName: 'Suomi', flag: '🇫🇮', rtl: false },
+            { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', rtl: false },
+            { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱', rtl: true },
+            { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳', rtl: false },
+            { code: 'hr', name: 'Croatian', nativeName: 'Hrvatski', flag: '🇭🇷', rtl: false },
+            { code: 'hu', name: 'Hungarian', nativeName: 'Magyar', flag: '🇭🇺', rtl: false },
+            { code: 'hy', name: 'Armenian', nativeName: 'Հայերեն', flag: '🇦🇲', rtl: false },
+            { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩', rtl: false },
+            { code: 'is', name: 'Icelandic', nativeName: 'Íslenska', flag: '🇮🇸', rtl: false },
+            { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹', rtl: false },
+            { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', rtl: false },
+            { code: 'ka', name: 'Georgian', nativeName: 'ქართული', flag: '🇬🇪', rtl: false },
+            { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', rtl: false },
+            { code: 'lt', name: 'Lithuanian', nativeName: 'Lietuvių', flag: '🇱🇹', rtl: false },
+            { code: 'lv', name: 'Latvian', nativeName: 'Latviešu', flag: '🇱🇻', rtl: false },
+            { code: 'mk', name: 'Macedonian', nativeName: 'Македонски', flag: '🇲🇰', rtl: false },
+            { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾', rtl: false },
+            { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱', rtl: false },
+            { code: 'no', name: 'Norwegian', nativeName: 'Norsk', flag: '🇳🇴', rtl: false },
+            { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱', rtl: false },
+            { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹', rtl: false },
+            { code: 'ro', name: 'Romanian', nativeName: 'Română', flag: '🇷🇴', rtl: false },
+            { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺', rtl: false },
+            { code: 'sk', name: 'Slovak', nativeName: 'Slovenčina', flag: '🇸🇰', rtl: false },
+            { code: 'sl', name: 'Slovenian', nativeName: 'Slovenščina', flag: '🇸🇮', rtl: false },
+            { code: 'sr', name: 'Serbian', nativeName: 'Српски', flag: '🇷🇸', rtl: false },
+            { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪', rtl: false },
+            { code: 'sw', name: 'Swahili', nativeName: 'Kiswahili', flag: '🇹🇿', rtl: false },
+            { code: 'th', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭', rtl: false },
+            { code: 'tl', name: 'Filipino', nativeName: 'Filipino', flag: '🇵🇭', rtl: false },
+            { code: 'tk', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷', rtl: false },
+            { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦', rtl: false },
+            { code: 'ur', name: 'Urdu', nativeName: 'اردو', flag: '🇵🇰', rtl: true },
+            { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳', rtl: false },
+            { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳', rtl: false },
+            { code: 'zh-tw', name: 'Traditional Chinese', nativeName: '繁體中文', flag: '🇹🇼', rtl: false }
         ];
     }
 
@@ -385,6 +405,7 @@ class TheBestItalyStaticWidget {
                 
                 .tbi-widget-small { width: 340px; min-height: 200px; }
                 .tbi-widget-medium { width: 420px; min-height: 280px; }
+                .tbi-widget-full { width: 100%; min-height: 400px; }
                 .tbi-widget-large { width: 100%; max-width: 600px; min-height: 400px; }
                 
                 .tbi-widget-header {
@@ -549,6 +570,12 @@ class TheBestItalyStaticWidget {
                     border-radius: 2px;
                 }
                 
+                .tbi-flag {
+                    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", sans-serif;
+                    font-size: 14px;
+                    line-height: 1;
+                }
+                
                 /* Loading skeleton */
                 .loading-skeleton {
                     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -645,25 +672,7 @@ class TheBestItalyStaticWidget {
     }
 }
 
-// Auto-initialize widgets on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Cerca tutti gli elementi con data-tbi-widget
-    const widgets = document.querySelectorAll('[data-tbi-widget="true"]');
-    
-    widgets.forEach(element => {
-        const options = {
-            type: element.dataset.type || 'azienda',
-            uuid: element.dataset.uuid || null,
-            size: element.dataset.size || 'medium',
-            language: element.dataset.language || 'it',
-            theme: element.dataset.theme || 'auto',
-            showSelector: element.dataset.showSelector !== 'false',
-            baseUrl: element.dataset.baseUrl || 'https://thebestitaly.eu'
-        };
-        
-        new TheBestItalyStaticWidget(element.id, options);
-    });
-});
+// Widget statico - inizializzazione manuale richiesta
 
 // Esporta per uso globale
 window.TheBestItalyStaticWidget = TheBestItalyStaticWidget;
