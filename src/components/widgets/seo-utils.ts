@@ -33,75 +33,97 @@ export function generateCanonicalUrl(lang: string, path?: string[]): string {
   return `${baseUrl}/${lang}/${cleanPath}`;
 }
 
-// Funzione per generare i metadati lato server
+// Helper function to generate hreflangs for multilingual support
+export function generateHreflangs(lang: string, path?: string[]): { [lang: string]: string } {
+  const languages = ['it', 'en', 'fr', 'de', 'es'];
+  const hreflangs: { [lang: string]: string } = {};
+  
+  languages.forEach(langCode => {
+    hreflangs[langCode] = generateCanonicalUrl(langCode, path);
+  });
+  
+  return hreflangs;
+}
+
+// FUNZIONE PRINCIPALE PER GENERARE METADATA STATICI
 export function generateMetadata({
   title,
   description,
-  image,
+  image = 'https://thebestitaly.eu/images/default-og.jpg',
   type = 'website',
   canonicalUrl,
-  hreflangs,
+  hreflangs = {},
   article,
   schema,
-  noindex,
+  noindex = false
 }: SEOProps): Metadata {
-  const siteUrl = 'https://thebestitaly.eu'; // Hardcoded per produzione
-  const defaultImage = `${siteUrl}/images/default-og.jpg`;
-  const finalImage = image || defaultImage;
+  
+  // Debug logging per verificare che i metadata vengano generati
+  console.log('🔍 SEO Debug:', {
+    title: title.substring(0, 50) + '...',
+    description: description.substring(0, 50) + '...',
+    type,
+    canonicalUrl,
+    hasHreflangs: Object.keys(hreflangs).length > 0,
+    noindex
+  });
 
+  // Metadata base ottimizzati per PageSpeed Insights
   const metadata: Metadata = {
     title,
     description,
+    robots: noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+    
+    // Alternates per canonical e hreflangs
+    alternates: {
+      canonical: canonicalUrl,
+      languages: hreflangs,
+    },
+    
+    // Open Graph ottimizzato
     openGraph: {
       title,
       description,
-      type,
+      url: canonicalUrl,
       images: [
         {
-          url: finalImage,
+          url: image,
           width: 1200,
           height: 630,
           alt: title,
         },
       ],
-      url: canonicalUrl || siteUrl,
+      type: type as any,
+      siteName: 'TheBestItaly',
+      locale: 'it_IT',
     },
+    
+    // Twitter Card
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [finalImage],
+      images: [image],
+      site: '@thebestitaly',
+    },
+    
+    // Metadata aggiuntivi per SEO
+    other: {
+      'format-detection': 'telephone=no',
+      'theme-color': '#1e40af',
+      'color-scheme': 'light',
     },
   };
 
-  // Add canonical URL and hreflang if provided
-  if (canonicalUrl || hreflangs) {
-    metadata.alternates = {
-      ...(canonicalUrl && { canonical: canonicalUrl }),
-      ...(hreflangs && { languages: hreflangs }),
-    };
-  }
-
-  // Add noindex if specified
-  if (noindex) {
-    metadata.robots = {
-      index: false,
-      follow: true,
-    };
-  }
-
-  // Note: Schema is now handled by JsonLdSchema component
-  // to ensure proper insertion into DOM in Next.js 13+
-
-  // Article-specific fields for Open Graph
+  // Aggiungi metadata specifici per gli articoli
   if (type === 'article' && article) {
     metadata.openGraph = {
       ...metadata.openGraph,
       type: 'article',
       publishedTime: article.publishedTime,
-      ...(article.modifiedTime && { modifiedTime: article.modifiedTime }),
-      ...(article.author && { authors: [article.author] }),
-      ...(article.category && { section: article.category }),
+      modifiedTime: article.modifiedTime,
+      authors: article.author ? [article.author] : undefined,
+      section: article.category,
     };
   }
 

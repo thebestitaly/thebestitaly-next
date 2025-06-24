@@ -29,8 +29,8 @@ const HeroSection: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative min-h-[600px]">
-      {/* Background Images */}
+    <div className="relative h-[600px] overflow-hidden">
+      {/* Background Images with fixed dimensions to prevent CLS */}
       {backgroundImages.map((img, index) => (
         <div
           key={img}
@@ -45,7 +45,9 @@ const HeroSection: React.FC = () => {
             priority={index === 0}
             sizes="100vw"
             className="object-cover"
-            quality={90}
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           />
           <div className="absolute inset-0 bg-black/40" />
         </div>
@@ -56,9 +58,9 @@ const HeroSection: React.FC = () => {
         <div className="absolute top-8 right-0 w-20 h-20 border-dashed border-t-2 border-r-2 border-white/50 rounded-tr-full" />
       </div>
 
-             {/* Content */}
-       <div className="relative z-10 container mx-auto px-4 md:px-8 lg:px-12 h-full text-left">
-        <div className="flex flex-col items-start justify-center min-h-[600px] max-w-2xl">
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-4 md:px-8 lg:px-12 h-full text-left">
+        <div className="flex flex-col items-start justify-center h-[600px] max-w-2xl">
           <h1 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight leading-tight">
             {homeTranslations?.title || 'EXPERIENCE DESTINATIONS'}
           </h1>
@@ -69,7 +71,7 @@ const HeroSection: React.FC = () => {
           {/* Fixed Link to Search Page with language parameter */}
           <Link 
             href={`/${lang}/search`} 
-            className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors duration-200"
+            className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg transition-colors duration-200 font-semibold"
           >
             {homeTranslations?.search_button || 'Search Destinations'}
           </Link>
