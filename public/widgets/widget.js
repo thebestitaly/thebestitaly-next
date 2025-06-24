@@ -208,7 +208,7 @@ class TheBestItalyWidget {
     trackEvent(eventName, data) {
         // Placeholder for analytics tracking
         if (this.config.enableAnalytics) {
-            console.log(`📊 Analytics: ${eventName}`, data);
+            // Track event silently
         }
     }
 
@@ -408,10 +408,7 @@ class TheBestItalyWidget {
                 return;
             }
 
-            // Debug: Log the received data to see available fields
-            console.log('🔍 Widget API Response Data:', data);
-            console.log('🔍 Available fields:', Object.keys(data));
-            console.log('🔍 External URL from API:', data.external_url);
+            // API data received successfully
 
             // Transform the response to match expected structure
             this.content = {
@@ -443,7 +440,6 @@ class TheBestItalyWidget {
             // For companies in large mode, description is already loaded from search, no need to reload
             if (this.config.type === 'company' && this.config.size === 'large') {
                 // Description is already available from search results
-                console.log('Company description already loaded from search results');
             }
             
             this.isLoading = false;
@@ -631,27 +627,21 @@ class TheBestItalyWidget {
     }
 
     getDestinationContent() {
-        console.log('🔍 Getting destination content for size:', this.config.size);
-        
         switch (this.config.size) {
             case 'small':
                 // SMALL: seo_title sotto il nome
                 const seoTitle = this.getTranslation('seo_title');
-                console.log('  - Small: seo_title =', seoTitle);
                 return seoTitle || 'Destinazione italiana';
                 
             case 'medium':
                 // MEDIUM: seo_summary sotto il nome
                 const seoSummary = this.getTranslation('seo_summary');
-                console.log('  - Medium: seo_summary =', seoSummary);
                 return seoSummary || 'Scopri questa destinazione italiana';
                 
             case 'full':
                 // FULL: seo_summary + description (per markdown)
                 const fullSeoSummary = this.getTranslation('seo_summary');
                 const description = this.getTranslation('description');
-                console.log('  - Full: seo_summary =', fullSeoSummary);
-                console.log('  - Full: description =', description);
                 
                 if (fullSeoSummary && description) {
                     return `${fullSeoSummary}\n\n${description}`;
@@ -675,12 +665,9 @@ class TheBestItalyWidget {
 
         // For FULL widgets of non-destinations
         if (this.config.size === 'full') {
-            console.log('🔍 Getting description for FULL widget (non-destination)');
-            
             // For companies, use the full description from API
             if (this.config.type === 'company') {
                 const description = this.getTranslation('description');
-                console.log('  - Company description:', description);
                 if (description) {
                     return description;
                 }
@@ -690,8 +677,6 @@ class TheBestItalyWidget {
             if (this.config.type === 'article') {
                 const content = this.getTranslation('content');
                 const description = this.getTranslation('description');
-                console.log('  - Article content:', content);
-                console.log('  - Article description:', description);
                 
                 if (content) {
                     return content;
@@ -701,9 +686,7 @@ class TheBestItalyWidget {
             }
             
             // Fallback for full widgets
-            const fallbackDesc = this.getTranslation('description') || this.getTranslation('seo_summary') || 'Discover the excellence of Italy with TheBestItaly';
-            console.log('  - Fallback description:', fallbackDesc);
-            return fallbackDesc;
+            return this.getTranslation('description') || this.getTranslation('seo_summary') || 'Discover the excellence of Italy with TheBestItaly';
         }
 
         // For smaller widgets, use summary
@@ -799,12 +782,10 @@ class TheBestItalyWidget {
     getUrl() {
         // Use external_url from API if available (like in example.html)
         if (this.content && this.content.external_url) {
-            console.log('✅ Using external_url from API:', this.content.external_url);
             return this.content.external_url;
         }
 
         // Fallback to manual URL construction
-        console.log('⚠️ No external_url, using manual construction');
         const langPrefix = this.currentLanguage === 'it' ? '' : `/${this.currentLanguage}`;
         
         switch (this.config.type) {
@@ -831,13 +812,7 @@ class TheBestItalyWidget {
         const provinceSlug = this.content.province_slug || this.getTranslation('province_slug');
         const municipalitySlug = this.content.municipality_slug || this.getTranslation('municipality_slug') || this.content.slug_permalink || this.getTranslation('slug_permalink');
 
-        // Debug: Log the slug data
-        console.log('🔍 Destination URL Debug:');
-        console.log('  - regionSlug:', regionSlug);
-        console.log('  - provinceSlug:', provinceSlug);
-        console.log('  - municipalitySlug:', municipalitySlug);
-        console.log('  - content.slug_permalink:', this.content.slug_permalink);
-        console.log('  - content object:', this.content);
+        // Building destination URL
 
         // Build hierarchical URL based on available data
         let urlPath = '';
@@ -845,25 +820,19 @@ class TheBestItalyWidget {
         if (municipalitySlug && provinceSlug && regionSlug) {
             // Full path: region/province/municipality
             urlPath = `${regionSlug}/${provinceSlug}/${municipalitySlug}`;
-            console.log('✅ Using full path:', urlPath);
         } else if (provinceSlug && regionSlug) {
             // Province level: region/province
             urlPath = `${regionSlug}/${provinceSlug}`;
-            console.log('✅ Using province path:', urlPath);
         } else if (regionSlug) {
             // Region level: region
             urlPath = regionSlug;
-            console.log('✅ Using region path:', urlPath);
         } else {
             // Fallback to basic slug
             const fallbackSlug = this.getTranslation('slug_permalink') || this.content?.slug_permalink || this.config.id;
             urlPath = fallbackSlug;
-            console.log('⚠️ Using fallback slug:', urlPath);
         }
 
-        const finalUrl = `${this.baseUrl}${langPrefix}/${urlPath}`;
-        console.log('🔗 Final destination URL:', finalUrl);
-        return finalUrl;
+        return `${this.baseUrl}${langPrefix}/${urlPath}`;
     }
 
     getImage() {
@@ -872,9 +841,7 @@ class TheBestItalyWidget {
     }
 
     getCurrentLanguage() {
-        const lang = this.languages.find(l => l.code === this.currentLanguage) || this.languages[0];
-        console.log('Current language:', lang);
-        return lang;
+        return this.languages.find(l => l.code === this.currentLanguage) || this.languages[0];
     }
 
     getFlagDisplay(flag, code) {
@@ -887,21 +854,18 @@ class TheBestItalyWidget {
     }
 
     changeLanguage(langCode) {
-        console.log(`🌍 Changing language from ${this.currentLanguage} to ${langCode}`);
         this.currentLanguage = langCode;
         this.closeDropdown();
         
         // Salva la lingua selezionata
         localStorage.setItem('tbi-widget-language', langCode);
         
-        console.log(`🔄 Reloading content in ${langCode}`);
         // Ricarica il contenuto nella nuova lingua
         this.loadContent();
     }
 
     toggleLanguageDropdown() {
         this.dropdownOpen = !this.dropdownOpen;
-        console.log('Dropdown toggled:', this.dropdownOpen);
         
         // Update dropdown visibility directly without re-render
         const dropdown = this.container.querySelector('.tbi-dropdown');
@@ -982,12 +946,7 @@ class TheBestItalyWidget {
         const title = this.getTitle();
         const description = this.getDescription();
         
-        // Debug: Log title and description
-        console.log('🔍 Render Debug:');
-        console.log('  - Widget size:', this.config.size);
-        console.log('  - Title:', title);
-        console.log('  - Description:', description);
-        console.log('  - Content object:', this.content);
+        // Rendering widget
 
         // Language selector dropdown
         const languageSelector = this.config.showSelector ? `
