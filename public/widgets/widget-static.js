@@ -12,7 +12,7 @@ class TheBestItalyStaticWidget {
             widgetId: options.widgetId || null, // ID del widget specifico
             size: options.size || 'medium', // small, medium, full
             theme: options.theme || 'auto', // auto, light, dark
-            baseUrl: options.baseUrl || window.location.origin,
+            baseUrl: options.baseUrl || 'https://thebestitaly.eu',
             ...options
         };
         
