@@ -18,7 +18,7 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
     setIsClient(true);
   }, []);
 
-  // Query per articoli della stessa destinazione
+  // Query per articoli della stessa destinazione - React Query provides caching
   const { data: destinationArticles } = useQuery({
     queryKey: ['destination-articles', destinationId, lang],
     queryFn: () => directusClient.getArticles(
@@ -31,9 +31,10 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
       }
     ),
     enabled: isClient && !!destinationId,
+    staleTime: 1000 * 60 * 30, // 30 minuti
   });
 
-  // Query per altri articoli (se non abbiamo abbastanza articoli della destinazione)
+  // Query per altri articoli (se non abbiamo abbastanza articoli della destinazione) - React Query provides caching
   const { data: otherArticles, isLoading, error } = useQuery({
     queryKey: ['other-articles', lang, 'destination-sidebar'],
     queryFn: () => directusClient.getArticles(
@@ -46,6 +47,7 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
       }
     ),
     enabled: isClient,
+    staleTime: 1000 * 60 * 30, // 30 minuti
   });
 
   if (!isClient || isLoading) {

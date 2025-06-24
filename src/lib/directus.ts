@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from 'axios';
-import { withCache, CacheKeys, CACHE_DURATIONS } from './redis-cache';
 
 // Interfaces
 export interface Translation {
@@ -9,6 +8,35 @@ export interface Translation {
   seo_summary?: string;
   description?: string;
   slug_permalink?: string;
+}
+
+// Import Redis cache only on server side
+let RedisCache: any = null;
+let withCache: any = null;
+let CacheKeys: any = null;
+let CACHE_DURATIONS: any = null;
+
+// Dynamically import Redis cache only on server side
+async function loadRedisCache() {
+  if (typeof window !== 'undefined') {
+    // Client side - no Redis
+    return null;
+  }
+  
+  if (!RedisCache) {
+    try {
+      const redisModule = await import('./redis-cache');
+      RedisCache = redisModule.RedisCache;
+      withCache = redisModule.withCache;
+      CacheKeys = redisModule.CacheKeys;
+      CACHE_DURATIONS = redisModule.CACHE_DURATIONS;
+      console.log('✅ Redis cache loaded for DirectusClient');
+    } catch (error) {
+      console.warn('⚠️ Redis cache not available, using direct API calls');
+    }
+  }
+  
+  return RedisCache;
 }
 
 export interface Destination {
@@ -1260,6 +1288,53 @@ class DirectusClient {
     exclude_id?: string | number;
     lang: string;
   }): Promise<Destination[]> {
+    // Try Redis cache first (server-side only)
+    await loadRedisCache();
+    
+    if (withCache && CacheKeys && CACHE_DURATIONS) {
+      // Create a unique cache key based on parameters
+      const regionIdStr = typeof region_id === 'object' ? region_id?.id?.toString() : region_id?.toString();
+      const provinceIdStr = typeof province_id === 'object' ? province_id?.id?.toString() : province_id?.toString();
+      const cacheKey = `destinations:${type}:r${regionIdStr || 'none'}:p${provinceIdStr || 'none'}:ex${exclude_id || 'none'}:${lang}`;
+      
+      return await withCache(
+        cacheKey,
+        CACHE_DURATIONS.RELATED_DESTINATIONS,
+        async () => {
+          return await this._getDestinationsDirect({
+            type,
+            region_id,
+            province_id,
+            exclude_id,
+            lang,
+          });
+        }
+      );
+    }
+    
+    // Fallback to direct call
+    return await this._getDestinationsDirect({
+      type,
+      region_id,
+      province_id,
+      exclude_id,
+      lang,
+    });
+  }
+
+  private async _getDestinationsDirect({
+    type,
+    region_id,
+    province_id,
+    exclude_id,
+    lang,
+  }: {
+    type: string;
+    region_id?: string | number | { id: string | number };
+    province_id?: string | number | { id: string | number };
+    exclude_id?: string | number;
+    lang: string;
+  }): Promise<Destination[]> {
     try {
       const filterParams: Record<string, any> = {
         'filter[type][_eq]': type,
@@ -1358,6 +1433,24 @@ class DirectusClient {
     }
   }
   public async getDestinationById(id: string, languageCode: string): Promise<Destination | null> {
+    // Try Redis cache first (server-side only)
+    await loadRedisCache();
+    
+    if (withCache && CacheKeys && CACHE_DURATIONS) {
+      return await withCache(
+        CacheKeys.destination(id, languageCode),
+        CACHE_DURATIONS.DESTINATIONS,
+        async () => {
+          return await this._getDestinationByIdDirect(id, languageCode);
+        }
+      );
+    }
+    
+    // Fallback to direct call
+    return await this._getDestinationByIdDirect(id, languageCode);
+  }
+
+  private async _getDestinationByIdDirect(id: string, languageCode: string): Promise<Destination | null> {
     try {
       // Query ottimizzata: solo campi essenziali e filtrata per lingua
       const response = await this.client.get('/items/destinations', {

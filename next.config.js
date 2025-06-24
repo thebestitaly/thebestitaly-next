@@ -73,13 +73,43 @@ const nextConfig = {
     // Rimosso optimizeCss che causava problemi
   },
 
-  // Configurazione webpack per performance
+  // Configurazione webpack per performance e Redis exclusion
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      // Exclude Redis and Node.js modules from client bundle
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+        querystring: false,
+        util: false,
+        buffer: false,
+        events: false,
+        timers: false,
       };
+
+      // Ignore Redis modules on client side
+      config.externals = config.externals || [];
+      config.externals.push({
+        redis: 'redis',
+        '@redis/client': '@redis/client',
+      });
+
+      // Add module rules to ignore Node.js modules
+      config.module.rules.push({
+        test: /node_modules[\/\\]redis/,
+        use: 'null-loader',
+      });
     }
     return config;
   },

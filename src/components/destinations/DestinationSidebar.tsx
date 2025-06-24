@@ -27,21 +27,23 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
 }) => {
   const [showAllMunicipalities, setShowAllMunicipalities] = useState(false);
   
-  // Query per ottenere la regione (se siamo in provincia o comune)
+  // Query per ottenere la regione (se siamo in provincia o comune) - React Query provides caching
   const { data: regionData } = useQuery({
     queryKey: ["region", regionId, lang],
     queryFn: () => regionId ? directusClient.getDestinationById(regionId, lang) : null,
     enabled: !!regionId && (type === "province" || type === "municipality"),
+    staleTime: 1000 * 60 * 30, // 30 minuti
   });
 
-  // Query per ottenere la provincia (se siamo in un comune)
+  // Query per ottenere la provincia (se siamo in un comune) - React Query provides caching
   const { data: provinceData } = useQuery({
     queryKey: ["province", provinceId, lang],
     queryFn: () => provinceId ? directusClient.getDestinationById(provinceId, lang) : null,
     enabled: !!provinceId && type === "municipality",
+    staleTime: 1000 * 60 * 30, // 30 minuti
   });
 
-  // Query per ottenere le altre province della stessa regione (se siamo in una provincia)
+  // Query per ottenere le altre province della stessa regione (se siamo in una provincia) - React Query provides caching
   const { data: otherProvinces } = useQuery({
     queryKey: ["other-provinces", regionId, currentDestinationId, lang],
     queryFn: () => regionId ? directusClient.getDestinations({
@@ -51,9 +53,10 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
       lang,
     }) : [],
     enabled: !!regionId && type === "province",
+    staleTime: 1000 * 60 * 60, // 1 ora
   });
 
-  // Query per ottenere i comuni/province (limitati a 15 inizialmente)
+  // Query per ottenere i comuni/province (limitati a 15 inizialmente) - React Query provides caching
   const { data: municipalities, isLoading } = useQuery({
     queryKey: ["municipalities", provinceId || currentDestinationId, showAllMunicipalities, type, lang],
     queryFn: async () => {
@@ -81,9 +84,10 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
       }
     },
     enabled: !!(currentDestinationId && (type === "region" || provinceId || (type === "province"))),
+    staleTime: 1000 * 60 * 60, // 1 ora
   });
 
-  // Query per ottenere il conteggio totale (per sapere se mostrare il bottone "Carica altri")
+  // Query per ottenere il conteggio totale (per sapere se mostrare il bottone "Carica altri") - React Query provides caching
   const { data: totalMunicipalities } = useQuery({
     queryKey: ["total-municipalities", provinceId || currentDestinationId, type, lang],
     queryFn: async () => {
@@ -111,6 +115,7 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
       }
     },
     enabled: !!(currentDestinationId && (type === "region" || provinceId || (type === "province"))),
+    staleTime: 1000 * 60 * 60 * 2, // 2 ore
   });
 
   if (isLoading) return <div>Loading...</div>;

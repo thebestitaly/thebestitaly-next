@@ -17,6 +17,7 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
     setIsClient(true);
   }, []);
 
+  // Query con React Query caching per articoli sidebar
   const { data, isLoading, error } = useQuery({
     queryKey: ['articles', lang, 'sidebar', categoryId, currentArticleId],
     queryFn: () => {
@@ -43,6 +44,7 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
       );
     },
     enabled: isClient,
+    staleTime: 1000 * 60 * 30, // 30 minuti
   });
 
   if (!isClient || isLoading) {
