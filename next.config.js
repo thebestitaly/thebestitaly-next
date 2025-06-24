@@ -65,7 +65,6 @@ const nextConfig = {
   },
 
   // Ottimizzazioni build
-  swcMinify: true,
   poweredByHeader: false,
   
   // Forza generazione statica per SEO

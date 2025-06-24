@@ -45,8 +45,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Language change is handled by Next.js routing
-
   // Language options for desktop (only main ones)
   const mainLanguages = [
     { code: 'it', name: 'Italiano', flag: 'it' },
@@ -121,10 +119,13 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
     setIsMobileMenuOpen(false);
   };
 
+  const headerStyle = { height: '80px' };
+  const headerClasses = "sticky top-0 bg-white z-50 h-20 border-b border-gray-100";
+
   return (
-    <header className="sticky top-0 bg-white z-50 h-20 border-b border-gray-100" style={{ height: '80px' }}>
+    <header className={headerClasses} style={headerStyle}>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20" style={{ height: '80px' }}>
+        <div className="flex items-center justify-between h-20" style={headerStyle}>
             {/* Logo */}
             <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
             <Image
@@ -272,7 +273,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 {menuTranslations?.experience_menu || 'Experience'}
               </Link>
 
-              {/* Useful Information Link - Changed from dropdown to direct link */}
+              {/* Useful Information Link */}
               <Link
                 href={`/${lang}/magazine/c/useful-information/`}
                 className={`h-full flex items-center px-6 text-gray-700 hover:text-blue-600 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}
@@ -317,7 +318,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     height={40}
                     style={{ width: "70px", height: "40px" }}
                     className="h-10 w-auto"
-                    priority
                   />
                   </Link>
                   <div className="flex items-center space-x-4">
@@ -333,9 +333,8 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
               </div>
 
               <div className="p-4 pb-20">
-                {/* Mobile Menu Items */}
                 <div className="space-y-4">
-                  {/* Destinations */}
+                  {/* Mobile Destinations */}
                   <div>
                     <button
                       className="w-full text-left px-4 py-2 text-lg font-medium flex justify-between items-center"
@@ -348,16 +347,16 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                       />
                     </button>
                     {showDestinations && destinations && (
-                      <div className="pl-8 space-y-2">
+                      <div className="mt-2 pl-4 space-y-2">
                         {destinations.map((destination) => {
                           const translation = destination.translations?.[0];
-                          if (!translation?.slug_permalink || !lang) return null;
-
+                          if (!translation?.slug_permalink) return null;
+                          
                           return (
                             <Link
                               key={destination.id}
                               href={`/${lang}/${translation.slug_permalink}/`}
-                              className="block py-1 text-gray-600"
+                              className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
                               {translation.description || translation.destination_name}
@@ -368,8 +367,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     )}
                   </div>
 
-                  {/* Magazine */}
-                  {/* Magazine Section */}
+                  {/* Mobile Magazine */}
                   <div>
                     <button
                       className="w-full text-left px-4 py-2 text-lg font-medium flex justify-between items-center"
@@ -382,16 +380,16 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                       />
                     </button>
                     {showMagazine && categories && (
-                      <div className="pl-8 space-y-2">
+                      <div className="mt-2 pl-4 space-y-2">
                         {categories.map((category) => {
                           const translation = category.translations?.[0];
-                          if (!translation?.slug_permalink || !lang) return null;
+                          if (!translation?.slug_permalink) return null;
 
                           return (
                             <Link
                               key={category.id}
                               href={`/${lang}/magazine/c/${translation.slug_permalink}/`}
-                              className="block py-1 text-gray-600"
+                              className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
                               {translation.nome_categoria}
@@ -402,16 +400,15 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     )}
                   </div>
 
-                  {/* Eccellenze */}
+                  {/* Mobile Direct Links */}
                   <Link
                     href={`/${lang}/poi`}
                     className="block px-4 py-2 text-lg font-medium"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Eccellenze
+                    {menuTranslations?.excellence_menu || 'Eccellenze'}
                   </Link>
 
-                  {/* Experience Link */}
                   <Link
                     href={`/${lang}/experience`}
                     className="block px-4 py-2 text-lg font-medium"
@@ -420,7 +417,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     {menuTranslations?.experience_menu || 'Experience'}
                   </Link>
 
-                  {/* Useful Information - Changed to direct link in mobile */}
                   <Link
                     href={`/${lang}/magazine/c/useful-information/`}
                     className="block px-4 py-2 text-lg font-medium"
@@ -429,83 +425,61 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     {menuTranslations?.useful_informations || 'Informazioni'}
                   </Link>
 
-                  {/* Language Selector */}
+                  {/* Mobile Language Selector */}
                   <div className="px-4 py-2">
                     <button
-                    className="flex items-center text-lg font-medium"
-                    onClick={() => setIsLanguageModalOpen(true)}
-                  >
+                      className="flex items-center text-lg font-medium"
+                      onClick={() => setIsLanguageModalOpen(true)}
+                    >
                       <Image
                         src={`/images/flags/${lang}.svg`}
-                        alt={menuTranslations?.menu_language || lang.toUpperCase()}
+                        alt={lang.toUpperCase()}
                         width={24}
                         height={18}
                         className="rounded mr-2 w-6 h-[18px] object-cover"
                       />
-                      {menuTranslations?.menu_language || lang.toUpperCase()}
+                      {lang.toUpperCase()}
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
 
-      {/* Language Modal - Mobile Fullscreen Bottom Sheet */}
+      {/* Language Modal */}
       {isLanguageModalOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-50 flex items-end"
-          onClick={() => setIsLanguageModalOpen(false)}
-        >
-          <div 
-            className="bg-white rounded-t-3xl shadow-2xl w-full h-[60vh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Handle bar */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
-            </div>
-            
-            {/* Close button - top right */}
-            <div className="absolute top-4 right-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Select Language</h3>
               <button
                 onClick={() => setIsLanguageModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg"
               >
                 <X size={20} />
               </button>
             </div>
-            
-            {/* Languages list */}
-            <div className="px-4 pb-4 h-full overflow-y-auto">
-              <div className="space-y-1">
-                {allLanguages.map((language: { code: string; name: string; flag: string }) => (
+            <div className="p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {allLanguages.map((language) => (
                   <button
                     key={language.code}
                     onClick={() => handleLanguageChange(language.code)}
-                    className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                      lang === language.code 
-                        ? 'bg-blue-50 border border-blue-200' 
-                        : 'hover:bg-gray-50 border border-transparent'
+                    className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                      lang === language.code
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'hover:bg-gray-50'
                     }`}
                   >
                     <Image
                       src={`/images/flags/${language.flag}.svg`}
                       alt={language.name}
-                      width={24}
-                      height={18}
-                      className="rounded flex-shrink-0 w-6 h-[18px] object-cover"
-                      onError={(e) => {
-                        // Fallback per bandiere mancanti
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
+                      width={20}
+                      height={15}
+                      className="rounded w-5 h-[15px] object-cover"
                     />
-                    <span className="text-base font-medium text-left flex-1">{language.name}</span>
-                    {lang === language.code && (
-                      <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                    )}
+                    <span className="text-sm font-medium truncate">{language.name}</span>
                   </button>
                 ))}
               </div>
