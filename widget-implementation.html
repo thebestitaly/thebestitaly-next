@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget TheBestItaly - Implementazione</title>
+    <style>
+        /* Stili base per la pagina */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .widget-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .widget-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        
+        .copy-btn {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .copy-btn:hover {
+            background: #005a87;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇮🇹 Widget TheBestItaly - Guida all'Implementazione</h1>
+        <p>Questa pagina mostra come implementare il widget TheBestItaly sul tuo sito web.</p>
+        
+        <!-- Esempio 1: Widget Azienda -->
+        <div class="widget-section">
+            <div class="widget-title">📍 Esempio 1: Widget Azienda (Osteria Francescana)</div>
+            <div id="widget-company"></div>
+        </div>
+        
+        <!-- Esempio 2: Widget Destinazione -->
+        <div class="widget-section">
+            <div class="widget-title">🏛️ Esempio 2: Widget Destinazione (Roma)</div>
+            <div id="widget-destination"></div>
+        </div>
+        
+        <!-- Esempio 3: Widget Articolo -->
+        <div class="widget-section">
+            <div class="widget-title">📰 Esempio 3: Widget Articolo</div>
+            <div id="widget-article"></div>
+        </div>
+
+        <!-- Codice di Implementazione -->
+        <div style="margin-top: 40px;">
+            <h2>💻 Codice per l'Implementazione</h2>
+            
+            <h3>1. Includi il JavaScript del Widget</h3>
+            <div class="code-block">
+&lt;script src="https://thebestitaly.eu/widgets/widget.js"&gt;&lt;/script&gt;
+                <button class="copy-btn" onclick="copyToClipboard('script-include')">Copia</button>
+            </div>
+            
+            <h3>2. Crea il Container HTML</h3>
+            <div class="code-block">
+&lt;!-- Per un'azienda --&gt;
+&lt;div id="my-widget-1"&gt;&lt;/div&gt;
+
+&lt;!-- Per una destinazione --&gt;
+&lt;div id="my-widget-2"&gt;&lt;/div&gt;
+
+&lt;!-- Per un articolo --&gt;
+&lt;div id="my-widget-3"&gt;&lt;/div&gt;
+                <button class="copy-btn" onclick="copyToClipboard('html-containers')">Copia</button>
+            </div>
+            
+            <h3>3. Inizializza i Widget</h3>
+            <div class="code-block">
+&lt;script&gt;
+// Widget per azienda
+new TheBestItalyWidget('my-widget-1', {
+    type: 'company',
+    query: 'francescana',
+    size: 'medium',
+    language: 'it'
+});
+
+// Widget per destinazione  
+new TheBestItalyWidget('my-widget-2', {
+    type: 'destination',
+    query: 'roma',
+    size: 'medium',
+    language: 'it'
+});
+
+// Widget per articolo
+new TheBestItalyWidget('my-widget-3', {
+    type: 'article',
+    query: 'cucina italiana',
+    size: 'medium',
+    language: 'it'
+});
+&lt;/script&gt;
+                <button class="copy-btn" onclick="copyToClipboard('js-init')">Copia</button>
+            </div>
+
+            <h3>4. Codice Completo Pronto all'Uso</h3>
+            <div class="code-block">
+&lt;!DOCTYPE html&gt;
+&lt;html lang="it"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Il Mio Sito con Widget TheBestItaly&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Benvenuto nel mio sito&lt;/h1&gt;
+    
+    &lt;!-- Widget TheBestItaly --&gt;
+    &lt;div id="thebestitaly-widget"&gt;&lt;/div&gt;
+    
+    &lt;!-- Includi il JavaScript del widget --&gt;
+    &lt;script src="https://thebestitaly.eu/widgets/widget.js"&gt;&lt;/script&gt;
+    
+    &lt;!-- Inizializza il widget --&gt;
+    &lt;script&gt;
+        new TheBestItalyWidget('thebestitaly-widget', {
+            type: 'company',        // 'company', 'destination', 'article'
+            query: 'francescana',   // Nome da cercare
+            size: 'medium',         // 'small', 'medium', 'large'
+            language: 'it',         // Lingua iniziale
+            showSelector: true,     // Mostra selettore lingua
+            enableAnimations: true  // Abilita animazioni
+        });
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+                <button class="copy-btn" onclick="copyToClipboard('complete-code')">Copia</button>
+            </div>
+
+            <h3>5. Opzioni Avanzate</h3>
+            <div class="code-block">
+new TheBestItalyWidget('widget-container', {
+    // Configurazione base
+    type: 'company',           // Tipo: 'company', 'destination', 'article'
+    query: 'francescana',      // Termine di ricerca
+    size: 'medium',            // Dimensione: 'small', 'medium', 'large'
+    language: 'it',            // Lingua: 'it', 'en', 'fr', 'de', 'es', etc.
+    
+    // Opzioni di visualizzazione
+    showSelector: true,        // Mostra selettore lingua (true/false)
+    showShare: true,          // Mostra pulsanti condivisione (true/false)
+    enableHover: true,        // Abilita effetti hover (true/false)
+    enableAnimations: true,   // Abilita animazioni (true/false)
+    
+    // Funzionalità avanzate
+    autoRotate: false,        // Rotazione automatica contenuti (true/false)
+    rotateInterval: 5000,     // Intervallo rotazione in ms
+    enableAnalytics: true,    // Abilita analytics (true/false)
+    enableSwipeGestures: true, // Abilita gesti touch (true/false)
+    
+    // Personalizzazione
+    theme: 'auto',            // Tema: 'auto', 'light', 'dark'
+    apiUrl: 'https://thebestitaly.eu', // URL API personalizzato
+    
+    // Callback eventi
+    callbacks: {
+        onLoad: function(data) {
+            console.log('Widget caricato:', data);
+        },
+        onError: function(error) {
+            console.error('Errore widget:', error);
+        },
+        onLanguageChange: function(lang) {
+            console.log('Lingua cambiata:', lang);
+        }
+    }
+});
+                <button class="copy-btn" onclick="copyToClipboard('advanced-options')">Copia</button>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background: #e8f4fd; border-radius: 8px;">
+            <h3>📝 Note Importanti:</h3>
+            <ul>
+                <li><strong>URL Widget:</strong> https://thebestitaly.eu/widgets/widget.js</li>
+                <li><strong>Supporto Lingue:</strong> 40+ lingue con supporto RTL</li>
+                <li><strong>Responsive:</strong> Il widget si adatta automaticamente</li>
+                <li><strong>SEO Friendly:</strong> Contenuti ottimizzati per i motori di ricerca</li>
+                <li><strong>Performance:</strong> Caricamento asincrono e cache intelligente</li>
+                <li><strong>CORS:</strong> Funziona su qualsiasi dominio</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Include il widget JavaScript -->
+    <script src="https://thebestitaly.eu/widgets/widget.js"></script>
+    
+    <!-- Inizializza i widget di esempio -->
+    <script>
+        // Widget Azienda - Osteria Francescana
+        new TheBestItalyWidget('widget-company', {
+            type: 'company',
+            query: 'francescana',
+            size: 'medium',
+            language: 'it',
+            showSelector: true
+        });
+        
+        // Widget Destinazione - Roma
+        new TheBestItalyWidget('widget-destination', {
+            type: 'destination', 
+            query: 'roma',
+            size: 'medium',
+            language: 'it',
+            showSelector: true
+        });
+        
+        // Widget Articolo
+        new TheBestItalyWidget('widget-article', {
+            type: 'article',
+            query: 'cucina',
+            size: 'medium', 
+            language: 'it',
+            showSelector: true
+        });
+
+        // Funzione per copiare negli appunti
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const text = element.textContent || element.innerText;
+                navigator.clipboard.writeText(text).then(function() {
+                    alert('Codice copiato negli appunti!');
+                }, function(err) {
+                    console.error('Errore nella copia: ', err);
+                });
+            } else {
+                // Fallback per copiare il testo dal div
+                const codeBlocks = document.querySelectorAll('.code-block');
+                const button = event.target;
+                const codeBlock = button.parentElement;
+                const text = codeBlock.textContent.replace('Copia', '').trim();
+                
+                navigator.clipboard.writeText(text).then(function() {
+                    button.textContent = 'Copiato!';
+                    setTimeout(() => {
+                        button.textContent = 'Copia';
+                    }, 2000);
+                }, function(err) {
+                    console.error('Errore nella copia: ', err);
+                });
+            }
+        }
+    </script>
+</body>
+</html> 

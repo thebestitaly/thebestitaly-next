@@ -877,31 +877,57 @@
             const size = document.getElementById('codeWidgetSize').value;
             const language = document.getElementById('codeLanguage').value;
             const theme = document.getElementById('codeTheme').value;
-            const uuid = state.selectedContent.uuid;
-            const type = state.selectedContent.type;
+            
+            // Convert API type to widget type
+            const apiTypeMap = {
+                'azienda': 'company',
+                'destinazione': 'destination', 
+                'articolo': 'article'
+            };
+            const widgetType = apiTypeMap[state.selectedContent.type] || state.selectedContent.type;
+            
+            // Use search term instead of UUID for simplicity
+            const searchTerm = state.searchTerm || state.selectedContent.title;
 
-            // Generate HTML code
-            const htmlCode = '<!-- Widget TheBestItaly -->' + '\n' +
-                '<div id="tbi-widget-1"' + '\n' +
-                '     data-tbi-widget="true"' + '\n' +
-                '     data-type="' + type + '"' + '\n' +
-                '     data-uuid="' + uuid + '"' + '\n' +
-                '     data-size="' + size + '"' + '\n' +
-                '     data-language="' + language + '"' + '\n' +
-                '     data-theme="' + theme + '"' + '\n' +
-                '     data-show-selector="true">' + '\n' +
-                '</div>';
+            // Generate HTML code - Simple container
+            const htmlCode = '<!-- Container per Widget TheBestItaly -->\n' +
+                '<div id="thebestitaly-widget"></div>';
 
-            // Generate JavaScript code
-            const jsCode = '<script src="https://thebestitaly.eu/api/widget/widget.js"><\/script>' + '\n' +
+            // Generate JavaScript code - Robust constructor approach with error handling
+            const jsCode = '<!-- Script del Widget -->' + '\n' +
+                '<script src="' + window.location.origin + '/api/widget/widget.js"><\/script>' + '\n' +
+                '' + '\n' +
+                '<!-- Inizializzazione con controlli di sicurezza -->' + '\n' +
                 '<script>' + '\n' +
-                'document.addEventListener("DOMContentLoaded", function() {' + '\n' +
-                '    new TheBestItalyWidget("tbi-widget-1");' + '\n' +
+                'function initializeWidget() {' + '\n' +
+                '    if (typeof TheBestItalyWidget !== "undefined") {' + '\n' +
+                '        try {' + '\n' +
+                '            new TheBestItalyWidget("thebestitaly-widget", {' + '\n' +
+                '                type: "' + widgetType + '",' + '\n' +
+                '                query: "' + searchTerm + '",' + '\n' +
+                '                size: "' + size + '",' + '\n' +
+                '                language: "' + language + '",' + '\n' +
+                '                theme: "' + theme + '",' + '\n' +
+                '                showSelector: true' + '\n' +
+                '            });' + '\n' +
+                '        } catch (error) {' + '\n' +
+                '            console.error("Errore inizializzazione widget:", error);' + '\n' +
+                '        }' + '\n' +
+                '    } else {' + '\n' +
+                '        setTimeout(initializeWidget, 100);' + '\n' +
+                '    }' + '\n' +
+                '}' + '\n' +
+                '' + '\n' +
+                'document.addEventListener("DOMContentLoaded", initializeWidget);' + '\n' +
+                'window.addEventListener("load", function() {' + '\n' +
+                '    if (document.getElementById("thebestitaly-widget").innerHTML.trim() === "") {' + '\n' +
+                '        initializeWidget();' + '\n' +
+                '    }' + '\n' +
                 '});' + '\n' +
                 '<\/script>';
 
             // Generate full code
-            const fullCode = htmlCode + '\n' + '\n' + jsCode;
+            const fullCode = htmlCode + '\n\n' + jsCode;
 
             // Update textareas
             document.getElementById('htmlCode').value = htmlCode;
@@ -936,157 +962,6 @@
         }
     </script>
 
-    <!-- Implementation Section -->
-    <div class="max-w-6xl mx-auto px-4 py-16 bg-white">
-        <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">💻 Guida all'Implementazione</h2>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- HTML Integration -->
-            <div class="bg-gray-900 rounded-xl p-6 text-white">
-                <h3 class="text-xl font-semibold mb-4 text-cyan-300">🔧 Integrazione HTML</h3>
-                <p class="text-gray-300 mb-4">Copia e incolla nel tuo sito:</p>
-                <div class="bg-black rounded-lg p-4 overflow-x-auto">
-                    <pre class="text-green-400 text-sm"><code>&lt;!-- Widget theBest Italy --&gt;
-&lt;div id="thebestitaly-widget"&gt;&lt;/div&gt;
-&lt;script&gt;
-(function() {
-    var script = document.createElement('script');
-    script.src = 'https://thebestitaly.eu/widgets/widget.js';
-    script.async = true;
-    script.onload = function() {
-        TheBestItaly.init({
-            container: '#thebestitaly-widget',
-            type: 'azienda', // articolo | destinazione | azienda
-            size: 'medium',  // small | medium | full
-            language: 'it'   // auto-detect o codice lingua
-        });
-    };
-    document.head.appendChild(script);
-})();
-&lt;/script&gt;</code></pre>
-                </div>
-            </div>
 
-            <!-- API Structure -->
-            <div class="bg-blue-50 rounded-xl p-6">
-                <h3 class="text-xl font-semibold mb-4 text-blue-800">🔗 Struttura URL</h3>
-                <div class="space-y-4">
-                    <div class="bg-white rounded-lg p-4 border-l-4 border-blue-500">
-                        <h4 class="font-semibold text-blue-800 mb-2">🏢 Aziende</h4>
-                        <code class="text-sm text-blue-600">/{lingua}/poi/{slug}</code>
-                        <p class="text-xs text-blue-600 mt-1">es: /it/poi/ferrari-spa</p>
-                    </div>
-
-                    <div class="bg-white rounded-lg p-4 border-l-4 border-green-500">
-                        <h4 class="font-semibold text-green-800 mb-2">📰 Articoli</h4>
-                        <code class="text-sm text-green-600">/{lingua}/magazine/{slug}</code>
-                        <p class="text-xs text-green-600 mt-1">es: /it/magazine/cucina-italiana</p>
-                    </div>
-
-                    <div class="bg-white rounded-lg p-4 border-l-4 border-purple-500">
-                        <h4 class="font-semibold text-purple-800 mb-2">🏛️ Destinazioni</h4>
-                        <code class="text-sm text-purple-600">/{lingua}/{regione}/{provincia}/{municipalità}</code>
-                        <p class="text-xs text-purple-600 mt-1">es: /it/lombardia/milano/milano</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- React Integration -->
-            <div class="bg-gray-900 rounded-xl p-6 text-white">
-                <h3 class="text-xl font-semibold mb-4 text-cyan-300">⚛️ React/Next.js</h3>
-                <div class="bg-black rounded-lg p-4 overflow-x-auto">
-                    <pre class="text-blue-400 text-sm"><code>import { useEffect } from 'react';
-
-function TheBestItalyWidget() {
-    useEffect(() => {
-        const script = document.createElement('script');
-        script.src = 'https://thebestitaly.eu/widgets/widget.js';
-        script.async = true;
-        
-        script.onload = () => {
-            window.TheBestItaly.init({
-                container: '#widget-container',
-                type: 'azienda',
-                size: 'medium',
-                language: 'it'
-            });
-        };
-        
-        document.head.appendChild(script);
-        
-        return () => {
-            document.head.removeChild(script);
-        };
-    }, []);
-
-    return &lt;div id="widget-container"&gt;&lt;/div&gt;;
-}</code></pre>
-                </div>
-            </div>
-
-            <!-- API Direct -->
-            <div class="bg-purple-50 rounded-xl p-6">
-                <h3 class="text-xl font-semibold mb-4 text-purple-800">🛠️ API Diretta</h3>
-                <p class="text-purple-700 mb-4">Endpoint per integrazioni personalizzate:</p>
-                <div class="bg-white rounded-lg p-4 border border-purple-200">
-                    <pre class="text-purple-600 text-sm"><code>POST /api/widget/search
-
-{
-  "type": "azienda",
-  "query": "Ferrari", 
-  "language": "it",
-  "limit": 5
-}</code></pre>
-                </div>
-                <div class="mt-4 p-3 bg-purple-100 rounded-lg">
-                    <p class="text-xs text-purple-700">
-                        <strong>✨ Caratteristiche:</strong> Cache 5min, slug_permalink, URL esterni, 40+ lingue
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Features Grid -->
-        <div class="mt-16">
-            <h3 class="text-2xl font-bold text-center mb-8 text-gray-800">🚀 Caratteristiche Premium</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl">
-                    <div class="text-4xl mb-4">🌐</div>
-                    <h4 class="font-semibold text-gray-800 mb-2">Multilingua</h4>
-                    <p class="text-sm text-gray-600">Supporto completo per 50 lingue con traduzione automatica</p>
-                </div>
-                
-                <div class="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
-                    <div class="text-4xl mb-4">⚡</div>
-                    <h4 class="font-semibold text-gray-800 mb-2">Performance</h4>
-                    <p class="text-sm text-gray-600">Cache intelligente, caricamento asincrono, ottimizzato per mobile</p>
-                </div>
-                
-                <div class="text-center p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
-                    <div class="text-4xl mb-4">🎯</div>
-                    <h4 class="font-semibold text-gray-800 mb-2">SEO Boost</h4>
-                    <p class="text-sm text-gray-600">Backlink di qualità da thebestitaly.eu per migliorare il ranking</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- CTA -->
-        <div class="mt-16 text-center">
-            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-8">
-                <h3 class="text-2xl font-bold mb-4">Pronto per iniziare?</h3>
-                <p class="text-lg opacity-90 mb-6">Integra il widget in meno di 2 minuti</p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="/widgets/widget.js" target="_blank" 
-                       class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
-                        📥 Scarica Widget.js
-                    </a>
-                    <a href="/widgets/integration.md" target="_blank"
-                       class="bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
-                        📖 Guida Completa
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html> 
