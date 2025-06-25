@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import directusClient from '../../lib/directus';
+import { getOptimizedImageUrl } from '../../lib/imageUtils';
 
 interface HomepageDestinationsCarouselProps {
   lang: string;
@@ -121,7 +122,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                     {region.image && (
                       <div className="absolute inset-0">
                         <Image
-                          src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}`}
+                          src={getOptimizedImageUrl(region.image, 'CARD')}
                           alt={`${translation.destination_name} - scenic regional landscape`}
                           fill
                           sizes="(max-width: 768px) 50vw, 33vw"
@@ -201,7 +202,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                       <div className="absolute inset-0">
                         <div className="relative w-full h-full">
                           <Image
-                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}`}
+                            src={getOptimizedImageUrl(region.image, 'CARD')}
                             alt={`${translation.destination_name} - scenic regional landscape`}
                             fill
                             sizes="(max-width: 1200px) 33vw, 20vw"

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { getOptimizedImageUrl } from '../../lib/imageUtils';
 import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 
@@ -89,7 +90,7 @@ export default function ImageGallery({ images, companyName, featuredImage }: Ima
               }}
             >
               <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${image.directus_files_id}?width=400&height=400&fit=cover`}
+                src={getOptimizedImageUrl(image.directus_files_id, 'CARD')}
                 alt={`${companyName} - Immagine ${index + 1}`}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-110"

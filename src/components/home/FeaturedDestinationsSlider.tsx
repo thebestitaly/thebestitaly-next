@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Play } from 'lucide-react';
 import directusClient, { getSlugsAndBreadcrumbs } from '../../lib/directus';
+import { getOptimizedImageUrl } from '../../lib/imageUtils';
 
 interface FeaturedDestinationsSliderProps {
   className?: string;
@@ -187,7 +188,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
             {destination.image && (
               <>
                 <Image
-                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
+                  src={getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}
                   alt={`${destination.translations?.[0]?.destination_name || 'Beautiful destination'} - scenic landscape view`}
                   fill
                   className="object-cover"
@@ -314,7 +315,7 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
               >
                 {destination.image && (
                   <Image
-                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
+                    src={getOptimizedImageUrl(destination.image, 'THUMBNAIL')}
                     alt={`${destination.translations?.[0]?.destination_name || 'Destination'} - thumbnail image`}
                     width={128}
                     height={80}
