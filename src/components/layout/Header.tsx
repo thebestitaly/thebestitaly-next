@@ -245,7 +245,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                           >
                             <div className="relative h-20 w-full mx-auto rounded-lg overflow-hidden">
                               <img
-                                src={getOptimizedImageUrl(category.image, 'THUMBNAIL')}
+                                src={getOptimizedImageUrl(category.image, 'CARD')}
                                 alt={translation.nome_categoria}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 loading="lazy"

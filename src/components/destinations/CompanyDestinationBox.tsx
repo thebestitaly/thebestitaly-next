@@ -2,6 +2,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import directusClient, { getSlugsAndBreadcrumbs } from "@/lib/directus";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface CompanyDestinationBoxProps {
   destinationId: string | number;
