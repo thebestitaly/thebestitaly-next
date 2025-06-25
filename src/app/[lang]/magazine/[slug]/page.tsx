@@ -12,6 +12,7 @@ import ArticleDestinationBox from '@/components/destinations/ArticleDestinationB
 import { getArticleHreflang } from '@/lib/directus';
 import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
 import JsonLdSchema from '@/components/widgets/JsonLdSchema';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 interface PageProps {
   params: Promise<{
@@ -54,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
                           `Discover ${slug.replace(/-/g, ' ')} - Read our latest travel article about Italy on TheBestItaly magazine.`;
     
     const imageUrl = article.image 
-      ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`
+      ? `${baseUrl}${getOptimizedImageUrl(article.image, 'HERO_DESKTOP')}`
       : `${baseUrl}/images/default-og.jpg`;
 
     // Improved schema markup for article
@@ -157,7 +158,7 @@ export default async function MagazineArticlePage({ params }: PageProps) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
   const canonicalUrl = `${baseUrl}/${lang}/magazine/${slug}`;
   const imageUrl = article.image 
-    ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`
+    ? `${baseUrl}${getOptimizedImageUrl(article.image, 'HERO_DESKTOP')}`
     : `${baseUrl}/images/default-og.jpg`;
 
   const schema = {
@@ -269,7 +270,7 @@ export default async function MagazineArticlePage({ params }: PageProps) {
             <div className="w-full md:w-half">
               <div className="relative aspect-[16/9] md:aspect-[4/3] lg:aspect-[1/1] overflow-hidden rounded-xl md:rounded-2xl">
                 <Image
-                  src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+                  src={getOptimizedImageUrl(article.image, 'HERO_DESKTOP')}
                   alt={translation?.titolo_articolo || ''}
                   fill
                   className="object-cover"

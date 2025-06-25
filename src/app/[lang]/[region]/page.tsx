@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: RegionPageProps): Promise<Met
         "latitude": destination.lat,
         "longitude": destination.long
       } : undefined,
-      "image": destination?.image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}` : undefined,
+              "image": destination?.image ? `${process.env.NEXT_PUBLIC_APP_URL}/api/directus/assets/${destination.image}?width=400&height=180&fit=cover&quality=50` : undefined,
       "sameAs": Object.values(hreflangs)
     };
     

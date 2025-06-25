@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import directusClient from "@/lib/directus";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Image from "next/image";
 
@@ -176,7 +177,7 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
                           {article.image && (
                             <div className="aspect-[16/9] overflow-hidden rounded-lg">
                               <Image
-                                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+                                src={getOptimizedImageUrl(article.image, 'CARD')}
                                 alt={articleTranslation?.titolo_articolo}
                                 width={400}
                                 height={225}

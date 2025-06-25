@@ -118,7 +118,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
   // Schema for structured data (still needed for page content)
   const seoImage = destination.image
-    ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`
+          ? `${process.env.NEXT_PUBLIC_APP_URL}${getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}`
     : undefined;
   const seoDescription = translation?.seo_summary || translation?.description || "Discover beautiful destinations in Italy.";
   

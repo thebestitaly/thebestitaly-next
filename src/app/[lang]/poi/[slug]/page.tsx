@@ -183,7 +183,7 @@ export default async function CompanyPage({ params }: PageProps) {
       "name": company.company_name,
       "description": translation?.seo_summary || englishTranslation?.seo_summary || `Discover ${company.company_name}, one of the best Italian excellences selected by TheBestItaly.`,
       "url": `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/poi/${slug}`,
-      "image": company.featured_image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}` : null,
+      "image": company.featured_image ? `${process.env.NEXT_PUBLIC_APP_URL}${getOptimizedImageUrl(company.featured_image, 'HERO_DESKTOP')}` : null,
       "telephone": company.phone || null,
       "email": company.email || null,
       "website": company.website || null,
