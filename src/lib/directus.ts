@@ -284,13 +284,13 @@ class DirectusClient {
       const isBuild = process.env.NODE_ENV === 'production' && !process.env.RAILWAY_ENVIRONMENT_NAME;
       
       if (isBuild) {
-        // Durante la build, usa direttamente Directus per evitare loop
-        baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'https://directus-production-93f0.up.railway.app';
+        // 🚨 EMERGENCY: NEVER use direct Railway URLs - always use proxy even during build
+        baseURL = 'https://thebestitaly.eu/api/directus';
       } else if (appUrl && !appUrl.includes('localhost')) {
         baseURL = appUrl + '/api/directus';
       } else {
-        // Fallback diretto a Directus per build/sviluppo
-        baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'https://directus-production-93f0.up.railway.app';
+        // 🚨 EMERGENCY: For localhost development, still use proxy to prevent Railway costs
+        baseURL = 'https://thebestitaly.eu/api/directus';
       }
     }
       

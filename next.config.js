@@ -12,10 +12,6 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'directus-production-93f0.up.railway.app',
-      },
-      {
-        protocol: 'https',
         hostname: 'thebestitaly.eu',
       }
     ],
