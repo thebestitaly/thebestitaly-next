@@ -5,8 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import directusClient from '../../lib/directus';
+import { getOptimizedImageUrl } from '../../lib/imageUtils';
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-import { getOptimizedImageUrl } from '../../lib/directus-optimization';
+
 
 interface Company {
   id: number;
@@ -146,7 +147,7 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ class
                       <div className="w-full h-64 relative rounded-2xl overflow-hidden mb-6">
                         {company.featured_image ? (
                           <Image
-                            src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, company.featured_image, 'SLIDER')}
+                            src={getOptimizedImageUrl(company.featured_image, 'CARD')}
                             alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
                             fill
                             className="object-cover"
@@ -189,7 +190,7 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ class
                       <div className="w-1/2 h-full relative rounded-2xl overflow-hidden mr-8 lg:mr-12">
                         {company.featured_image ? (
                           <Image
-                            src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, company.featured_image, 'SLIDER')}
+                            src={getOptimizedImageUrl(company.featured_image, 'CARD')}
                             alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
                             fill
                             className="object-cover"

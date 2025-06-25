@@ -15,6 +15,7 @@ import ImageGallery from '@/components/companies/ImageGallery';
 import RelatedPOI from '@/components/companies/RelatedPOI';
 import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 import { getTranslation } from '@/lib/translations-server';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
@@ -328,7 +329,7 @@ export default async function CompanyPage({ params }: PageProps) {
           <div className="px-4 mt-6 md:mt-12">
             <div className="container mx-auto relative poi-hero-image mb-4 md:mb-8 overflow-hidden rounded-xl md:rounded-2xl">
               <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
+                src={getOptimizedImageUrl(company.featured_image, 'HERO_DESKTOP')}
                 alt={`${company.company_name} - Immagine principale che mostra l'ambiente e l'atmosfera`}
                 fill
                 className="object-cover"

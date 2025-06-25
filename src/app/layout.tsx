@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="it" dir="ltr" className={`${poppins.variable} font-sans`}>
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <link rel="preconnect" href="https://directus-production-93f0.up.railway.app" />
+        {/* Removed preconnect to Railway to force using our proxy */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://widget.getyourguide.com" />

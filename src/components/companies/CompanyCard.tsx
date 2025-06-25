@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Company } from '@/lib/directus';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 interface CompanyCardProps {
   company: {
@@ -33,7 +34,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company, lang }) => {
       <div className="relative h-48 rounded-t-lg overflow-hidden">
         {company.featured_image && (
           <Image
-            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
+            src={getOptimizedImageUrl(company.featured_image, 'CARD')}
             alt={company.company_name} // Usa company_name invece di translation.name
             fill
             className="object-cover"

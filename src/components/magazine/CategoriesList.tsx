@@ -68,7 +68,7 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ lang }) => {
                   {category.image && (
                     <div className="relative w-full h-[200px] rounded-lg overflow-hidden">
                       <Image 
-                        src={getOptimizedImageUrl(category.image, 'THUMBNAIL')}
+                        src={getOptimizedImageUrl(category.image, 'CARD')}
                         alt={translation.nome_categoria}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

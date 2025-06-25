@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Breadcrumb from '../layout/Breadcrumb';
 import directusClient, { getTranslations, getPageTitles } from '../../lib/directus';
+import { getOptimizedImageUrl } from '../../lib/imageUtils';
 
 interface EccellenzeListProps {
   lang: string;
@@ -208,7 +209,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                   <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
                     {company.featured_image ? (
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
+                        src={getOptimizedImageUrl(company.featured_image, 'THUMBNAIL')}
                         alt={company.company_name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"

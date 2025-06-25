@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, ExternalLink } from 'lucide-react';
 import directusClient from '../../lib/directus';
+import { getOptimizedImageUrl } from '../../lib/imageUtils';
 
 interface RelatedPOIProps {
   currentCompanyId: number;
@@ -133,7 +134,7 @@ export default function RelatedPOI({ currentCompanyId, destinationId, lang }: Re
                 <div className="flex-shrink-0 w-32 h-24 relative rounded-lg overflow-hidden bg-gray-200">
                   {company.featured_image ? (
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=200&height=150&fit=cover`}
+                      src={getOptimizedImageUrl(company.featured_image, 'THUMBNAIL')}
                       alt={company.company_name}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-200"
