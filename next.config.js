@@ -6,7 +6,7 @@ const nextConfig = {
     // Dimensioni più conservative per ridurre traffico
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 31536000, // 1 anno
+    minimumCacheTTL: 604800, // 7 giorni (fix 32-bit overflow)
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
@@ -36,16 +36,52 @@ const nextConfig = {
   async headers() {
     return [
       {
-        // Cache per assets statici (immagini, CSS, JS)
-        source: '/public/(.*)',
+        // Cache per CSS
+        source: '/:path*.css',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable', // 1 anno
+            value: 'public, max-age=604800, immutable',
           },
+        ],
+      },
+      {
+        // Cache per JS
+        source: '/:path*.js',
+        headers: [
           {
-            key: 'Content-Encoding',
-            value: 'gzip',
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, immutable',
+          },
+        ],
+      },
+      {
+        // Cache per immagini
+        source: '/:path*.:ext(png|jpg|jpeg|gif|svg|webp|ico)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, immutable',
+          },
+        ],
+      },
+      {
+        // Cache per font WOFF
+        source: '/:path*.woff',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, immutable',
+          },
+        ],
+      },
+      {
+        // Cache per font WOFF2
+        source: '/:path*.woff2',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, immutable',
           },
         ],
       },
@@ -56,10 +92,6 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, s-maxage=7200, stale-while-revalidate=86400', // 2 ore + 1 giorno stale
-          },
-          {
-            key: 'Content-Encoding',
-            value: 'gzip',
           },
           {
             key: 'Vary',
@@ -76,26 +108,22 @@ const nextConfig = {
             value: 'public, s-maxage=3600, stale-while-revalidate=7200', // 1 ora + 2 ore stale
           },
           {
-            key: 'Content-Encoding',
-            value: 'gzip',
-          },
-          {
             key: 'Vary',
             value: 'Accept-Encoding',
           },
         ],
       },
       {
-        // Compressione aggressiva per immagini
+        // Cache per assets Directus
         source: '/api/directus/assets/(.*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable', // 1 anno
+            value: 'public, max-age=604800, immutable', // 7 giorni (fix 32-bit overflow)
           },
           {
-            key: 'Content-Encoding',
-            value: 'gzip',
+            key: 'Vary',
+            value: 'Accept-Encoding',
           },
         ],
       },

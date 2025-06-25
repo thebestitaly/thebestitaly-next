@@ -35,7 +35,9 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
       if (result?.length > 0) {
       }
       return result;
-    }
+    },
+    staleTime: 1000 * 60 * 60 * 24, // 24 ORE - cache ultra-aggressiva per homepage
+    gcTime: 1000 * 60 * 60 * 48, // 48 ORE - mantieni in memoria ancora più a lungo
   });
 
   // Fetch slug data for building correct URLs

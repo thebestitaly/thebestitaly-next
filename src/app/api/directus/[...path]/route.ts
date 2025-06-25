@@ -64,7 +64,7 @@ export async function GET(
         status: 200,
         headers: {
           'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+          'Cache-Control': 'public, max-age=604800', // Cache for 7 days (fix 32-bit overflow)
         },
       });
     }

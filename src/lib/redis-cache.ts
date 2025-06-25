@@ -66,38 +66,47 @@ export async function getRedisClient() {
   return redisClient;
 }
 
-// Cache durations ottimizzate per contenuti statici
+// Cache durations ottimizzate per contenuti statici (valori sicuri per 32-bit)
 export const CACHE_DURATIONS = {
-  // Contenuti principali - cache molto lunga
-  DESTINATIONS: 60 * 60 * 24 * 30, // 30 giorni
-  COMPANIES: 60 * 60 * 24 * 30, // 30 giorni  
-  ARTICLES: 60 * 60 * 24 * 7, // 7 giorni (più dinamici)
+  // Contenuti principali - CACHE ULTRA-AGGRESSIVA per contenuti stabili
+  DESTINATIONS: 60 * 60 * 24 * 14, // 14 GIORNI (era 7) - destinazioni cambiano raramente
+  COMPANIES: 60 * 60 * 24 * 14, // 14 GIORNI (era 7) - aziende cambiano raramente
+  ARTICLES: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - articoli sono contenuti statici
   
-  // Dati di supporto - cache lunghissima
-  TRANSLATIONS: 60 * 60 * 24 * 90, // 90 giorni
-  LANGUAGES: 60 * 60 * 24 * 365, // 1 anno
-  CATEGORIES: 60 * 60 * 24 * 180, // 6 mesi
+  // Dati di supporto - cache lunga per stabilità
+  TRANSLATIONS: 60 * 60 * 24 * 14, // 14 giorni (era 7) - traduzioni quasi mai cambiano
+  LANGUAGES: 60 * 60 * 24 * 30, // 30 giorni - lingue supportate mai cambiano
+  CATEGORIES: 60 * 60 * 24 * 14, // 14 giorni (era 7) - categorie quasi mai cambiano
   
-  // Menu navigation - cache a vita (praticamente immutabile)
-  MENU_DESTINATIONS: 60 * 60 * 24 * 365, // 1 anno (menu regioni)
+  // Menu navigation - CACHE ULTRA-LUNGA
+  MENU_DESTINATIONS: 60 * 60 * 24 * 21, // 21 GIORNI (era 7) - menu regioni/province stabile
   
-  // Homepage e liste - cache media
-  HOMEPAGE_DESTINATIONS: 60 * 60 * 24, // 1 giorno
-  FEATURED_COMPANIES: 60 * 60 * 24, // 1 giorno
-  LATEST_ARTICLES: 60 * 60 * 6, // 6 ore
+  // Homepage e liste - CACHE PIÙ AGGRESSIVA per contenuti più visti
+  HOMEPAGE_DESTINATIONS: 60 * 60 * 24 * 3, // 3 GIORNI (era 1) - featured homepage
+  FEATURED_COMPANIES: 60 * 60 * 24 * 3, // 3 GIORNI (era 1) - featured homepage
+  LATEST_ARTICLES: 60 * 60 * 12, // 12 ORE (era 6) - gli ultimi articoli possono cambiare
   
-  // Sidebar components - cache aggressiva per performance
-  DESTINATION_SIDEBAR: 60 * 60 * 12, // 12 ore
-  ARTICLES_SIDEBAR: 60 * 60 * 6, // 6 ore
-  RELATED_DESTINATIONS: 60 * 60 * 24, // 1 giorno
+  // Homepage articles - NUOVA CATEGORIA per ottimizzare
+  HOMEPAGE_ARTICLES: 60 * 60 * 24 * 2, // 2 GIORNI - articoli featured homepage
+  FEATURED_ARTICLES: 60 * 60 * 24 * 2, // 2 GIORNI - articoli featured
   
-  // API responses - cache aggressiva
-  SEARCH_RESULTS: 60 * 60 * 24 * 7, // 7 giorni
-  WIDGET_DATA: 60 * 60 * 24 * 30, // 30 giorni
+  // Sidebar components - cache MOLTO aggressiva per performance
+  DESTINATION_SIDEBAR: 60 * 60 * 24, // 24 ORE (era 12) - sidebar destinazioni
+  ARTICLES_SIDEBAR: 60 * 60 * 12, // 12 ORE (era 6) - sidebar articoli
+  RELATED_DESTINATIONS: 60 * 60 * 24 * 2, // 2 GIORNI (era 1) - destinazioni correlate
   
-  // Sitemap e SEO
-  SITEMAP: 60 * 60 * 24, // 1 giorno
-  METADATA: 60 * 60 * 24 * 7, // 7 giorni
+  // API responses - cache estesa per ridurre traffico Directus
+  SEARCH_RESULTS: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - risultati ricerca stabili
+  WIDGET_DATA: 60 * 60 * 24 * 21, // 21 GIORNI (era 7) - widget data quasi mai cambia
+  
+  // Sitemap e SEO - cache lunga per performance
+  SITEMAP: 60 * 60 * 24 * 7, // 7 GIORNI (era 1) - sitemap cambia raramente
+  METADATA: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - metadata SEO stabile
+  
+  // NUOVE CATEGORIE per contenuti specifici più richiesti
+  DESTINATION_DETAIL: 60 * 60 * 24 * 14, // 14 giorni - pagine destinazioni dettaglio
+  ARTICLE_DETAIL: 60 * 60 * 24 * 7, // 7 giorni - pagine articoli dettaglio
+  IMAGES_METADATA: 60 * 60 * 24 * 30, // 30 giorni - metadata immagini mai cambiano
 } as const;
 
 // Interface per in-memory fallback

@@ -31,7 +31,8 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
       }
     ),
     enabled: isClient && !!destinationId,
-    staleTime: 1000 * 60 * 30, // 30 minuti
+    staleTime: 1000 * 60 * 60 * 6, // 6 ORE (era 30 min) - cache più aggressiva
+    gcTime: 1000 * 60 * 60 * 12, // 12 ORE - mantieni in memoria più a lungo
   });
 
   // Query per altri articoli (se non abbiamo abbastanza articoli della destinazione) - React Query provides caching
@@ -47,7 +48,8 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
       }
     ),
     enabled: isClient,
-    staleTime: 1000 * 60 * 30, // 30 minuti
+    staleTime: 1000 * 60 * 60 * 6, // 6 ORE (era 30 min) - cache più aggressiva
+    gcTime: 1000 * 60 * 60 * 12, // 12 ORE - mantieni in memoria più a lungo
   });
 
   if (!isClient || isLoading) {

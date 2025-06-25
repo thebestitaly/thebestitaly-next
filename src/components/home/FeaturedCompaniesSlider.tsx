@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import directusClient from '../../lib/directus';
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { getOptimizedImageUrl } from '../../lib/directus-optimization';
 
 interface Company {
   id: number;
@@ -33,7 +35,7 @@ interface FeaturedCompaniesSliderProps {
   className?: string;
 }
 
-  const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ className = '' }) => {
+const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ className = '' }) => {
   const params = useParams();
   const lang = (params?.lang as string) || 'it';
   
@@ -144,7 +146,7 @@ interface FeaturedCompaniesSliderProps {
                       <div className="w-full h-64 relative rounded-2xl overflow-hidden mb-6">
                         {company.featured_image ? (
                           <Image
-                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=600&height=400&fit=cover`}
+                            src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, company.featured_image, 'SLIDER')}
                             alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
                             fill
                             className="object-cover"
@@ -187,7 +189,7 @@ interface FeaturedCompaniesSliderProps {
                       <div className="w-1/2 h-full relative rounded-2xl overflow-hidden mr-8 lg:mr-12">
                         {company.featured_image ? (
                           <Image
-                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}?width=600&height=400&fit=cover`}
+                            src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, company.featured_image, 'SLIDER')}
                             alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
                             fill
                             className="object-cover"

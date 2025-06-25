@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import directusClient from '../../../../lib/directus';
+import { RedisCache, CACHE_DURATIONS, CacheKeys } from '../../../../lib/redis-cache';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -7,6 +8,17 @@ export async function GET(request: NextRequest) {
 
   try {
     console.log('Fetching homepage articles for lang:', lang);
+    
+    // NUOVA IMPLEMENTAZIONE CACHE: Controlla prima Redis
+    const cacheKey = CacheKeys.latestArticles(lang + '_homepage');
+    const cachedArticles = await RedisCache.get<any[]>(cacheKey);
+    
+    if (cachedArticles) {
+      console.log(`✅ Cache HIT for homepage articles ${lang}: ${cachedArticles.length} articles`);
+      return NextResponse.json({ data: cachedArticles });
+    }
+    
+    console.log(`📭 Cache MISS for homepage articles ${lang}, fetching from Directus`);
     
     // Ottieni gli articoli featured homepage
     const articles = await directusClient.getHomepageArticles(lang);
@@ -36,6 +48,10 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('Filtered articles:', filteredArticles?.length || 0);
+
+    // SALVA IN CACHE con TTL ottimizzato per homepage
+    await RedisCache.set(cacheKey, filteredArticles, CACHE_DURATIONS.HOMEPAGE_ARTICLES);
+    console.log(`💾 Cached homepage articles for ${lang}: ${filteredArticles.length} articles`);
 
     return NextResponse.json({ data: filteredArticles });
   } catch (error) {

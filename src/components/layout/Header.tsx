@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
-import { Search, X, Menu, ChevronDown } from 'lucide-react';
+import { Search, X, Menu, ChevronDown, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import directusClient from '../../lib/directus';
 import { useSectionTranslations } from '@/hooks/useTranslations';
+import { getOptimizedImageUrl } from '../../lib/directus-optimization';
 import InteractiveMap from './InteractiveMap';
+import SearchBar from '../../components/search/SearchBar';
 
 interface HeaderProps {
   lang: string;
@@ -24,20 +25,20 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
   // Hook per le traduzioni del menu con il nuovo sistema
   const { translations: menuTranslations, loading: menuLoading } = useSectionTranslations('menu', lang);
 
-  // Query per le destinazioni con cache aggressiva (1 anno)
+  // Query per le destinazioni con cache ultra-aggressive (1 anno)
   const { data: destinations } = useQuery({
     queryKey: ['menu-destinations', 'region', lang],
     queryFn: () => directusClient.getDestinationsByType('region', lang),
-    staleTime: 1000 * 60 * 60 * 24 * 30, // 30 giorni client-side
-    gcTime: 1000 * 60 * 60 * 24 * 365, // 1 anno in memoria
+    staleTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni client-side (fix 32-bit overflow)
+    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni (fix 32-bit overflow)
   });
 
-  // Query per le categorie con cache aggressiva
+  // Query per le categorie con cache ultra-aggressive
   const { data: categories } = useQuery({
     queryKey: ['menu-categories', lang],
     queryFn: () => directusClient.getCategories(lang),
     staleTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni client-side
-    gcTime: 1000 * 60 * 60 * 24 * 180, // 6 mesi in memoria
+    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni (fix 32-bit overflow)
   });
 
   // Gestione scroll
@@ -132,15 +133,13 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
         <div className="flex items-center justify-between h-20" style={headerStyle}>
             {/* Logo */}
             <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
-            <Image
+            <img
               src="/images/logo-black.webp"
               alt={`The Best Italy ${lang}`}
               width={105}
               height={60}
               style={{ width: "105px", height: "60px", minWidth: "105px", minHeight: "60px" }}
               className="h-10 w-auto"
-              priority
-              sizes="105px"
             />
             </Link>
 
@@ -191,11 +190,13 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                             >
                               <div className="flex items-center space-x-3">
                                 <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 flex-shrink-0">
-                                  <Image
-                                    src={destination.image ? `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}` : '/images/map.svg'}
+                                  <img
+                                    src={destination.image ? getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, destination.image, 'MICRO') : '/images/map.svg'}
                                     alt={translation.description || translation.destination_name || 'Region'}
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                    loading="lazy"
+                                    width="48"
+                                    height="48"
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -242,12 +243,14 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                             href={`/${lang}/magazine/c/${translation.slug_permalink}/`}
                             className="group block text-center space-y-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-300"
                           >
-                            <div className="relative h-28 w-full mx-auto rounded-xl overflow-hidden">
-                              <Image
-                                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${category.image}`}
+                            <div className="relative h-20 w-full mx-auto rounded-lg overflow-hidden">
+                              <img
+                                src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, category.image, 'HERO_MOBILE')}
                                 alt={translation.nome_categoria}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                                width="150"
+                                height="100"
                               />
                             </div>
                             <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -291,7 +294,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   href="#languages"
                   className="flex items-center space-x-2 hover:text-blue-600 transition-colors"
                 >
-                  <Image
+                  <img
                     src={`/images/flags/${lang}.svg`}
                     alt={`${menuTranslations?.menu_language || lang.toUpperCase()} - ${lang.toUpperCase()}`}
                     width={24}
@@ -315,7 +318,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
               <div className="sticky top-0 bg-white z-10">
                 <div className="h-20 border-b border-gray-100 flex items-center justify-between px-4">
                   <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
-                  <Image
+                  <img
                     src="/images/logo-black.webp"
                     alt={`The Best Italy ${lang}`}
                     width={70}
@@ -435,7 +438,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                       className="flex items-center text-lg font-medium"
                       onClick={() => setIsLanguageModalOpen(true)}
                     >
-                      <Image
+                      <img
                         src={`/images/flags/${lang}.svg`}
                         alt={lang.toUpperCase()}
                         width={24}
@@ -476,7 +479,7 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                         : 'hover:bg-gray-50'
                     }`}
                   >
-                    <Image
+                    <img
                       src={`/images/flags/${language.flag}.svg`}
                       alt={language.name}
                       width={20}

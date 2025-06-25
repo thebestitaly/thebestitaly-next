@@ -21,9 +21,7 @@ export default function HtmlLangUpdater() {
       htmlElement.setAttribute('class', 'font-sans');
     }
 
-    // Optional: Log for debugging
-    console.log(`🌍 HTML updated: lang="${lang}" dir="${dir}" for path: ${pathname}`);
-  }, [pathname]);
+   }, [pathname]);
 
   // This component doesn't render anything visible
   return null;

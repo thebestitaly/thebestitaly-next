@@ -1,11 +1,21 @@
 // Utility per ottimizzare le query Directus e ridurre il traffico Egress
 export const OPTIMIZED_IMAGE_PARAMS = {
-  // Parametri ottimizzati per ridurre dimensioni immagini
-  THUMBNAIL: 'width=150&height=150&fit=cover&quality=70&format=webp',
-  CARD: 'width=400&height=240&fit=cover&quality=75&format=webp',
-  HERO_MOBILE: 'width=400&height=240&fit=cover&quality=75&format=webp',
-  HERO_DESKTOP: 'width=1200&height=400&fit=cover&quality=80&format=webp',
-  GALLERY: 'width=800&height=600&fit=cover&quality=80&format=webp',
+  // Parametri ULTRA-OTTIMIZZATI per ridurre dimensioni immagini e traffico
+  THUMBNAIL: 'width=80&height=80&fit=cover&quality=65&format=webp', // Era 150x150 q70
+  CARD: 'width=320&height=200&fit=cover&quality=70&format=webp', // Era 400x240 q75
+  HERO_MOBILE: 'width=375&height=200&fit=cover&quality=70&format=webp', // Era 400x240 q75
+  HERO_DESKTOP: 'width=1000&height=350&fit=cover&quality=75&format=webp', // Era 1200x400 q80
+  GALLERY: 'width=600&height=400&fit=cover&quality=75&format=webp', // Era 800x600 q80
+  
+  // NUOVI PARAMETRI per ottimizzazioni specifiche
+  SIDEBAR: 'width=200&height=120&fit=cover&quality=65&format=webp', // Per sidebar
+  SLIDER: 'width=800&height=450&fit=cover&quality=75&format=webp', // Per slider
+  ARTICLE_HERO: 'width=900&height=400&fit=cover&quality=75&format=webp', // Per hero articoli
+  COMPANY_LOGO: 'width=300&height=200&fit=contain&quality=80&format=webp', // Per loghi aziende
+  
+  // Parametri micro per preview e lazy loading
+  MICRO: 'width=50&height=50&fit=cover&quality=50&format=webp', // Per preview micro
+  BLUR_PLACEHOLDER: 'width=20&height=12&fit=cover&quality=30&format=webp', // Per blur placeholder
 } as const;
 
 // Fields ottimizzati per ridurre payload
@@ -69,10 +79,10 @@ export function truncateDescription(text: string | undefined, maxLength: number 
 
 // Cache TTL ottimizzati per diversi tipi di contenuto
 export const CACHE_TTL = {
-  MENU: 31536000, // 1 anno (contenuto quasi statico)
-  DESTINATIONS: 2592000, // 30 giorni
-  COMPANIES: 2592000, // 30 giorni
+  MENU: 604800, // 7 giorni (fix 32-bit overflow)
+      DESTINATIONS: 604800, // 7 giorni (fix 32-bit overflow)
+    COMPANIES: 604800, // 7 giorni (fix 32-bit overflow)
   ARTICLES: 604800, // 7 giorni
-  CATEGORIES: 2592000, // 30 giorni
+      CATEGORIES: 604800, // 7 giorni (fix 32-bit overflow)
   HOMEPAGE: 3600, // 1 ora
 } as const; 

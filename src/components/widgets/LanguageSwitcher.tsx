@@ -233,14 +233,15 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
               'div',
               {
                 key: 'flag',
-                className: 'relative w-4 h-4 flex-shrink-0 mr-3 ml-1 mb-1'
+                className: 'relative w-5 h-4 flex-shrink-0 mr-3 ml-1 mb-1'
               },
               React.createElement(Image, {
                 src: `/images/flags/${language.code}.svg`,
                 alt: "",
                 fill: true,
                 className: 'rounded-sm object-cover',
-                sizes: "14px"
+                sizes: "20px",
+                loading: "lazy"
               })
             ),
             React.createElement(

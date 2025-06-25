@@ -1,41 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import directusClient from '../../../../lib/directus';
+import { RedisCache, CACHE_DURATIONS, CacheKeys } from '../../../../lib/redis-cache';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const lang = searchParams.get('lang') || 'it';
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const offset = parseInt(searchParams.get('offset') || '0');
 
   try {
     console.log('Fetching latest articles for lang:', lang);
     
-    // Ottieni gli ultimi articoli (non featured)
-    const articles = await directusClient.getLatestArticlesForHomepage(lang);
+    // CACHE IMPLEMENTATION: Controlla prima Redis
+    const cacheKey = CacheKeys.latestArticles(lang);
+    const cachedArticles = await RedisCache.get<any>(cacheKey);
     
-    console.log('Raw latest articles from Directus:', articles?.length || 0);
+    if (cachedArticles) {
+      console.log(`✅ Cache HIT for latest articles ${lang}: ${cachedArticles.articles?.length || 0} articles`);
+      return NextResponse.json(cachedArticles);
+    }
     
-    // Filtra le traduzioni delle categorie per mantenere solo quella della lingua richiesta
-    const filteredArticles = articles.map((article: any) => {
-      if (article.category_id?.translations) {
-        const categoryTranslation = article.category_id.translations.find(
-          (t: any) => t.languages_code === lang
-        );
-        
-        return {
-          ...article,
-          category_id: {
-            ...article.category_id,
-            translations: categoryTranslation ? [categoryTranslation] : []
-          }
-        };
-      }
-      return article;
-    });
+    console.log(`📭 Cache MISS for latest articles ${lang}, fetching from Directus`);
+    
+    // Ottieni gli articoli dal directus client
+    const result = await directusClient.getLatestArticlesForHomepage(lang);
+    
+    // SALVA IN CACHE con TTL ottimizzato
+    await RedisCache.set(cacheKey, result, CACHE_DURATIONS.LATEST_ARTICLES);
+    console.log(`💾 Cached latest articles for ${lang}: ${result.articles?.length || 0} articles`);
 
-    console.log('Filtered latest articles:', filteredArticles?.length || 0);
-
-    return NextResponse.json({ data: filteredArticles });
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching latest articles:', error);
-    return NextResponse.json({ error: 'Failed to fetch articles' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch latest articles' }, { status: 500 });
   }
 } 

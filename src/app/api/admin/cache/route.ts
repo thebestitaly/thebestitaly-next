@@ -1,57 +1,201 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { RedisCache, invalidateContentCache } from '@/lib/redis-cache';
+import { RedisCache, CACHE_DURATIONS, CacheKeys, invalidateContentCache } from '../../../../lib/redis-cache';
+import directusClient from '../../../../lib/directus';
 
 // GET - Cache statistics and health check
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get('action');
+
+  switch (action) {
+    case 'stats':
+      return await getCacheStats();
+    case 'clear':
+      return await clearCache();
+    case 'prepopulate':
+      return await prepopulateCache();
+    case 'prepopulate-critical':
+      return await prepopulateCriticalContent();
+    default:
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  }
+}
+
+async function getCacheStats() {
   try {
-    const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action');
-
-    if (action === 'stats') {
-      const stats = await RedisCache.getStats();
-      const ping = await RedisCache.ping();
-      
-      return NextResponse.json({
-        success: true,
-        connected: ping,
-        stats: stats,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    if (action === 'ping') {
-      const ping = await RedisCache.ping();
-      return NextResponse.json({
-        success: true,
-        connected: ping,
-        message: ping ? 'Redis is connected' : 'Redis is not connected'
-      });
-    }
-
-    // Default: return basic info
-    const ping = await RedisCache.ping();
+    const stats = await RedisCache.getStats();
     return NextResponse.json({
       success: true,
-      connected: ping,
-      message: 'Redis cache API is working',
-      availableActions: [
-        'GET ?action=stats - Get cache statistics',
-        'GET ?action=ping - Check Redis connection',
-        'POST - Clear cache (with body: {action, type, id})',
-        'DELETE - Clear all cache'
-      ]
+      connected: true,
+      stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting cache stats:', error);
+    return NextResponse.json({
+      success: false,
+      connected: false,
+      error: 'Failed to get cache stats'
+    }, { status: 500 });
+  }
+}
+
+async function clearCache() {
+  try {
+    // Clear all cache patterns
+    const patterns = [
+      'dest:*',      // All destinations
+      'art:*',       // All articles  
+      'comp:*',      // All companies
+      'latest:*',    // Latest articles
+      'homepage:*',  // Homepage content
+      'featured:*',  // Featured content
+      'menu:*',      // Menu content
+      'sidebar:*',   // Sidebar components
+    ];
+
+    let totalDeleted = 0;
+    for (const pattern of patterns) {
+      const deleted = await RedisCache.delPattern(pattern);
+      totalDeleted += deleted;
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Cache cleared: ${totalDeleted} keys deleted`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error clearing cache:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to clear cache'
+    }, { status: 500 });
+  }
+}
+
+async function prepopulateCache() {
+  try {
+    const results = {
+      regions: 0,
+      articles: 0,
+      destinations: 0,
+      errors: [] as string[]
+    };
+
+    const languages = ['it', 'en', 'fr', 'de', 'es'];
+
+    // Pre-populate per ogni lingua
+    for (const lang of languages) {
+      try {
+        // 1. Pre-carica regioni per menu (PRIORITÀ MASSIMA)
+        console.log(`🔥 Pre-populating menu regions for ${lang}`);
+        const regions = await directusClient.getDestinationsByType('region', lang);
+        const menuCacheKey = CacheKeys.menuDestinations('region', lang);
+        await RedisCache.set(menuCacheKey, regions, CACHE_DURATIONS.MENU_DESTINATIONS);
+        results.regions += regions.length;
+
+        // 2. Pre-carica articoli homepage (PRIORITÀ MASSIMA)
+        console.log(`🔥 Pre-populating homepage articles for ${lang}`);
+        const homepageArticles = await directusClient.getHomepageArticles(lang);
+        const homepageArticlesCacheKey = CacheKeys.latestArticles(lang + '_homepage');
+        await RedisCache.set(homepageArticlesCacheKey, homepageArticles, CACHE_DURATIONS.HOMEPAGE_ARTICLES);
+        results.articles += homepageArticles.length;
+
+        // 3. Pre-carica latest articles (ALTA PRIORITÀ)
+        console.log(`🔥 Pre-populating latest articles for ${lang}`);
+        const latestArticles = await directusClient.getLatestArticlesForHomepage(lang);
+        const latestArticlesCacheKey = CacheKeys.latestArticles(lang);
+        await RedisCache.set(latestArticlesCacheKey, latestArticles, CACHE_DURATIONS.LATEST_ARTICLES);
+
+        // 4. Pre-carica destinazioni homepage (ALTA PRIORITÀ)
+        console.log(`🔥 Pre-populating homepage destinations for ${lang}`);
+        const homepageDestinations = await directusClient.getHomepageDestinations(lang);
+        const homepageDestCacheKey = CacheKeys.homepageDestinations(lang);
+        await RedisCache.set(homepageDestCacheKey, homepageDestinations, CACHE_DURATIONS.HOMEPAGE_DESTINATIONS);
+        results.destinations += homepageDestinations.length;
+
+        // 5. Pre-carica featured companies (ALTA PRIORITÀ) - RIMOSSO per ora
+        // console.log(`🔥 Pre-populating featured companies for ${lang}`);
+        // const featuredCompanies = await directusClient.getFeaturedCompanies(lang);
+        // const featuredCompaniesCacheKey = CacheKeys.featuredCompanies(lang);
+        // await RedisCache.set(featuredCompaniesCacheKey, featuredCompanies, CACHE_DURATIONS.FEATURED_COMPANIES);
+
+      } catch (langError: any) {
+        console.error(`Error pre-populating for ${lang}:`, langError);
+        results.errors.push(`${lang}: ${langError?.message || 'Unknown error'}`);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Cache pre-populated successfully`,
+      results,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('❌ Cache API GET error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to get cache information',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    console.error('Error pre-populating cache:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to pre-populate cache'
+    }, { status: 500 });
+  }
+}
+
+// NUOVA FUNZIONE: Pre-populate solo contenuti ultra-critici (veloce)
+async function prepopulateCriticalContent() {
+  try {
+    const results = {
+      cached_items: 0,
+      languages: 0,
+      duration_ms: 0
+    };
+
+    const startTime = Date.now();
+    const languages = ['it', 'en']; // Solo lingue principali per velocità
+
+    for (const lang of languages) {
+      try {
+        // SOLO i contenuti più critici con traffico massimo
+        
+        // 1. Menu regioni (richiesto da ogni pagina)
+        const regions = await directusClient.getDestinationsByType('region', lang);
+        await RedisCache.set(CacheKeys.menuDestinations('region', lang), regions, CACHE_DURATIONS.MENU_DESTINATIONS);
+        results.cached_items += regions.length;
+
+        // 2. Articoli homepage (molto richiesti)
+        const homepageArticles = await directusClient.getHomepageArticles(lang);
+        await RedisCache.set(CacheKeys.latestArticles(lang + '_homepage'), homepageArticles, CACHE_DURATIONS.HOMEPAGE_ARTICLES);
+        results.cached_items += homepageArticles.length;
+
+        // 3. Latest articles (sidebar e homepage)
+        const latestArticles = await directusClient.getLatestArticlesForHomepage(lang);
+        await RedisCache.set(CacheKeys.latestArticles(lang), latestArticles, CACHE_DURATIONS.LATEST_ARTICLES);
+        results.cached_items += (latestArticles.articles?.length || 0);
+
+        results.languages++;
+        
+      } catch (langError) {
+        console.error(`Error in critical pre-population for ${lang}:`, langError);
+      }
+    }
+
+    results.duration_ms = Date.now() - startTime;
+
+    return NextResponse.json({
+      success: true,
+      message: `Critical content cached in ${results.duration_ms}ms`,
+      results,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error in critical pre-population:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to pre-populate critical content'
+    }, { status: 500 });
   }
 }
 

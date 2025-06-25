@@ -101,8 +101,7 @@ async function loadTranslationsToCache(): Promise<void> {
     }
     
     lastCacheUpdate = Date.now();
-    console.log(`✅ Caricate ${result.rows.length} traduzioni in cache`);
-    
+   
   } catch (error) {
     console.error('❌ Errore caricando traduzioni:', error);
     console.warn('⚠️ Usando cache vuota come fallback');
