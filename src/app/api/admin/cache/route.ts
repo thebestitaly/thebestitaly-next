@@ -104,7 +104,11 @@ async function prepopulateCache() {
 
         // 3. Pre-carica latest articles (ALTA PRIORITÀ)
         console.log(`🔥 Pre-populating latest articles for ${lang}`);
-        const latestArticles = await directusClient.getLatestArticlesForHomepage(lang);
+        const latestArticlesData = await directusClient.getLatestArticlesForHomepage(lang);
+        const latestArticles = {
+          data: latestArticlesData || [],
+          total: latestArticlesData?.length || 0
+        };
         const latestArticlesCacheKey = CacheKeys.latestArticles(lang);
         await RedisCache.set(latestArticlesCacheKey, latestArticles, CACHE_DURATIONS.LATEST_ARTICLES);
 
@@ -170,9 +174,13 @@ async function prepopulateCriticalContent() {
         results.cached_items += homepageArticles.length;
 
         // 3. Latest articles (sidebar e homepage)
-        const latestArticles = await directusClient.getLatestArticlesForHomepage(lang);
+        const latestArticlesData = await directusClient.getLatestArticlesForHomepage(lang);
+        const latestArticles = {
+          data: latestArticlesData || [],
+          total: latestArticlesData?.length || 0
+        };
         await RedisCache.set(CacheKeys.latestArticles(lang), latestArticles, CACHE_DURATIONS.LATEST_ARTICLES);
-        results.cached_items += (latestArticles.articles?.length || 0);
+        results.cached_items += latestArticles.data.length;
 
         results.languages++;
         

@@ -16,22 +16,33 @@ export async function GET(request: NextRequest) {
     const cachedArticles = await RedisCache.get<any>(cacheKey);
     
     if (cachedArticles) {
-      console.log(`✅ Cache HIT for latest articles ${lang}: ${cachedArticles.articles?.length || 0} articles`);
+      console.log(`✅ Cache HIT for latest articles ${lang}: ${cachedArticles.data?.length || 0} articles`);
       return NextResponse.json(cachedArticles);
     }
     
     console.log(`📭 Cache MISS for latest articles ${lang}, fetching from Directus`);
     
     // Ottieni gli articoli dal directus client
-    const result = await directusClient.getLatestArticlesForHomepage(lang);
+    const articles = await directusClient.getLatestArticlesForHomepage(lang);
+    
+    // Wrap in object with data property to match expected format
+    const result = {
+      data: articles || [],
+      total: articles?.length || 0
+    };
     
     // SALVA IN CACHE con TTL ottimizzato
     await RedisCache.set(cacheKey, result, CACHE_DURATIONS.LATEST_ARTICLES);
-    console.log(`💾 Cached latest articles for ${lang}: ${result.articles?.length || 0} articles`);
+    console.log(`💾 Cached latest articles for ${lang}: ${result.data?.length || 0} articles`);
 
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching latest articles:', error);
-    return NextResponse.json({ error: 'Failed to fetch latest articles' }, { status: 500 });
+    // Return empty data structure to prevent undefined queries
+    return NextResponse.json({ 
+      data: [], 
+      total: 0,
+      error: 'Failed to fetch latest articles' 
+    }, { status: 500 });
   }
 } 
