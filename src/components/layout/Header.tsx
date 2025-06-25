@@ -296,10 +296,11 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                 >
                   <img
                     src={`/images/flags/${lang}.svg`}
-                    alt={`${menuTranslations?.menu_language || lang.toUpperCase()} - ${lang.toUpperCase()}`}
+                    alt=""
                     width={24}
                     height={18}
                     className="rounded w-6 h-[18px] object-cover"
+                    role="presentation"
                   />
                   <span className={`ml-2 transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}>
                     {lang.toUpperCase()}
@@ -440,10 +441,11 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                     >
                       <img
                         src={`/images/flags/${lang}.svg`}
-                        alt={lang.toUpperCase()}
+                        alt=""
                         width={24}
                         height={18}
                         className="rounded mr-2 w-6 h-[18px] object-cover"
+                        role="presentation"
                       />
                       {lang.toUpperCase()}
                     </button>
@@ -481,10 +483,11 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                   >
                     <img
                       src={`/images/flags/${language.flag}.svg`}
-                      alt={language.name}
+                      alt=""
                       width={20}
                       height={15}
                       className="rounded w-5 h-[15px] object-cover"
+                      role="presentation"
                     />
                     <span className="text-sm font-medium truncate">{language.name}</span>
                   </button>

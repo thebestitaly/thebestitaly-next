@@ -461,4 +461,12 @@ export async function invalidateContentCache(type: 'destination' | 'company' | '
   console.log(`✅ Cache invalidation completed for ${type}`);
 }
 
+// 🚨 EMERGENCY: Limiti aggressivi per Railway costs
+export const EMERGENCY_LIMITS = {
+  MAX_REQUESTS_PER_MINUTE: 50,        // Massimo 50 req/min
+  MAX_EGRESS_MB_PER_HOUR: 100,       // Massimo 100MB egress/ora
+  BLOCK_HEAVY_IMAGES: true,           // Blocca immagini > 500KB
+  CACHE_EVERYTHING: true              // Cachea tutto aggressivamente
+};
+
 export default RedisCache; 

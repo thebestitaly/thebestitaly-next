@@ -35,14 +35,30 @@ export default function RootLayout({
         
         <meta name="naver-site-verification" content="456897315623611c6ab1dd38be219cded9a1cef6" />
         
+        {/* Disable Cloudflare RUM if not properly configured */}
+        <meta name="cf-rum" content="disabled" />
+        
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','GTM-M4HZ8MZ3');
+              window.dataLayer = window.dataLayer || [];
+              // Carica GTM in modo differito per ridurre JavaScript inutilizzato
+              function loadGTM() {
+                if (window.gtmLoaded) return;
+                window.gtmLoaded = true;
+                
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','GTM-M4HZ8MZ3');
+              }
+              
+              // Carica GTM dopo il primo evento di interazione o dopo 3 secondi
+              ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(function(e) {
+                window.addEventListener(e, loadGTM, {once: true, passive: true});
+              });
+              setTimeout(loadGTM, 3000);
             `,
           }}
         />

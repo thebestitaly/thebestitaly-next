@@ -241,7 +241,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 fill: true,
                 className: 'rounded-sm object-cover',
                 sizes: "20px",
-                loading: "lazy"
+                loading: "lazy",
+                role: "presentation"
               })
             ),
             React.createElement(

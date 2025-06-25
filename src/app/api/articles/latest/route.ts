@@ -5,7 +5,7 @@ import { RedisCache, CACHE_DURATIONS, CacheKeys } from '../../../../lib/redis-ca
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const lang = searchParams.get('lang') || 'it';
-  const limit = parseInt(searchParams.get('limit') || '10');
+  const limit = parseInt(searchParams.get('limit') || '12');
   const offset = parseInt(searchParams.get('offset') || '0');
 
   try {
