@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, X, Menu, ChevronDown, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import directusClient from '../../lib/directus';
 import { useSectionTranslations } from '@/hooks/useTranslations';
-import { getOptimizedImageUrl } from '../../lib/directus-optimization';
+import { getOptimizedImageUrl } from '../../lib/imageUtils';
 import InteractiveMap from './InteractiveMap';
 import SearchBar from '../../components/search/SearchBar';
 
@@ -191,12 +191,12 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                               <div className="flex items-center space-x-3">
                                 <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 flex-shrink-0">
                                   <img
-                                    src={destination.image ? getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, destination.image, 'MICRO') : '/images/map.svg'}
+                                    src={destination.image ? getOptimizedImageUrl(destination.image, 'MICRO') : '/images/map.svg'}
                                     alt={translation.description || translation.destination_name || 'Region'}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                     loading="lazy"
-                                    width="48"
-                                    height="48"
+                                    width="24"
+                                    height="24"
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -245,12 +245,12 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
                           >
                             <div className="relative h-20 w-full mx-auto rounded-lg overflow-hidden">
                               <img
-                                src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, category.image, 'HERO_MOBILE')}
+                                src={getOptimizedImageUrl(category.image, 'THUMBNAIL')}
                                 alt={translation.nome_categoria}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 loading="lazy"
-                                width="150"
-                                height="100"
+                                width="60"
+                                height="60"
                               />
                             </div>
                             <h3 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">

@@ -9,7 +9,8 @@ export const getDirectusImageUrl = (
 ) => {
   if (!assetId) return '';
   
-  const baseUrl = `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${assetId}`;
+  // 🚨 EMERGENCY FIX: Use API proxy instead of direct Railway URL to save costs
+  const baseUrl = `/api/directus/assets/${assetId}`;
   
   if (!options) return baseUrl;
   
@@ -21,4 +22,22 @@ export const getDirectusImageUrl = (
   
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+};
+
+// 🚨 EMERGENCY: Optimized image presets to reduce traffic
+export const getOptimizedImageUrl = (
+  assetId: string,
+  preset: 'MICRO' | 'THUMBNAIL' | 'CARD' | 'HERO_MOBILE' | 'HERO_DESKTOP' = 'CARD'
+) => {
+  if (!assetId) return '';
+  
+  const presets = {
+    MICRO: { width: 24, height: 24, quality: 25 },
+    THUMBNAIL: { width: 60, height: 60, quality: 35 },
+    CARD: { width: 150, height: 100, quality: 40 },
+    HERO_MOBILE: { width: 300, height: 200, quality: 45 },
+    HERO_DESKTOP: { width: 400, height: 180, quality: 50 }
+  };
+  
+  return getDirectusImageUrl(assetId, { ...presets[preset], fit: 'cover' });
 };

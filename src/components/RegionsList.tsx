@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import directusClient from '../lib/directus';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 const RegionsList = () => {
   const { data: regions, isLoading, error } = useQuery({
@@ -32,12 +33,12 @@ const RegionsList = () => {
               {region.image && (
                 <div className="relative aspect-[4/3] h-48">
                   <img 
-                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${region.image}?width=400&height=300&fit=cover&quality=85`}
+                    src={getOptimizedImageUrl(region.image, 'CARD')}
                     alt={translation?.destination_name}
                     className="w-full h-full object-cover"
                     loading="lazy"
-                    width="400"
-                    height="300"
+                    width="150"
+                    height="100"
                   />
                 </div>
               )}
