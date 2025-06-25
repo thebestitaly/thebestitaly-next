@@ -1,0 +1,39 @@
+User-agent: *
+Allow: /
+
+# 🚨 EMERGENCY: Block all bots from expensive image routes
+Disallow: /api/directus/assets/
+Disallow: /_next/image?*
+Disallow: /images/
+Disallow: *.jpg
+Disallow: *.jpeg
+Disallow: *.png
+Disallow: *.webp
+Disallow: *.gif
+
+# Block expensive API routes
+Disallow: /api/directus/
+Disallow: /api/widget/
+
+# Allow only essential pages for SEO
+Allow: /it/
+Allow: /en/
+Allow: /fr/
+Allow: /de/
+Allow: /es/
+Allow: /sitemap.xml
+
+Sitemap: https://thebestitaly.eu/sitemap.xml
+
+# Aggressive bot blocking for cost control
+User-agent: Googlebot
+Disallow: /api/directus/assets/
+Disallow: /_next/image?*
+
+User-agent: Bingbot  
+Disallow: /api/directus/assets/
+Disallow: /_next/image?*
+
+User-agent: facebookexternalhit
+Disallow: /api/directus/assets/
+Disallow: /_next/image?* 

@@ -837,7 +837,8 @@ class TheBestItalyWidget {
 
     getImage() {
         if (!this.content?.image) return null;
-        return `https://directus-production-93f0.up.railway.app/assets/${this.content.image}?width=400&height=300&fit=cover&quality=80`;
+        // 🚨 EMERGENCY: Redirect to Next.js optimized images instead of direct Railway calls
+        return `https://thebestitaly.eu/_next/image?url=https%3A%2F%2Fdirectus-production-93f0.up.railway.app%2Fassets%2F${this.content.image}&w=200&q=40`;
     }
 
     getCurrentLanguage() {

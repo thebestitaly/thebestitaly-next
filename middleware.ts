@@ -71,61 +71,69 @@ function getRedirectUrl(pathname: string): string | null {
 }
 
 // Lingue supportate
-const supportedLanguages = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tk', 'hu',
-    'ro', 'nl', 'sv', 'pl', 'vi', 'id', 'el', 'uk',
-    'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja',
-    'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg',
-    'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca',
-    'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is',
-    'sw', 'zh-tw'];
+const supportedLanguages = ['it', 'en', 'es', 'fr', 'de', 'pt', 'ru', 'zh', 'ja', 'ar', 'hi', 'bn', 'ur', 'ko', 'vi', 'th', 'tr', 'pl', 'nl', 'sv', 'da', 'no', 'fi', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sr', 'sl', 'et', 'lv', 'lt', 'el', 'he', 'fa', 'am', 'az', 'ka', 'hy', 'tk', 'tl', 'sw', 'ms', 'id', 'is', 'mk', 'af'];
+
 export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+  // 🚨 EMERGENCY: Blocco BOT prima di tutto per Railway costs
+  const userAgent = request.headers.get('user-agent') || '';
+  const isBot = /bot|crawler|spider|scraper|facebook|twitter|linkedin|pinterest|slurp|archive|wayback/i.test(userAgent);
   
-  // 🎯 WIDGET REDIRECT - FIX PER I WIDGET!
-  if (pathname.includes('/widgets/')) {
-    const widgetPath = pathname.replace(/^\/[a-z]{2}\/widgets\//, '/widgets/');
-    console.log(`🎯 WIDGET REDIRECT: ${pathname} -> ${widgetPath}`);
-    return NextResponse.redirect(new URL(widgetPath, request.url), 302);
-  }
+  const aggressiveBots = [
+    'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot',
+    'facebookexternalhit', 'twitterbot', 'linkedinbot', 'pinterestbot',
+    'archive.org', 'wayback', 'ia_archiver', 'scrapy', 'python-requests'
+  ];
   
-  // 🔄 Check for redirects first (old URLs without region -> new URLs with region)
-  const redirectUrl = getRedirectUrl(pathname);
-  if (redirectUrl) {
-    // Log only in development now that we know it works
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 MIDDLEWARE REDIRECT: ${pathname} -> ${redirectUrl}`);
+  const isAggressiveBot = aggressiveBots.some(bot => 
+    userAgent.toLowerCase().includes(bot)
+  );
+  
+  const { pathname } = request.nextUrl;
+  
+  // BLOCCA BOT da routes costose
+  if (isBot || isAggressiveBot) {
+    if (pathname.includes('/api/directus/assets/') || 
+        pathname.includes('/_next/image') ||
+        pathname.includes('/images/')) {
+      console.log('🚫 MIDDLEWARE: Blocked bot from images:', userAgent);
+      return new NextResponse('Bot blocked from images', { status: 403 });
     }
-    return NextResponse.redirect(new URL(redirectUrl, request.url), 301);
-  }
-
-  // Controlla se il pathname inizia già con un codice lingua supportato
-  const langMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
-  
-  if (langMatch) {
-    const lang = langMatch[1];
-    // Se la lingua è supportata, lascia passare
-    if (supportedLanguages.includes(lang)) {
-      return NextResponse.next();
+    
+    if (pathname.includes('/api/directus/') || 
+        pathname.includes('/api/widget/')) {
+      console.log('🚫 MIDDLEWARE: Blocked bot from API:', userAgent);
+      return new NextResponse('Bot blocked from API', { status: 403 });
     }
-    // Se la lingua non è supportata, reindirizza a inglese
-    return NextResponse.redirect(new URL(pathname.replace(`/${lang}`, '/en'), request.url), 302);
   }
 
-  // Se non c'è lingua nel pathname, aggiungi la lingua preferita
-  let lang = request.headers.get('accept-language')?.split(',')[0].split('-')[0] || 'en';
-  
-  // Se la lingua non è supportata, usa 'en'
-  if (!supportedLanguages.includes(lang)) {
-    lang = 'en';
+  // Skip middleware per API routes, file statici, etc.
+  if (pathname.startsWith('/api') || 
+      pathname.startsWith('/_next') || 
+      pathname.startsWith('/favicon') ||
+      pathname.startsWith('/robots') ||
+      pathname.startsWith('/sitemap') ||
+      pathname.startsWith('/images') ||
+      pathname.startsWith('/widgets')) {
+    return NextResponse.next();
   }
 
-  return NextResponse.redirect(new URL(`/${lang}${pathname}`, request.url), 302);
+  // Estrai il segmento della lingua dall'URL
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const potentialLang = pathSegments[0];
+
+  // Se non c'è lingua o lingua non supportata, redirect a italiano
+  if (!potentialLang || !supportedLanguages.includes(potentialLang)) {
+    const lang = 'it';
+    return NextResponse.redirect(new URL(`/${lang}${pathname}`, request.url), 302);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    // Match ALL language paths and root paths for language detection
-    '/(it|en|es|fr|de|pt|ru|zh|ja|ar|hi|bn|ur|ko|vi|th|tr|pl|nl|sv|da|no|fi|cs|sk|hu|ro|bg|hr|sr|sl|et|lv|lt|el|he|fa|am|az|ka|hy|tk|tl|sw|ms|id|is|mk|af)/:path*',
     '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images|widgets).*)',
-  ],
-};
+    '/api/directus/:path*',
+    '/api/widget/:path*'
+  ]
+}

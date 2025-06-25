@@ -7,6 +7,30 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  // 🚨 EMERGENCY: Blocco CRAWLER dalle immagini per costi Railway
+  const userAgent = request.headers.get('user-agent') || '';
+  const isBot = /bot|crawler|spider|scraper|facebook|twitter|linkedin|pinterest/i.test(userAgent);
+  
+  const url = new URL(request.url);
+  const isImageRequest = url.pathname.includes('/assets/');
+  
+  // BLOCCA BOT dalle immagini
+  if (isBot && isImageRequest) {
+    console.log('🚫 BLOCKED BOT IMAGE REQUEST:', { userAgent, path: url.pathname });
+    return new NextResponse('Bot access to images blocked - cost control', { status: 403 });
+  }
+  
+  if (isImageRequest) {
+    const width = parseInt(url.searchParams.get('width') || '0');
+    const quality = parseInt(url.searchParams.get('quality') || '100');
+    
+    // BLOCCA immagini troppo grosse per emergenza costi
+    if (width > 500 || quality > 60) {
+      console.log('🚨 EMERGENCY: Blocked large image request', { width, quality });
+      return new NextResponse('Image too large - emergency cost control', { status: 429 });
+    }
+  }
+
   try {
     const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
     

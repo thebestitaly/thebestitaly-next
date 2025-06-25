@@ -85,4 +85,22 @@ export const CACHE_TTL = {
   ARTICLES: 604800, // 7 giorni
       CATEGORIES: 604800, // 7 giorni (fix 32-bit overflow)
   HOMEPAGE: 3600, // 1 ora
-} as const; 
+} as const;
+
+// 🚨 CRITICAL EMERGENCY: 21.87GB/DAY = 650GB/MONTH DISASTER!
+export const IMAGE_SIZES = {
+  // MINIMALI ASSOLUTI - Railway sta bruciando soldi
+  MICRO: { width: 24, height: 24, quality: 25 },           // DRASTICO: era 50x50
+  THUMBNAIL: { width: 60, height: 60, quality: 35 },       // DRASTICO: era 120x120  
+  CARD: { width: 150, height: 100, quality: 40 },          // DRASTICO: era 320x200
+  HERO_MOBILE: { width: 250, height: 130, quality: 45 },   // DRASTICO: era 375x200
+  HERO_DESKTOP: { width: 400, height: 180, quality: 50 },  // DRASTICO: era 1000x350
+  
+  // EMERGENCY SIZES
+  SIDEBAR: { width: 48, height: 48, quality: 30 },         
+  SLIDER: { width: 120, height: 80, quality: 35 },        
+  ARTICLE_HERO: { width: 300, height: 160, quality: 45 },  
+  COMPANY_LOGO: { width: 48, height: 48, quality: 35 },    
+  PREVIEW: { width: 32, height: 24, quality: 25 },         
+  BLUR_PLACEHOLDER: { width: 16, height: 12, quality: 20 } 
+}; 
