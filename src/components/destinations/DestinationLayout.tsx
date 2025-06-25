@@ -86,12 +86,12 @@ interface DestinationLayoutProps {
 }
 
 export default function DestinationLayout({ slug, lang, type, parentSlug }: DestinationLayoutProps) {
-  const { data: destination, isLoading: isLoadingDestination } = useQuery({
+  const { data: destination, isLoading: isLoadingDestination, error: destinationError } = useQuery({
     queryKey: ["destination", slug, lang],
     queryFn: () => directusClient.getDestinationBySlug(slug, lang),
     enabled: !!slug,
   });
-  const { data: slugData, isLoading: isLoadingSlugs } = useQuery({
+  const { data: slugData, isLoading: isLoadingSlugs, error: slugsError } = useQuery({
     queryKey: ["slugs", destination?.id, lang],
     queryFn: () => {
       if (!destination?.id) return null;
@@ -100,12 +100,61 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
     enabled: !!destination?.id,
   });
 
+  // 🚨 DEBUG: Log errors to console
+  if (destinationError) {
+    console.error('🚨 DestinationLayout - Destination Error:', destinationError);
+  }
+  if (slugsError) {
+    console.error('🚨 DestinationLayout - Slugs Error:', slugsError);
+  }
+
   if (isLoadingDestination || isLoadingSlugs) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading {slug}...</p>
+          {destinationError && <p className="text-red-600 mt-2">Destination Error: {destinationError.message}</p>}
+          {slugsError && <p className="text-red-600 mt-2">Slugs Error: {slugsError.message}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  if (destinationError || slugsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center bg-red-50 p-8 rounded-lg">
+          <h2 className="text-xl font-bold text-red-800 mb-4">Error Loading Destination</h2>
+          {destinationError && (
+            <div className="mb-4">
+              <p className="text-red-600 font-semibold">Destination Error:</p>
+              <p className="text-red-500">{destinationError.message}</p>
+            </div>
+          )}
+          {slugsError && (
+            <div className="mb-4">
+              <p className="text-red-600 font-semibold">Slugs Error:</p>
+              <p className="text-red-500">{slugsError.message}</p>
+            </div>
+          )}
+          <p className="text-gray-600">Slug: {slug}, Lang: {lang}, Type: {type}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!destination || !slugData) {
-    return <div>Not found</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center bg-yellow-50 p-8 rounded-lg">
+          <h2 className="text-xl font-bold text-yellow-800 mb-4">Destination Not Found</h2>
+          <p className="text-gray-600">Slug: {slug}, Lang: {lang}, Type: {type}</p>
+          <p className="text-gray-500 mt-2">Destination: {destination ? 'Found' : 'Not Found'}</p>
+          <p className="text-gray-500">Slug Data: {slugData ? 'Found' : 'Not Found'}</p>
+        </div>
+      </div>
+    );
   }
 
   const translation = destination.translations[0];
