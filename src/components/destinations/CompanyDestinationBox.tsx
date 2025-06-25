@@ -106,7 +106,7 @@ const CompanyDestinationBox: React.FC<CompanyDestinationBoxProps> = ({ destinati
               <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
                 {item.image ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${item.image}`}
+                    src={getOptimizedImageUrl(item.image, 'THUMBNAIL')}
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {

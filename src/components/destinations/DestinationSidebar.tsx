@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import directusClient from "../../lib/directus";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface DestinationSidebarProps {
   currentDestinationId: string;
@@ -150,7 +151,7 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
         {destination.image && (
           <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
             <img
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}?width=100&height=100&fit=cover`}
+              src={getOptimizedImageUrl(destination.image, 'THUMBNAIL')}
               alt={translation?.destination_name}
               className="w-full h-full object-cover"
               loading="lazy"

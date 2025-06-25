@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Article } from "@/lib/directus";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface ArticleCardProps {
   article: Article;
@@ -27,7 +28,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, lang }) => {
         {article.image && (
           <div className="relative w-full h-[250px] overflow-hidden rounded-lg">
             <Image
-              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+              src={getOptimizedImageUrl(article.image, 'CARD')}
               alt={translation?.titolo_articolo}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"

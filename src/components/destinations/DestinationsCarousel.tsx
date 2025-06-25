@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import directusClient from '../../lib/directus';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 interface DestinationsCarouselProps {
   lang: string;
@@ -86,7 +87,7 @@ const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang, type 
                   <div className="absolute inset-0">
                     <div className="relative w-full h-full">
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${destination.image}`}
+                        src={getOptimizedImageUrl(destination.image, 'CARD')}
                         alt={translation.destination_name}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

@@ -130,7 +130,7 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
               <div className="relative aspect-[3/2] overflow-hidden  rounded-xl">
                 {company.featured_image ? (
                   <Image
-                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${company.featured_image}`}
+                    src={getOptimizedImageUrl(company.featured_image, 'THUMBNAIL')}
                     alt={company.company_name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"

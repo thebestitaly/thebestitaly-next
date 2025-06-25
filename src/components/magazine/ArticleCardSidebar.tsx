@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Article } from "@/lib/directus";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface ArticleCardSidebarProps {
   article: Article;
@@ -29,7 +30,7 @@ const ArticleCardSidebar: React.FC<ArticleCardSidebarProps> = ({ article, lang }
           <div className="flex-shrink-0">
             <div className="relative w-20 h-20 rounded-xl overflow-hidden">
               <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}`}
+                src={getOptimizedImageUrl(article.image, 'THUMBNAIL')}
                 alt={translation.titolo_articolo}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"

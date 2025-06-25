@@ -6,6 +6,7 @@ import directusClient from "../../lib/directus";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface FeaturedHomepageArticlesProps {
   lang: string;
@@ -118,7 +119,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
                       <div className="w-full h-48 relative rounded-2xl overflow-hidden mb-4">
                         {article.image ? (
                           <Image
-                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}?width=600&height=400&fit=cover`}
+                            src={getOptimizedImageUrl(article.image, 'CARD')}
                             alt={`${translation.titolo_articolo} - article featured image`}
                             fill
                             className="object-cover"
@@ -192,7 +193,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
                       <div className="w-1/2 h-full relative rounded-2xl overflow-hidden">
                         {article.image ? (
                           <Image
-                            src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${article.image}?width=600&height=400&fit=cover`}
+                            src={getOptimizedImageUrl(article.image, 'CARD')}
                             alt={`${translation.titolo_articolo} - article featured image`}
                             fill
                             className="object-cover"

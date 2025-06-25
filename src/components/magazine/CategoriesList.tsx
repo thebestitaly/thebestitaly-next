@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 import { useQuery } from '@tanstack/react-query';
 import directusClient from '../../lib/directus';
 import { useSectionTranslations } from '@/hooks/useTranslations';
@@ -67,7 +68,7 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ lang }) => {
                   {category.image && (
                     <div className="relative w-full h-[200px] rounded-lg overflow-hidden">
                       <Image 
-                        src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${category.image}`}
+                        src={getOptimizedImageUrl(category.image, 'THUMBNAIL')}
                         alt={translation.nome_categoria}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

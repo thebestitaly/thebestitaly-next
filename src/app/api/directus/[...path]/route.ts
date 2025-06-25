@@ -9,45 +9,36 @@ export async function GET(
 ) {
   try {
     const userAgent = request.headers.get('user-agent') || '';
-    
-    // 🔧 FIXED: More precise bot detection - only block obvious bots
-    const isBot = 
-      // Major search engines and social crawlers (keep these)
-      /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot/i.test(userAgent) ||
-      /facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
-      // SEO tools and monitoring (keep these)
-      /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot/i.test(userAgent) ||
-      // Only obvious bot patterns
-      /crawler|spider|scraper|wget|curl/i.test(userAgent) ||
-      // Empty user agents
-      userAgent === '' ||
-      // Very short user agents (suspicious)
-      userAgent.length < 5
-    
-    if (isBot) {
-      console.log(`🚫 DIRECTUS API: BLOCKED BOT - ${userAgent}`);
-      return new Response('Bot access denied', { 
-        status: 403,
-        headers: { 'Content-Type': 'text/plain' }
-      });
-    }
-
     const url = new URL(request.url);
     const isImageRequest = url.pathname.includes('/assets/');
     
-    // BLOCCA BOT dalle immagini
-    if (isBot && isImageRequest) {
-      console.log('🚫 BLOCKED BOT IMAGE REQUEST:', { userAgent, path: url.pathname });
-      return new NextResponse('Bot access to images blocked - cost control', { status: 403 });
+    // 🔧 ONLY block bots for IMAGE requests to save costs
+    if (isImageRequest) {
+      const isBot = 
+        // Major search engines and social crawlers
+        /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot/i.test(userAgent) ||
+        /facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
+        // SEO tools and monitoring
+        /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot/i.test(userAgent) ||
+        // Bot patterns (removed curl for testing)
+        /crawler|spider|scraper|wget/i.test(userAgent) ||
+        // Empty or very short user agents (suspicious)
+        userAgent === '' || userAgent.length < 5
+      
+      if (isBot) {
+        console.log('🚫 BLOCKED BOT IMAGE REQUEST:', { userAgent, path: url.pathname });
+        return new NextResponse('Bot access to images blocked - cost control', { status: 403 });
+      }
     }
     
     if (isImageRequest) {
       const width = parseInt(url.searchParams.get('width') || '0');
       const quality = parseInt(url.searchParams.get('quality') || '100');
       
-      // BLOCCA immagini troppo grosse per emergenza costi
-      if (width > 500 || quality > 60) {
-        console.log('🚨 EMERGENCY: Blocked large image request', { width, quality });
+      // 🔧 ALLOW optimized images but block large ones
+      // Our optimized presets: MICRO (24x24), THUMBNAIL (60x60), CARD (150x100), HERO_MOBILE (300x200), HERO_DESKTOP (400x180)
+      if (width > 600 || quality > 75) {
+        console.log('🚨 EMERGENCY: Blocked large image request', { width, quality, userAgent });
         return new NextResponse('Image too large - emergency cost control', { status: 429 });
       }
     }
@@ -108,7 +99,7 @@ export async function GET(
         status: 200,
         headers: {
           'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=604800', // Cache for 7 days (fix 32-bit overflow)
+          'Cache-Control': 'public, max-age=31536000, immutable', // Cache for 1 year
         },
       });
     }

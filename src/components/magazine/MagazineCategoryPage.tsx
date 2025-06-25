@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import directusClient from "@/lib/directus";
 import Breadcrumb from "@/components/layout/Breadcrumb";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 import ArticleGrid from "./ArticleGrid";
 
@@ -91,7 +92,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
           {categoryInfo?.image ? (
             <>
               <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${categoryInfo.image}`}
+                src={getOptimizedImageUrl(categoryInfo.image, 'HERO_DESKTOP')}
                 alt={categoryTranslation?.nome_categoria || "Category image"}
                 fill
                 className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
