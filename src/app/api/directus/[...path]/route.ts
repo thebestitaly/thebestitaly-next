@@ -7,31 +7,59 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  // 🚨 EMERGENCY: Blocco CRAWLER dalle immagini per costi Railway
-  const userAgent = request.headers.get('user-agent') || '';
-  const isBot = /bot|crawler|spider|scraper|facebook|twitter|linkedin|pinterest/i.test(userAgent);
-  
-  const url = new URL(request.url);
-  const isImageRequest = url.pathname.includes('/assets/');
-  
-  // BLOCCA BOT dalle immagini
-  if (isBot && isImageRequest) {
-    console.log('🚫 BLOCKED BOT IMAGE REQUEST:', { userAgent, path: url.pathname });
-    return new NextResponse('Bot access to images blocked - cost control', { status: 403 });
-  }
-  
-  if (isImageRequest) {
-    const width = parseInt(url.searchParams.get('width') || '0');
-    const quality = parseInt(url.searchParams.get('quality') || '100');
-    
-    // BLOCCA immagini troppo grosse per emergenza costi
-    if (width > 500 || quality > 60) {
-      console.log('🚨 EMERGENCY: Blocked large image request', { width, quality });
-      return new NextResponse('Image too large - emergency cost control', { status: 429 });
-    }
-  }
-
   try {
+    const userAgent = request.headers.get('user-agent') || '';
+    
+    // 🚨 EMERGENCY: ULTRA-AGGRESSIVE BOT BLOCKING
+    const isBot = 
+      // Major search engines and social crawlers
+      /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
+      /facebookcrawler|instagrambot|pinterestbot|snapchatbot|tiktokbot|discordbot/i.test(userAgent) ||
+      // SEO tools and monitoring
+      /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot|screaming frog|sitebulb|seobility|serpstat/i.test(userAgent) ||
+      // Generic bot patterns
+      /bot|crawler|spider|scraper|fetch|wget|curl|python|java|go-http|okhttp|apache|nginx/i.test(userAgent) ||
+      // Programming languages and tools
+      /node|php|ruby|perl|rust|go\/|python-|java\/|c\+\+|.net|powershell/i.test(userAgent) ||
+      // Headless and automation
+      /headless|phantom|selenium|puppeteer|playwright|zombie|jsdom/i.test(userAgent) ||
+      // Suspicious patterns
+      userAgent === '' || 
+      userAgent.length < 10 || 
+      userAgent.length > 500 ||
+      // Must contain browser indicators
+      !/mozilla|chrome|safari|firefox|edge|opera/i.test(userAgent) ||
+      // Block non-standard versions
+      !/version|rv:|chrome\/|firefox\/|safari\/|edge\//i.test(userAgent)
+    
+    if (isBot) {
+      console.log(`🚨 DIRECTUS API: BLOCKED BOT - ${userAgent}`);
+      return new Response('Bot access denied', { 
+        status: 403,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    }
+
+    const url = new URL(request.url);
+    const isImageRequest = url.pathname.includes('/assets/');
+    
+    // BLOCCA BOT dalle immagini
+    if (isBot && isImageRequest) {
+      console.log('🚫 BLOCKED BOT IMAGE REQUEST:', { userAgent, path: url.pathname });
+      return new NextResponse('Bot access to images blocked - cost control', { status: 403 });
+    }
+    
+    if (isImageRequest) {
+      const width = parseInt(url.searchParams.get('width') || '0');
+      const quality = parseInt(url.searchParams.get('quality') || '100');
+      
+      // BLOCCA immagini troppo grosse per emergenza costi
+      if (width > 500 || quality > 60) {
+        console.log('🚨 EMERGENCY: Blocked large image request', { width, quality });
+        return new NextResponse('Image too large - emergency cost control', { status: 429 });
+      }
+    }
+
     const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
     
     if (!directusUrl) {

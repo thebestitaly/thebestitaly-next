@@ -74,36 +74,36 @@ function getRedirectUrl(pathname: string): string | null {
 const supportedLanguages = ['it', 'en', 'es', 'fr', 'de', 'pt', 'ru', 'zh', 'ja', 'ar', 'hi', 'bn', 'ur', 'ko', 'vi', 'th', 'tr', 'pl', 'nl', 'sv', 'da', 'no', 'fi', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sr', 'sl', 'et', 'lv', 'lt', 'el', 'he', 'fa', 'am', 'az', 'ka', 'hy', 'tk', 'tl', 'sw', 'ms', 'id', 'is', 'mk', 'af'];
 
 export function middleware(request: NextRequest) {
-  // 🚨 EMERGENCY: Blocco BOT prima di tutto per Railway costs
   const userAgent = request.headers.get('user-agent') || '';
-  const isBot = /bot|crawler|spider|scraper|facebook|twitter|linkedin|pinterest|slurp|archive|wayback/i.test(userAgent);
-  
-  const aggressiveBots = [
-    'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot',
-    'facebookexternalhit', 'twitterbot', 'linkedinbot', 'pinterestbot',
-    'archive.org', 'wayback', 'ia_archiver', 'scrapy', 'python-requests'
-  ];
-  
-  const isAggressiveBot = aggressiveBots.some(bot => 
-    userAgent.toLowerCase().includes(bot)
-  );
-  
-  const { pathname } = request.nextUrl;
-  
-  // BLOCCA BOT da routes costose
-  if (isBot || isAggressiveBot) {
-    if (pathname.includes('/api/directus/assets/') || 
-        pathname.includes('/_next/image') ||
-        pathname.includes('/images/')) {
-      console.log('🚫 MIDDLEWARE: Blocked bot from images:', userAgent);
-      return new NextResponse('Bot blocked from images', { status: 403 });
-    }
-    
-    if (pathname.includes('/api/directus/') || 
-        pathname.includes('/api/widget/')) {
-      console.log('🚫 MIDDLEWARE: Blocked bot from API:', userAgent);
-      return new NextResponse('Bot blocked from API', { status: 403 });
-    }
+  const pathname = request.nextUrl.pathname;
+
+  // �� EMERGENCY: AGGRESSIVE BOT BLOCKING - Block ALL non-human traffic
+  const isBot = 
+    // Major search engine bots
+    /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
+    // Social media crawlers
+    /facebookcrawler|instagrambot|pinterestbot|snapchatbot|tiktokbot|discordbot/i.test(userAgent) ||
+    // SEO and monitoring tools
+    /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot|screaming frog|sitebulb/i.test(userAgent) ||
+    // Generic bot patterns
+    /bot|crawler|spider|scraper|fetch|wget|curl|python|java|go-http|okhttp/i.test(userAgent) ||
+    // Empty or suspicious user agents
+    userAgent === '' || userAgent.length < 10 ||
+    // Non-browser patterns
+    !/mozilla|chrome|safari|firefox|edge|opera/i.test(userAgent) ||
+    // Headless browsers
+    /headless|phantom|selenium|puppeteer|playwright/i.test(userAgent)
+
+  // Block bots from expensive image routes
+  const isImageRoute = 
+    pathname.startsWith('/api/directus/assets/') ||
+    pathname.startsWith('/_next/image') ||
+    pathname.startsWith('/images/') ||
+    /\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|tiff)$/i.test(pathname)
+
+  if (isBot && isImageRoute) {
+    console.log(`🚨 BLOCKED BOT: ${userAgent} accessing ${pathname}`)
+    return new NextResponse('Bot access to images blocked', { status: 403 })
   }
 
   // Skip middleware per API routes, file statici, etc.
@@ -132,8 +132,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images|widgets).*)',
-    '/api/directus/:path*',
-    '/api/widget/:path*'
+    // Match all paths except static files and API routes that should be accessible
+    '/((?!_next/static|favicon.ico|robots.txt|sitemap.xml).*)',
   ]
 }
