@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Phone, Mail, ExternalLink, Building2, Star } from "lucide-react";
 import directusClient from "@/lib/directus";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface DestinationCompaniesProps {
   destinationId: string;
