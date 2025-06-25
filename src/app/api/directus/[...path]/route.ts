@@ -10,30 +10,22 @@ export async function GET(
   try {
     const userAgent = request.headers.get('user-agent') || '';
     
-    // 🚨 EMERGENCY: ULTRA-AGGRESSIVE BOT BLOCKING
+    // 🔧 FIXED: More precise bot detection - only block obvious bots
     const isBot = 
-      // Major search engines and social crawlers
-      /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
-      /facebookcrawler|instagrambot|pinterestbot|snapchatbot|tiktokbot|discordbot/i.test(userAgent) ||
-      // SEO tools and monitoring
-      /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot|screaming frog|sitebulb|seobility|serpstat/i.test(userAgent) ||
-      // Generic bot patterns
-      /bot|crawler|spider|scraper|fetch|wget|curl|python|java|go-http|okhttp|apache|nginx/i.test(userAgent) ||
-      // Programming languages and tools
-      /node|php|ruby|perl|rust|go\/|python-|java\/|c\+\+|.net|powershell/i.test(userAgent) ||
-      // Headless and automation
-      /headless|phantom|selenium|puppeteer|playwright|zombie|jsdom/i.test(userAgent) ||
-      // Suspicious patterns
-      userAgent === '' || 
-      userAgent.length < 10 || 
-      userAgent.length > 500 ||
-      // Must contain browser indicators
-      !/mozilla|chrome|safari|firefox|edge|opera/i.test(userAgent) ||
-      // Block non-standard versions
-      !/version|rv:|chrome\/|firefox\/|safari\/|edge\//i.test(userAgent)
+      // Major search engines and social crawlers (keep these)
+      /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot/i.test(userAgent) ||
+      /facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
+      // SEO tools and monitoring (keep these)
+      /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot/i.test(userAgent) ||
+      // Only obvious bot patterns
+      /crawler|spider|scraper|wget|curl/i.test(userAgent) ||
+      // Empty user agents
+      userAgent === '' ||
+      // Very short user agents (suspicious)
+      userAgent.length < 5
     
     if (isBot) {
-      console.log(`🚨 DIRECTUS API: BLOCKED BOT - ${userAgent}`);
+      console.log(`🚫 DIRECTUS API: BLOCKED BOT - ${userAgent}`);
       return new Response('Bot access denied', { 
         status: 403,
         headers: { 'Content-Type': 'text/plain' }

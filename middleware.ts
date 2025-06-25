@@ -77,24 +77,22 @@ export function middleware(request: NextRequest) {
   const userAgent = request.headers.get('user-agent') || '';
   const pathname = request.nextUrl.pathname;
 
-  // �� EMERGENCY: AGGRESSIVE BOT BLOCKING - Block ALL non-human traffic
+  // 🔧 FIXED: More precise bot detection - only block obvious bots
   const isBot = 
-    // Major search engine bots
-    /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
-    // Social media crawlers
-    /facebookcrawler|instagrambot|pinterestbot|snapchatbot|tiktokbot|discordbot/i.test(userAgent) ||
-    // SEO and monitoring tools
-    /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot|screaming frog|sitebulb/i.test(userAgent) ||
-    // Generic bot patterns
-    /bot|crawler|spider|scraper|fetch|wget|curl|python|java|go-http|okhttp/i.test(userAgent) ||
-    // Empty or suspicious user agents
-    userAgent === '' || userAgent.length < 10 ||
-    // Non-browser patterns
-    !/mozilla|chrome|safari|firefox|edge|opera/i.test(userAgent) ||
-    // Headless browsers
-    /headless|phantom|selenium|puppeteer|playwright/i.test(userAgent)
+    // Major search engine bots (keep these)
+    /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot/i.test(userAgent) ||
+    // Social media crawlers (keep these)
+    /facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(userAgent) ||
+    // SEO and monitoring tools (keep these)
+    /semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot/i.test(userAgent) ||
+    // Only obvious bot patterns (removed generic patterns that catch browsers)
+    /crawler|spider|scraper|wget|curl/i.test(userAgent) ||
+    // Empty user agents (keep this)
+    userAgent === '' ||
+    // Very short user agents (suspicious)
+    userAgent.length < 5
 
-  // Block bots from expensive image routes
+  // Only block bots from expensive image routes
   const isImageRoute = 
     pathname.startsWith('/api/directus/assets/') ||
     pathname.startsWith('/_next/image') ||
@@ -102,7 +100,7 @@ export function middleware(request: NextRequest) {
     /\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|tiff)$/i.test(pathname)
 
   if (isBot && isImageRoute) {
-    console.log(`🚨 BLOCKED BOT: ${userAgent} accessing ${pathname}`)
+    console.log(`🚫 BLOCKED BOT: ${userAgent} accessing ${pathname}`)
     return new NextResponse('Bot access to images blocked', { status: 403 })
   }
 
