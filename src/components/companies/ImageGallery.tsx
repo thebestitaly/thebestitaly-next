@@ -186,7 +186,7 @@ export default function ImageGallery({ images, companyName, featuredImage }: Ima
           <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center p-4">
             <div className="relative w-full h-full" style={{ minHeight: '400px' }}>
               <Image
-                src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${allImages[currentImageIndex].directus_files_id}?width=1200&height=800&fit=inside`}
+                src={getOptimizedImageUrl(allImages[currentImageIndex].directus_files_id, 'HERO_DESKTOP')}
                 alt={`${companyName} - Immagine ${currentImageIndex + 1} di ${allImages.length}`}
                 fill
                 className="object-contain"
@@ -225,7 +225,7 @@ export default function ImageGallery({ images, companyName, featuredImage }: Ima
                   type="button"
                 >
                   <Image
-                    src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${image.directus_files_id}?width=100&height=100&fit=cover`}
+                    src={getOptimizedImageUrl(image.directus_files_id, 'MICRO')}
                     alt=""
                     width={48}
                     height={48}

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import directusClient, { getSlugsAndBreadcrumbs } from "@/lib/directus";
 import Breadcrumb from "@/components/layout/Breadcrumb";
-import { getOptimizedImageUrl } from "@/lib/directus-optimization";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
@@ -221,7 +221,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Mobile: immagine più piccola */}
             <div className="block md:hidden w-full h-full relative">
               <Image
-                src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, destination.image, 'HERO_MOBILE')}
+                src={getOptimizedImageUrl(destination.image, 'HERO_MOBILE')}
                 alt={translation?.destination_name || ""}
                 fill
                 className="object-cover"
@@ -232,7 +232,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Desktop: immagine ottimizzata */}
             <div className="hidden md:block w-full h-full relative">
               <Image
-                src={getOptimizedImageUrl(process.env.NEXT_PUBLIC_DIRECTUS_URL!, destination.image, 'HERO_DESKTOP')}
+                src={getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}
                 alt={translation?.destination_name || ""}
                 fill
                 className="object-cover"
