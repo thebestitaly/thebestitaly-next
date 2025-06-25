@@ -131,8 +131,9 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
               <div className="relative aspect-[3/2] overflow-hidden  rounded-xl">
                 {company.featured_image ? (
                   <Image
-                    src={getOptimizedImageUrl(company.featured_image, 'THUMBNAIL')}
+                    src={getOptimizedImageUrl(company.featured_image, 'CARD')}
                     alt={company.company_name}
+                    loading="lazy"
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />

@@ -28,7 +28,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, lang }) => {
         {article.image && (
           <div className="relative w-full h-[250px] overflow-hidden rounded-lg">
             <Image
-              src={getOptimizedImageUrl(article.image, 'CARD')}
+              src={getOptimizedImageUrl(article.image, 'HERO_MOBILE')}
               alt={translation?.titolo_articolo}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"

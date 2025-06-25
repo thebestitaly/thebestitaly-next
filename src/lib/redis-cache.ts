@@ -84,7 +84,7 @@ export const CACHE_DURATIONS = {
   // Homepage e liste - CACHE PIÙ AGGRESSIVA per contenuti più visti
   HOMEPAGE_DESTINATIONS: 60 * 60 * 24 * 3, // 3 GIORNI (era 1) - featured homepage
   FEATURED_COMPANIES: 60 * 60 * 24 * 3, // 3 GIORNI (era 1) - featured homepage
-  LATEST_ARTICLES: 60 * 60 * 12, // 12 ORE (era 6) - gli ultimi articoli possono cambiare
+  LATEST_ARTICLES: 60 * 60 * 1, // 12 ORE (era 6) - gli ultimi articoli possono cambiare
   
   // Homepage articles - NUOVA CATEGORIA per ottimizzare
   HOMEPAGE_ARTICLES: 60 * 60 * 24 * 2, // 2 GIORNI - articoli featured homepage

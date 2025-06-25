@@ -32,11 +32,11 @@ export const getOptimizedImageUrl = (
   if (!assetId) return '';
   
   const presets = {
-    MICRO: { width: 24, height: 24, quality: 25 },
-    THUMBNAIL: { width: 60, height: 60, quality: 35 },
-    CARD: { width: 150, height: 100, quality: 40 },
-    HERO_MOBILE: { width: 300, height: 200, quality: 45 },
-    HERO_DESKTOP: { width: 400, height: 180, quality: 50 }
+    MICRO: { width: 48, height: 48, quality: 45 },
+    THUMBNAIL: { width: 100, height: 80, quality: 55 },
+    CARD: { width: 200, height: 150, quality: 60 },
+    HERO_MOBILE: { width: 300, height: 200, quality: 60 },
+    HERO_DESKTOP: { width: 600, height: 400, quality: 60 }
   };
   
   return getDirectusImageUrl(assetId, { ...presets[preset], fit: 'cover' });
