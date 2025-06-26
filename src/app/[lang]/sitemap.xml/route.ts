@@ -311,6 +311,7 @@ export async function GET(
   // Check for force parameter to bypass cache
   const url = new URL(request.url);
   const forceRegenerate = url.searchParams.get('force') === '1';
+  const timestamp = url.searchParams.get('t'); // Timestamp per bypassare Cloudflare
   
   // Check cache (skip if force=1)
   const cached = sitemapCache.get(cacheKey);
@@ -351,8 +352,8 @@ export async function GET(
     return new Response(sitemap, {
       headers: {
         'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=21600, s-maxage=21600',
-        'X-Cache-Status': 'MISS'
+        'Cache-Control': forceRegenerate ? 'no-cache, no-store, must-revalidate' : 'public, max-age=21600, s-maxage=21600',
+        'X-Cache-Status': forceRegenerate ? 'FORCE' : 'MISS'
       },
     });
   } catch (error) {
