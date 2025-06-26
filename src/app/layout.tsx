@@ -76,6 +76,10 @@ export default function RootLayout({
         {/* 🎯 META DESCRIPTION HARDCODED per PageSpeed Insights */}
         <meta name="description" content="Discover the best destinations and excellences of Italy. The complete guide for quality tourism in over 50 languages." />
         
+        {/* 🚫 BLOCCA Cloudflare RUM per evitare errori 404 */}
+        <meta name="cf-rum" content="disabled" />
+        <meta httpEquiv="Content-Security-Policy" content="connect-src 'self' https://www.googletagmanager.com https://fonts.googleapis.com https://widget.getyourguide.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://widget.getyourguide.com; object-src 'none';" />
+        
         {/* Removed preconnect to Railway to force using our proxy */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
@@ -90,9 +94,6 @@ export default function RootLayout({
         <meta name="color-scheme" content="light" />
         
         <meta name="naver-site-verification" content="456897315623611c6ab1dd38be219cded9a1cef6" />
-        
-        {/* Disable Cloudflare RUM if not properly configured */}
-        <meta name="cf-rum" content="disabled" />
         
         <script
           dangerouslySetInnerHTML={{
