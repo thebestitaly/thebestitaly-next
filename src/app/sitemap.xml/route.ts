@@ -1,8 +1,10 @@
 export async function GET() {
   const languages = [
-    'it', 'en', 'fr', 'es', 'pt', 'de', 'tr', 'nl', 'ro', 'sv', 'pl', 'vi', 'id', 'el', 'uk', 'ru',
-    'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja', 'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg', 'sk',
-    'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca', 'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is', 'sw', 'zh-tw'
+    'af', 'am', 'ar', 'az', 'bg', 'bn', 'ca', 'cs', 'da', 'de', 
+    'el', 'en', 'es', 'et', 'fa', 'fi', 'fr', 'he', 'hi', 'hr', 
+    'hu', 'hy', 'id', 'is', 'it', 'ja', 'ka', 'ko', 'lt', 'lv', 
+    'mk', 'ms', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 
+    'sv', 'sw', 'th', 'tl', 'tk', 'uk', 'ur', 'vi', 'zh', 'zh-tw'
   ];
   
   const sitemapIndex = `<?xml version="1.0" encoding="UTF-8"?>
@@ -10,6 +12,10 @@ export async function GET() {
 ${languages.map(lang => `  <sitemap>
     <loc>https://thebestitaly.eu/${lang}/sitemap.xml</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://thebestitaly.eu/${lang}/sitemap-destinations.xml</loc>
+    <lastmod>2024-01-01T00:00:00.000Z</lastmod>
   </sitemap>`).join('\n')}
 </sitemapindex>`;
 

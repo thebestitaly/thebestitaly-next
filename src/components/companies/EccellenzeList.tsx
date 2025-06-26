@@ -209,7 +209,7 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
                   <Link href={company.slug_permalink ? `/${lang}/poi/${company.slug_permalink}/` : '#'}>
                     {company.featured_image ? (
                       <Image
-                        src={getOptimizedImageUrl(company.featured_image, 'THUMBNAIL')}
+                        src={getOptimizedImageUrl(company.featured_image, 'CARD')}
                         alt={company.company_name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"

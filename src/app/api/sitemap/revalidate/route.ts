@@ -4,6 +4,41 @@ import { NextRequest, NextResponse } from 'next/server';
 // In produzione, questo dovrebbe essere sostituito con Redis o un altro store persistente
 const sitemapCache = new Map<string, { data: string; timestamp: number }>();
 
+// Funzione per fare purge di Cloudflare cache
+async function purgeCloudflareCache(url: string) {
+  try {
+    const cloudflareZoneId = process.env.CLOUDFLARE_ZONE_ID;
+    const cloudflareApiToken = process.env.CLOUDFLARE_API_TOKEN;
+    
+    if (!cloudflareZoneId || !cloudflareApiToken) {
+      console.log('⚠️ Cloudflare credentials not configured, skipping purge');
+      return false;
+    }
+    
+    const response = await fetch(`https://api.cloudflare.com/client/v4/zones/${cloudflareZoneId}/purge_cache`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${cloudflareApiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        files: [url]
+      })
+    });
+    
+    if (response.ok) {
+      console.log(`✅ Cloudflare cache purged for: ${url}`);
+      return true;
+    } else {
+      console.error(`❌ Cloudflare purge failed: ${response.status}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Cloudflare purge error:', error);
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Verifica token di autorizzazione
@@ -37,12 +72,16 @@ export async function POST(request: NextRequest) {
       const cacheKey = `sitemap-${lang}`;
       const deleted = sitemapCache.delete(cacheKey);
       
+      // NUOVO: Purge anche Cloudflare cache
+      const cloudflarePurged = await purgeCloudflareCache(`https://thebestitaly.eu/${lang}/sitemap.xml`);
+      
       console.log(`Sitemap cache cleared for language: ${lang}`);
       
       return NextResponse.json({
         success: true,
-        message: `Sitemap cache cleared for language: ${lang}`,
-        clearedEntries: deleted ? 1 : 0
+        message: `Sitemap cache cleared for language: ${lang}${cloudflarePurged ? ' (including Cloudflare)' : ' (Cloudflare purge skipped)'}`,
+        clearedEntries: deleted ? 1 : 0,
+        cloudflarePurged
       });
     }
 
