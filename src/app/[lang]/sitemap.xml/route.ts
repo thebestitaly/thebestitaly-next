@@ -8,9 +8,9 @@ interface SitemapEntry {
   priority: number;
 }
 
-// Cache per le sitemap - durata ridotta per testing
+// Cache per le sitemap - durata 24 ore (sitemap cambiano raramente)
 const sitemapCache = new Map<string, { data: string; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minuti per testing
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 ore
 
 // Funzione per escapare caratteri XML e validare URL
 function escapeXml(unsafe: string): string {
