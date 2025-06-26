@@ -8,9 +8,9 @@ interface SitemapEntry {
   priority: number;
 }
 
-// Cache per le sitemap - durata 24 ore (sitemap cambiano raramente)
+// Cache per le sitemap - durata ridotta per testing
 const sitemapCache = new Map<string, { data: string; timestamp: number }>();
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 ore
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minuti per testing
 
 // Funzione per escapare caratteri XML e validare URL
 function escapeXml(unsafe: string): string {
@@ -189,13 +189,13 @@ async function generateSitemap(lang: string): Promise<string> {
           params: {
             fields: [
               'type', 
-              'region_id',
-              'province_id',
-              'translations.slug_permalink'
+              'region_id.translations.slug_permalink',
+              'region_id.translations.languages_code',
+              'province_id.translations.slug_permalink', 
+              'province_id.translations.languages_code',
+              'translations.slug_permalink',
+              'translations.languages_code'
             ],
-            'deep[translations][_filter][languages_code][_eq]': lang,
-            'deep[region_id.translations][_filter][languages_code][_eq]': lang,
-            'deep[province_id.translations][_filter][languages_code][_eq]': lang,
             limit: batchSize,
             offset: offset
           }
