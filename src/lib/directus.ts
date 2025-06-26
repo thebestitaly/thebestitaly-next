@@ -1284,7 +1284,7 @@ class DirectusClient {
             'translations.slug_permalink',
           ],
           'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'limit': 1, // Solo il primo risultato
+          'limit': 1,
         },
       });
   
@@ -1471,110 +1471,36 @@ class DirectusClient {
 
   private async _getDestinationByIdDirect(id: string, languageCode: string): Promise<Destination | null> {
     try {
-      // Query ottimizzata: solo campi essenziali e filtrata per lingua
+      // 🚀 SINGLE QUERY with deep relations instead of 3 separate queries
       const response = await this.client.get('/items/destinations', {
         params: {
           'filter[id][_eq]': id,
           'fields[]': [
             'id',
-            'uuid_id',
             'type',
             'image',
-            'region_id',
-            'province_id',
+            'region_id.id',
+            'region_id.translations.destination_name',
+            'region_id.translations.slug_permalink',
+            'province_id.id', 
+            'province_id.translations.destination_name',
+            'province_id.translations.slug_permalink',
             'translations.destination_name',
             'translations.slug_permalink',
             'translations.seo_title',
-            'translations.seo_summary',
-            'translations.languages_code'
+            'translations.seo_summary'
           ],
-          'deep[translations][_filter][languages_code][_in]': `${languageCode},it`
+          'deep[translations][_filter][languages_code][_eq]': languageCode,
+          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
+          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
+          'limit': 1
         },
       });
 
       const destination = response.data?.data[0];
       if (!destination) return null;
 
-      // Applica fallback in italiano per le traduzioni principali
-      let translation = destination.translations?.find((t: any) => t.languages_code === languageCode);
-      if (!translation) {
-        translation = destination.translations?.find((t: any) => t.languages_code === 'it');
-      }
-
-      // Applica fallback per la traduzione principale
-      destination.translations = translation ? [translation] : [];
-
-      // Se abbiamo region_id o province_id, proviamo a caricarli separatamente con query ottimizzata
-      if (destination.region_id && (typeof destination.region_id === 'string' || typeof destination.region_id === 'number')) {
-        try {
-          const regionResponse = await this.client.get('/items/destinations', {
-            params: {
-              'filter[id][_eq]': destination.region_id.toString(),
-              'fields[]': [
-                'id', 
-                'uuid_id', 
-                'image', 
-                'translations.destination_name',
-                'translations.slug_permalink',
-                'translations.languages_code'
-              ],
-              'deep[translations][_filter][languages_code][_in]': `${languageCode},it`
-            }
-          });
-          const regionData = regionResponse.data?.data[0];
-          if (regionData) {
-            let regionTranslation = regionData.translations?.find((t: any) => t.languages_code === languageCode);
-            if (!regionTranslation) {
-              regionTranslation = regionData.translations?.find((t: any) => t.languages_code === 'it');
-            }
-            destination.region_id = {
-              id: regionData.id,
-              uuid_id: regionData.uuid_id,
-              image: regionData.image,
-              translations: regionTranslation ? [regionTranslation] : []
-            };
-          }
-        } catch (error) {
-          console.warn('Could not load region data:', error);
-          destination.region_id = null;
-        }
-      }
-
-      if (destination.province_id && (typeof destination.province_id === 'string' || typeof destination.province_id === 'number')) {
-        try {
-          const provinceResponse = await this.client.get('/items/destinations', {
-            params: {
-              'filter[id][_eq]': destination.province_id.toString(),
-              'fields[]': [
-                'id', 
-                'uuid_id', 
-                'image', 
-                'translations.destination_name',
-                'translations.slug_permalink',
-                'translations.languages_code'
-              ],
-              'deep[translations][_filter][languages_code][_in]': `${languageCode},it`
-            }
-          });
-          const provinceData = provinceResponse.data?.data[0];
-          if (provinceData) {
-            let provinceTranslation = provinceData.translations?.find((t: any) => t.languages_code === languageCode);
-            if (!provinceTranslation) {
-              provinceTranslation = provinceData.translations?.find((t: any) => t.languages_code === 'it');
-            }
-            destination.province_id = {
-              id: provinceData.id,
-              uuid_id: provinceData.uuid_id,
-              image: provinceData.image,
-              translations: provinceTranslation ? [provinceTranslation] : []
-            };
-          }
-        } catch (error) {
-          console.warn('Could not load province data:', error);
-          destination.province_id = null;
-        }
-      }
-
+      // 🚀 Data already filtered by language thanks to deep filtering
       return destination;
     } catch (error) {
       console.error('Error fetching destination by ID:', error);
