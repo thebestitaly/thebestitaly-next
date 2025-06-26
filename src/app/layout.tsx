@@ -11,6 +11,59 @@ const poppins = Poppins({
   fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 })
 
+// 🎯 META DESCRIPTION GLOBALE per PageSpeed Insights
+export const metadata: Metadata = {
+  title: {
+    template: '%s | TheBestItaly',
+    default: 'TheBestItaly - Discover the Best of Italy',
+  },
+  description: 'Discover the best destinations and excellences of Italy. The complete guide for quality tourism in over 50 languages.',
+  keywords: ['Italy', 'travel', 'destinations', 'tourism', 'Italian experiences', 'vacation', 'hotels', 'restaurants', 'excellence'],
+  authors: [{ name: 'TheBestItaly' }],
+  creator: 'TheBestItaly',
+  publisher: 'TheBestItaly',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'it_IT',
+    url: 'https://thebestitaly.eu',
+    siteName: 'TheBestItaly',
+    title: 'TheBestItaly - Discover the Best of Italy',
+    description: 'Discover the best destinations and excellences of Italy. The complete guide for quality tourism in over 50 languages.',
+    images: [
+      {
+        url: 'https://thebestitaly.eu/images/hero/hero-img-1.webp',
+        width: 1200,
+        height: 630,
+        alt: 'TheBestItaly - Discover the Best of Italy',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TheBestItaly - Discover the Best of Italy',
+    description: 'Discover the best destinations and excellences of Italy. The complete guide for quality tourism in over 50 languages.',
+    images: ['https://thebestitaly.eu/images/hero/hero-img-1.webp'],
+    creator: '@thebestitaly',
+    site: '@thebestitaly',
+  },
+  other: {
+    'format-detection': 'telephone=no',
+    'theme-color': '#1e40af',
+    'color-scheme': 'light',
+  },
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -20,6 +73,9 @@ export default function RootLayout({
     <html lang="it" dir="ltr" className={`${poppins.variable} font-sans`}>
       <head>
         <link rel="icon" href="/favicon.ico" />
+        {/* 🎯 META DESCRIPTION HARDCODED per PageSpeed Insights */}
+        <meta name="description" content="Discover the best destinations and excellences of Italy. The complete guide for quality tourism in over 50 languages." />
+        
         {/* Removed preconnect to Railway to force using our proxy */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
