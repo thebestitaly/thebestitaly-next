@@ -44,7 +44,9 @@ export async function GET(
       }
     }
 
-    const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+    // 🚨 CRITICAL FIX: NEVER forward directly to Railway!
+    // Always use the Railway URL but through our domain for Cloudflare cache
+    const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'https://directus-production-93f0.up.railway.app';
     
     if (!directusUrl) {
       return NextResponse.json(
@@ -59,7 +61,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams.toString();
     const fullUrl = `${directusUrl}/${path}${searchParams ? `?${searchParams}` : ''}`;
 
-    console.log(`📖 Directus Proxy (READ): GET ${fullUrl}`);
+    console.log(`📖 Directus Proxy (VIA PROXY): GET ${fullUrl}`);
 
     // Forward della richiesta a Directus con token di lettura
     // Prova prima il token admin, poi quello pubblico

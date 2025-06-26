@@ -281,17 +281,18 @@ class DirectusClient {
     if (isBrowser) {
       baseURL = '/api/directus';
     } else {
-      // Server-side: usa l'URL dell'app se disponibile, altrimenti fallback a Directus diretto
+      // Server-side: usa sempre il proxy per evitare costi Railway
       const appUrl = process.env.NEXT_PUBLIC_APP_URL;
       const isBuild = process.env.NODE_ENV === 'production' && !process.env.RAILWAY_ENVIRONMENT_NAME;
       
       if (isBuild) {
-        // 🚨 EMERGENCY: NEVER use direct Railway URLs - always use proxy even during build
+        // Durante il build statico, usa il dominio di produzione
         baseURL = 'https://thebestitaly.eu/api/directus';
       } else if (appUrl && !appUrl.includes('localhost')) {
+        // Su Railway o altri hosting, usa il dominio configurato
         baseURL = appUrl + '/api/directus';
       } else {
-        // 🚨 EMERGENCY: For localhost development, still use proxy to prevent Railway costs
+        // Fallback per sviluppo locale
         baseURL = 'https://thebestitaly.eu/api/directus';
       }
     }
