@@ -8,9 +8,9 @@ interface SitemapEntry {
   priority: number;
 }
 
-// Cache per le sitemap - durata 6 ore
+// Cache per le sitemap - durata 24 ore (sitemap cambiano raramente)
 const sitemapCache = new Map<string, { data: string; timestamp: number }>();
-const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 ore
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 ore
 
 // Funzione per escapare caratteri XML e validare URL
 function escapeXml(unsafe: string): string {
@@ -188,17 +188,14 @@ async function generateSitemap(lang: string): Promise<string> {
         const destinationsResponse = await directusClient.get('/items/destinations', {
           params: {
             fields: [
-              'id',
               'type', 
               'region_id',
               'province_id',
-              'translations.slug_permalink', 
-              'translations.languages_code',
-              'region_id.translations.slug_permalink',
-              'region_id.translations.languages_code',
-              'province_id.translations.slug_permalink',
-              'province_id.translations.languages_code'
+              'translations.slug_permalink'
             ],
+            'deep[translations][_filter][languages_code][_eq]': lang,
+            'deep[region_id.translations][_filter][languages_code][_eq]': lang,
+            'deep[province_id.translations][_filter][languages_code][_eq]': lang,
             limit: batchSize,
             offset: offset
           }
