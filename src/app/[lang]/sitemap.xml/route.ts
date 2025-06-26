@@ -308,9 +308,13 @@ export async function GET(
   const cacheKey = `sitemap-${lang}`;
   const now = Date.now();
   
-  // Check cache
+  // Check for force parameter to bypass cache
+  const url = new URL(request.url);
+  const forceRegenerate = url.searchParams.get('force') === '1';
+  
+  // Check cache (skip if force=1)
   const cached = sitemapCache.get(cacheKey);
-  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+  if (!forceRegenerate && cached && (now - cached.timestamp) < CACHE_DURATION) {
     console.log(`💾 Serving cached sitemap for ${lang}`);
     return new Response(cached.data, {
       headers: {
