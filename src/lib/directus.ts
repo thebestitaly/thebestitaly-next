@@ -1264,13 +1264,7 @@ class DirectusClient {
             'id',
             'type',
             'region_id',
-            'region_id.translations.slug_permalink',
-            'region_id.translations.destination_name',
             'province_id',
-            'province_id.id', // Assicurati di recuperare l'ID della provincia
-            'province_id.translations.slug_permalink',
-            'province_id.translations.destination_name',
-            'parent.translations.slug_permalink',
             'image',
             'lat',
             'long',
@@ -1281,9 +1275,7 @@ class DirectusClient {
             'translations.slug_permalink',
           ],
           'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
-          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
-          'deep[parent.translations][_filter][languages_code][_eq]': languageCode,
+          'limit': 1, // Solo il primo risultato
         },
       });
   
