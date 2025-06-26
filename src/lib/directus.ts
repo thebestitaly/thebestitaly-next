@@ -199,15 +199,17 @@ export const getSlugsAndBreadcrumbs = async (destinationId: string, lang: string
           id: { _eq: destinationId },
         },
         fields: [
-          'id',
           'type',
-          'translations.slug_permalink',
           'region_id',
-          'province_id',
+          'province_id', 
+          'translations.slug_permalink',
           'region_id.translations.slug_permalink',
           'province_id.translations.slug_permalink',
         ],
-        lang,
+        'deep[translations][_filter][languages_code][_eq]': lang,
+        'deep[region_id.translations][_filter][languages_code][_eq]': lang,
+        'deep[province_id.translations][_filter][languages_code][_eq]': lang,
+        limit: 1,
       },
     });
 
@@ -622,7 +624,7 @@ class DirectusClient {
               }
             }
           },
-          limit: 10,
+          limit: 15, // Aumento a 15 per compensare eventuali traduzioni mancanti
           sort: ['-date_created']
         }
       });
@@ -631,23 +633,30 @@ class DirectusClient {
       console.log(`[getLatestArticlesForHomepage] Found ${articles.length} articles for language: ${lang}`);
 
       // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere le traduzioni corrette  
-      return articles.map((article: any) => {
-        const translation = article.translations?.[0];
-        const categoryTranslation = article.category_id?.translations?.[0];
+      const validArticles = articles
+        .map((article: any) => {
+          const translation = article.translations?.[0];
+          const categoryTranslation = article.category_id?.translations?.[0];
 
-        if (!translation) {
-          console.warn(`[getLatestArticlesForHomepage] Missing translation for article ${article.id}, language: ${lang}`);
-        }
+          if (!translation) {
+            console.warn(`[getLatestArticlesForHomepage] Missing translation for article ${article.id}, language: ${lang}`);
+            return null; // Scarta articoli senza traduzione
+          }
 
-        return {
-          ...article,
-          translations: translation ? [translation] : [],
-          category_id: article.category_id ? {
-            ...article.category_id,
-            translations: categoryTranslation ? [categoryTranslation] : []
-          } : undefined
-        };
-      });
+          return {
+            ...article,
+            translations: [translation],
+            category_id: article.category_id ? {
+              ...article.category_id,
+              translations: categoryTranslation ? [categoryTranslation] : []
+            } : undefined
+          };
+        })
+        .filter(Boolean) // Rimuovi articoli null
+        .slice(0, 12); // Prendi solo i primi 12 articoli validi
+
+      console.log(`[getLatestArticlesForHomepage] Returning ${validArticles.length} valid articles out of ${articles.length} fetched`);
+      return validArticles;
     } catch (error) {
       console.error('Error fetching latest articles:', error);
       return [];
