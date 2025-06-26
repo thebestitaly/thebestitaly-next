@@ -172,117 +172,42 @@ async function generateSitemap(lang: string): Promise<string> {
     console.error('❌ Error fetching categories:', error);
   }
 
-  // 5. Destinations - sistema questo con approccio a batch per gestire 7900 destinations
+  // 5. Destinations - SOLO REGIONI per evitare crash memoria
   try {
-    console.log(`🗺️ Fetching destinations for ${lang}...`);
+    console.log(`🗺️ Fetching ONLY regions for ${lang} (memory optimization)...`);
     
-    let allDestinations: any[] = [];
-    let offset = 0;
-    const batchSize = 500;
-    let hasMore = true;
-
-    while (hasMore && offset < 8000) { // Limite sicurezza per evitare loop infiniti
-      try {
-        console.log(`📍 Fetching destinations batch: ${offset}-${offset + batchSize}`);
-        
-        const destinationsResponse = await directusClient.get('/items/destinations', {
-          params: {
-            fields: [
-              'type', 
-              'region_id.translations.slug_permalink',
-              'region_id.translations.languages_code',
-              'province_id.translations.slug_permalink', 
-              'province_id.translations.languages_code',
-              'translations.slug_permalink',
-              'translations.languages_code'
-            ],
-            limit: batchSize,
-            offset: offset
-          }
-        });
-
-        const batch = destinationsResponse.data?.data || [];
-        console.log(`📍 Batch ${offset / batchSize + 1}: got ${batch.length} destinations`);
-        
-        if (batch.length === 0) {
-          hasMore = false;
-        } else {
-          allDestinations = allDestinations.concat(batch);
-          offset += batchSize;
-        }
-
-        // Se il batch è più piccolo del batchSize, siamo alla fine
-        if (batch.length < batchSize) {
-          hasMore = false;
-        }
-
-      } catch (batchError) {
-        console.error(`❌ Error in destinations batch ${offset}:`, batchError);
-        hasMore = false; // Stop su errore per evitare loop infiniti
-      }
-    }
-
-    console.log(`🗺️ Total destinations fetched: ${allDestinations.length}`);
-
-    // Processa tutte le destinations
-    let regionsCount = 0;
-    let provincesCount = 0;
-    let municipalitiesCount = 0;
-
-    allDestinations.forEach((destination: any) => {
-      // Trova la traduzione per la lingua corrente
-      const translation = destination.translations?.find((t: any) => t.languages_code === lang);
-      
-      if (translation?.slug_permalink && destination.type) {
-        let url = '';
-        
-        if (destination.type === 'region') {
-          // Regioni: /{lang}/{slug}
-          url = `${baseUrl}/${lang}/${translation.slug_permalink}`;
-          regionsCount++;
-          
-        } else if (destination.type === 'province') {
-          // Province: /{lang}/{region_slug}/{province_slug}
-          const regionTranslation = destination.region_id?.translations?.find((t: any) => t.languages_code === lang);
-          if (regionTranslation?.slug_permalink) {
-            url = `${baseUrl}/${lang}/${regionTranslation.slug_permalink}/${translation.slug_permalink}`;
-            provincesCount++;
-          }
-          
-        } else if (destination.type === 'municipality') {
-          // Municipality: /{lang}/{region_slug}/{province_slug}/{municipality_slug}
-          const regionTranslation = destination.region_id?.translations?.find((t: any) => t.languages_code === lang);
-          const provinceTranslation = destination.province_id?.translations?.find((t: any) => t.languages_code === lang);
-          
-          if (regionTranslation?.slug_permalink && provinceTranslation?.slug_permalink) {
-            url = `${baseUrl}/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${translation.slug_permalink}`;
-            municipalitiesCount++;
-          }
-        }
-
-        // Validazione URL più robusta
-        if (url && 
-            url.length < 2000 && 
-            url.startsWith('https://thebestitaly.eu/') &&
-            !url.includes('<') && 
-            !url.includes('>') &&
-            !url.includes('&') &&
-            !url.includes('"') &&
-            !url.includes("'")) {
-          entries.push({
-            url,
-            lastModified: currentDate,
-            changeFrequency: destination.type === 'region' ? 'monthly' : 'yearly',
-            priority: destination.type === 'region' ? 0.8 : destination.type === 'province' ? 0.7 : 0.6
-          });
-        }
+    const regionsResponse = await directusClient.get('/items/destinations', {
+      params: {
+        fields: [
+          'translations.slug_permalink'
+        ],
+        filter: {
+          type: { _eq: 'region' },
+          'translations.languages_code': { _eq: lang }
+        },
+        limit: 50
       }
     });
 
-    console.log(`🗺️ Destinations processed: ${regionsCount} regions, ${provincesCount} provinces, ${municipalitiesCount} municipalities`);
+    const regions = regionsResponse.data?.data || [];
+    console.log(`🗺️ Found ${regions.length} regions`);
+
+    regions.forEach((region: any) => {
+      const translation = region.translations?.[0];
+      if (translation?.slug_permalink) {
+        entries.push({
+          url: `${baseUrl}/${lang}/${translation.slug_permalink}`,
+          lastModified: currentDate,
+          changeFrequency: 'monthly',
+          priority: 0.8
+        });
+      }
+    });
+
+    console.log(`🗺️ Added ${regions.length} regions to sitemap (provinces/municipalities skipped for memory)`);
 
   } catch (error) {
-    console.error('❌ Error fetching destinations:', error);
+    console.error('❌ Error fetching regions:', error);
   }
 
   // Genera XML con escape dei caratteri speciali
