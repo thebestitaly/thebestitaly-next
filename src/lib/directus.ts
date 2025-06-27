@@ -1301,12 +1301,14 @@ class DirectusClient {
     province_id,
     exclude_id,
     lang,
+    limit = 20, // Default sensato invece di illimitato
   }: {
     type: string;
     region_id?: string | number | { id: string | number };
     province_id?: string | number | { id: string | number };
     exclude_id?: string | number;
     lang: string;
+    limit?: number; // Nuovo parametro opzionale
   }): Promise<Destination[]> {
     // Try Redis cache first (server-side only)
     await loadRedisCache();
@@ -1327,6 +1329,7 @@ class DirectusClient {
             province_id,
             exclude_id,
             lang,
+            limit,
           });
         }
       );
@@ -1339,6 +1342,7 @@ class DirectusClient {
       province_id,
       exclude_id,
       lang,
+      limit,
     });
   }
 
@@ -1348,12 +1352,14 @@ class DirectusClient {
     province_id,
     exclude_id,
     lang,
+    limit = 20,
   }: {
     type: string;
     region_id?: string | number | { id: string | number };
     province_id?: string | number | { id: string | number };
     exclude_id?: string | number;
     lang: string;
+    limit?: number;
   }): Promise<Destination[]> {
     try {
       const filterParams: Record<string, any> = {
@@ -1385,7 +1391,7 @@ class DirectusClient {
             'translations.slug_permalink',
           ],
           'deep[translations][_filter][languages_code][_eq]': lang,
-          limit: 100, // LIMITATO a 100 invece di -1 per evitare crash
+          limit: limit, // Usa il parametro passato
         },
       });
   

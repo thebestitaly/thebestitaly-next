@@ -57,62 +57,65 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
     staleTime: 1000 * 60 * 60, // 1 ora
   });
 
-  // Query per ottenere i comuni/province (limitati a 15 inizialmente) - React Query provides caching
+  // Query per ottenere i comuni/province (limitati direttamente nella query)
   const { data: municipalities, isLoading } = useQuery({
     queryKey: ["municipalities", provinceId || currentDestinationId, showAllMunicipalities, type, lang],
     queryFn: async () => {
+      const requestLimit = showAllMunicipalities ? 100 : 15; // Limita direttamente la query
+      
       if (type === "region") {
         // Per le regioni, ottieni le province
-        const allProvinces = await directusClient.getDestinations({
+        return await directusClient.getDestinations({
           type: "province",
           region_id: currentDestinationId,
           lang,
+          limit: requestLimit, // Passa il limit alla query
         });
-        return showAllMunicipalities ? allProvinces : allProvinces.slice(0, 15);
       } else {
         // Per province e comuni, ottieni i comuni
         const targetProvinceId = type === "province" ? currentDestinationId : provinceId;
         if (!targetProvinceId) return [];
         
-        const allMunicipalities = await directusClient.getDestinations({
+        return await directusClient.getDestinations({
           type: "municipality",
           province_id: targetProvinceId,
           exclude_id: type === "municipality" ? currentDestinationId : undefined,
           lang,
+          limit: requestLimit, // Passa il limit alla query
         });
-        
-        return showAllMunicipalities ? allMunicipalities : allMunicipalities.slice(0, 15);
       }
     },
     enabled: !!(currentDestinationId && (type === "region" || provinceId || (type === "province"))),
     staleTime: 1000 * 60 * 60, // 1 ora
   });
 
-  // Query per ottenere il conteggio totale (per sapere se mostrare il bottone "Carica altri") - React Query provides caching
+  // Query per ottenere il conteggio totale (limitato per performance)
   const { data: totalMunicipalities } = useQuery({
     queryKey: ["total-municipalities", provinceId || currentDestinationId, type, lang],
     queryFn: async () => {
       if (type === "region") {
-        // Per le regioni, conta le province
-        const allProvinces = await directusClient.getDestinations({
+        // Per le regioni, conta le province (max 50)
+        const provinces = await directusClient.getDestinations({
           type: "province",
           region_id: currentDestinationId,
           lang,
+          limit: 50, // Limite ragionevole per conteggio
         });
-        return allProvinces.length;
+        return provinces.length;
       } else {
-        // Per province e comuni, conta i comuni
+        // Per province e comuni, conta i comuni (max 200)
         const targetProvinceId = type === "province" ? currentDestinationId : provinceId;
         if (!targetProvinceId) return 0;
         
-        const allMunicipalities = await directusClient.getDestinations({
+        const municipalities = await directusClient.getDestinations({
           type: "municipality",
           province_id: targetProvinceId,
           exclude_id: type === "municipality" ? currentDestinationId : undefined,
           lang,
+          limit: 200, // Limite ragionevole per conteggio
         });
         
-        return allMunicipalities.length;
+        return municipalities.length;
       }
     },
     enabled: !!(currentDestinationId && (type === "region" || provinceId || (type === "province"))),
