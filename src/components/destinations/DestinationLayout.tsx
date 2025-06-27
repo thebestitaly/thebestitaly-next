@@ -266,7 +266,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
       {/* Hero Image - OTTIMIZZATO per ridurre Egress */}
       {destination.image && (
         <div className="px-4 mt-6 md:mt-12">
-          <div className="container mx-auto relative h-60 md:h-96 rounded-lg overflow-hidden" style={{ minHeight: '240px' }}>
+          <div className="container mx-auto relative h-60 md:h-96 rounded-lg overflow-hidden">
             {/* Mobile: immagine più piccola */}
             <div className="block md:hidden w-full h-full relative">
               <Image
@@ -279,7 +279,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               />
             </div>
             {/* Desktop: immagine ottimizzata */}
-            <div className="hidden md:block w-full h-full relative" style={{ minHeight: '384px' }}>
+            <div className="hidden md:block w-full h-full relative">
               <Image
                 src={getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}
                 alt={translation?.destination_name || ""}
@@ -359,26 +359,22 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Table of Contents - Sticky - Desktop only */}
-            <div className="hidden md:block sticky top-16 z-10 mb-10" style={{ minHeight: '800px' }}>
+            <div className="hidden md:block sticky top-16 z-10 mb-10">
               <TableOfContents content={tocContent} />
               <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-lg mb-4"></div>}>
-                <div style={{ minHeight: '400px' }}>
-                  <DestinationSidebar
-                    currentDestinationId={destination.id}
-                    regionSlug={slugData.regionSlug}
-                    provinceSlug={slugData.provinceSlug}
-                    currentSlug={translation?.slug_permalink || ""}
-                    provinceId={provinceId || undefined}  // Passa solo l'ID della provincia come stringa
-                    regionId={regionId || undefined}  // Passa l'ID della regione
-                    lang={lang}
-                    type={destination.type}
-                  />
-                </div>
+                <DestinationSidebar
+                  currentDestinationId={destination.id}
+                  regionSlug={slugData.regionSlug}
+                  provinceSlug={slugData.provinceSlug}
+                  currentSlug={translation?.slug_permalink || ""}
+                  provinceId={provinceId || undefined}  // Passa solo l'ID della provincia come stringa
+                  regionId={regionId || undefined}  // Passa l'ID della regione
+                  lang={lang}
+                  type={destination.type}
+                />
               </Suspense>
               <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
-                <div style={{ minHeight: '300px' }}>
-                  <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
-                </div>
+                <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
               </Suspense>
             </div>
             
