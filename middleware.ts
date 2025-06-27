@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// 1x1 transparent PNG as base64 (43 bytes) - same as Directus proxy
+const TRANSPARENT_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
 // Province to Region mapping - inline per evitare problemi import in produzione
 const provinceToRegion: Record<string, string> = {
   // Abruzzo
@@ -100,8 +103,19 @@ export function middleware(request: NextRequest) {
     /\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|tiff)$/i.test(pathname)
 
   if (isBot && isImageRoute) {
-    console.log(`🚫 BLOCKED BOT: ${userAgent} accessing ${pathname}`)
-    return new NextResponse('Bot access to images blocked', { status: 403 })
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🚫 BLOCKED BOT: ${userAgent} accessing ${pathname}`)
+    }
+    // Return 1x1 transparent PNG instead of text to avoid image optimization errors
+    const buffer = Buffer.from(TRANSPARENT_PNG, 'base64');
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=86400', // Cache for 1 day
+        'Content-Length': buffer.length.toString(),
+      },
+    });
   }
 
   // Skip middleware per API routes, file statici, etc.

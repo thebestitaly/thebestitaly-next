@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // Proxy per le operazioni di LETTURA del DirectusClient
 // Le operazioni di SCRITTURA usano le API routes dedicate in /api/admin/
 
+// 1x1 transparent PNG as base64 (43 bytes)
+const TRANSPARENT_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -26,8 +29,19 @@ export async function GET(
         userAgent === '' || userAgent.length < 5
       
       if (isBot) {
-        console.log('🚫 BLOCKED BOT IMAGE REQUEST:', { userAgent, path: url.pathname });
-        return new NextResponse('Bot access to images blocked - cost control', { status: 403 });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚫 BLOCKED BOT IMAGE REQUEST:', { userAgent, path: url.pathname });
+        }
+        // Return 1x1 transparent PNG instead of text to avoid image optimization errors
+        const buffer = Buffer.from(TRANSPARENT_PNG, 'base64');
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400', // Cache for 1 day
+            'Content-Length': buffer.length.toString(),
+          },
+        });
       }
     }
     
@@ -39,8 +53,19 @@ export async function GET(
       // Our optimized presets: MICRO (24x24), THUMBNAIL (60x60), CARD (150x100), HERO_MOBILE (300x200), HERO_DESKTOP (400x180)
       // Emergency: Allow up to 1000px but block original size images (usually 1920px+)
       if (width > 1201 || quality > 85) {
-        console.log('🚨 EMERGENCY: Blocked large image request', { width, quality, userAgent });
-        return new NextResponse('Image too large - emergency cost control', { status: 429 });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚨 EMERGENCY: Blocked large image request', { width, quality, userAgent });
+        }
+        // Return 1x1 transparent PNG for oversized images too
+        const buffer = Buffer.from(TRANSPARENT_PNG, 'base64');
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400',
+            'Content-Length': buffer.length.toString(),
+          },
+        });
       }
     }
 
