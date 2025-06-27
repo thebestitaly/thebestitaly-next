@@ -18,38 +18,29 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
     setIsClient(true);
   }, []);
 
-  // Query per articoli della stessa destinazione - React Query provides caching
+  // 🚀 Query OTTIMIZZATA per articoli della stessa destinazione - Single query, no meta count
   const { data: destinationArticles } = useQuery({
-    queryKey: ['destination-articles', destinationId, lang],
-    queryFn: () => directusClient.getArticles(
-      lang, 
-      0, // offset
-      10, // limit
+    queryKey: ['destination-articles-sidebar', destinationId, lang],
+    queryFn: () => directusClient.getArticlesForSidebar(
+      lang,
       {
         destination_id: { _eq: destinationId },
         category_id: { _neq: 9 } // Escludi categoria 9
-      }
+      },
+      8 // Limite ridotto per sidebar
     ),
     enabled: isClient && !!destinationId,
-    staleTime: 1000 * 60 * 60 * 6, // 6 ORE (era 30 min) - cache più aggressiva
+    staleTime: 1000 * 60 * 60 * 6, // 6 ORE - cache aggressiva
     gcTime: 1000 * 60 * 60 * 12, // 12 ORE - mantieni in memoria più a lungo
   });
 
-  // Query per altri articoli (se non abbiamo abbastanza articoli della destinazione) - React Query provides caching
+  // 🚀 Query ULTRA-OTTIMIZZATA per altri articoli - Cache lunga, contenuti generici
   const { data: otherArticles, isLoading, error } = useQuery({
-    queryKey: ['other-articles', lang, 'destination-sidebar'],
-    queryFn: () => directusClient.getArticles(
-      lang, 
-      0, // offset
-      20, // limit
-      {
-        destination_id: { _neq: destinationId }, // Escludi articoli della stessa destinazione
-        category_id: { _neq: 9 } // Escludi categoria 9
-      }
-    ),
+    queryKey: ['latest-articles-sidebar', lang],
+    queryFn: () => directusClient.getLatestArticlesForSidebar(lang, 15),
     enabled: isClient,
-    staleTime: 1000 * 60 * 60 * 6, // 6 ORE (era 30 min) - cache più aggressiva
-    gcTime: 1000 * 60 * 60 * 12, // 12 ORE - mantieni in memoria più a lungo
+    staleTime: 1000 * 60 * 60 * 12, // 12 ORE - cache molto aggressiva per contenuti generici
+    gcTime: 1000 * 60 * 60 * 24, // 24 ORE - mantieni in memoria molto più a lungo
   });
 
   if (!isClient || isLoading) {
@@ -74,9 +65,11 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
     );
   }
 
-  // Combina gli articoli: prima quelli della destinazione, poi gli altri
-  const destinationArticlesList = destinationArticles?.articles || [];
-  const otherArticlesList = otherArticles?.articles || [];
+  // Combina gli articoli: prima quelli della destinazione, poi gli altri (filtrati per evitare duplicati)
+  const destinationArticlesList = destinationArticles || [];
+  const otherArticlesList = (otherArticles || []).filter((article: any) => 
+    !destinationArticlesList.some((destArticle: any) => destArticle.id === article.id)
+  );
   
   // Prendi fino a 20 articoli totali, dando priorità a quelli della destinazione
   const combinedArticles = [
@@ -105,7 +98,7 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
             📍 Articoli su questa destinazione
           </h4>
           <ul className="space-y-3">
-            {destinationArticlesList.map((article) => (
+            {destinationArticlesList.map((article: any) => (
               <ArticleCardSidebar key={article.id} article={article} lang={lang} />
             ))}
           </ul>
@@ -116,7 +109,7 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
       {otherArticlesList.length > 0 && (
         <div>
           <ul className="space-y-3">
-            {otherArticlesList.slice(0, 20 - destinationArticlesList.length).map((article) => (
+            {otherArticlesList.slice(0, 20 - destinationArticlesList.length).map((article: any) => (
               <ArticleCardSidebar key={article.id} article={article} lang={lang} />
             ))}
           </ul>

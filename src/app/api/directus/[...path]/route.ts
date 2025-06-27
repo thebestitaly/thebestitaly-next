@@ -38,7 +38,7 @@ export async function GET(
       // 🔧 ALLOW optimized images but block VERY large ones
       // Our optimized presets: MICRO (24x24), THUMBNAIL (60x60), CARD (150x100), HERO_MOBILE (300x200), HERO_DESKTOP (400x180)
       // Emergency: Allow up to 1000px but block original size images (usually 1920px+)
-      if (width > 1000 || quality > 85) {
+      if (width > 1201 || quality > 85) {
         console.log('🚨 EMERGENCY: Blocked large image request', { width, quality, userAgent });
         return new NextResponse('Image too large - emergency cost control', { status: 429 });
       }

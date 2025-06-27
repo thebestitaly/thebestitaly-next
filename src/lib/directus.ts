@@ -1038,6 +1038,128 @@ class DirectusClient {
     }
   }
   
+  // 🚀 FUNZIONE OTTIMIZZATA per sidebar - Single query, no meta count + Redis cache
+  public async getArticlesForSidebar(
+    languageCode: string,
+    filters: Record<string, any> = {},
+    limit: number = 10
+  ): Promise<Article[]> {
+    try {
+      // Try Redis cache first (server-side only)
+      await loadRedisCache();
+      
+      if (withCache && CacheKeys && CACHE_DURATIONS) {
+        // Create cache key based on filters
+        const filterKey = JSON.stringify(filters);
+        const cacheKey = `articles-sidebar:${languageCode}:${limit}:${Buffer.from(filterKey).toString('base64')}`;
+        
+        return await withCache(
+          cacheKey,
+          CACHE_DURATIONS.ARTICLES_SIDEBAR, // 12 ore
+          async () => {
+            return await this._getArticlesForSidebarDirect(languageCode, filters, limit);
+          }
+        );
+      }
+      
+      // Fallback to direct call
+      return await this._getArticlesForSidebarDirect(languageCode, filters, limit);
+
+    } catch (error: any) {
+      console.error("Error fetching articles for sidebar:", error.message || error);
+      return [];
+    }
+  }
+
+  private async _getArticlesForSidebarDirect(
+    languageCode: string,
+    filters: Record<string, any> = {},
+    limit: number = 10
+  ): Promise<Article[]> {
+    try {
+      const isAuth = await this.testAuth();
+      if (!isAuth) {
+        console.error("Authentication failed");
+        return [];
+      }
+
+      // Single query ottimizzata con deep joins
+      const params: Record<string, any> = {
+        sort: "-date_created",
+        fields: [
+          "id",
+          "image", 
+          "date_created",
+          "translations.titolo_articolo",
+          "translations.slug_permalink",
+          "translations.seo_summary"
+        ],
+        limit: Math.max(limit, 1),
+        filter: {
+          status: { _eq: 'published' },
+          ...filters
+        },
+        deep: {
+          translations: {
+            _filter: {
+              languages_code: { _eq: languageCode }
+            }
+          }
+        }
+      };
+
+      const response = await this.client.get('/items/articles', { params });
+      const rawArticles = response.data.data || [];
+
+      // Filtra solo articoli con traduzioni valide
+      return rawArticles.filter((article: any) => 
+        article.translations && article.translations.length > 0
+      );
+
+    } catch (error: any) {
+      console.error("Error fetching articles for sidebar direct:", error.message || error);
+      return [];
+    }
+  }
+
+  // 🚀 FUNZIONE ULTRA-OTTIMIZZATA per articoli generali sidebar (cache lunga)
+  public async getLatestArticlesForSidebar(
+    languageCode: string, 
+    limit: number = 15
+  ): Promise<Article[]> {
+    try {
+      // Try Redis cache first with longer TTL for generic content
+      await loadRedisCache();
+      
+      if (withCache && CacheKeys && CACHE_DURATIONS) {
+        const cacheKey = `latest-articles-sidebar:${languageCode}:${limit}`;
+        
+        return await withCache(
+          cacheKey,
+          CACHE_DURATIONS.LATEST_ARTICLES, // 12 ore - cache molto lunga per contenuti generici
+          async () => {
+            return await this._getArticlesForSidebarDirect(
+              languageCode,
+              { category_id: { _neq: 9 } }, // Solo escludi categoria 9
+              limit
+            );
+          }
+        );
+      }
+      
+      // Fallback
+      return await this._getArticlesForSidebarDirect(
+        languageCode,
+        { category_id: { _neq: 9 } },
+        limit
+      );
+
+    } catch (error: any) {
+      console.error("Error fetching latest articles for sidebar:", error.message || error);
+      return [];
+    }
+  }
+
   public async getArticles(
     languageCode: string,
     offset: number = 0,

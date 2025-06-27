@@ -1,9 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import directusClient from "../../lib/directus";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
+import { 
+  getProvincesForRegion, 
+  getMunicipalitiesForProvince, 
+  getDestinationDetails 
+} from "@/lib/static-destinations";
 
 interface DestinationSidebarProps {
   currentDestinationId: string;
@@ -28,99 +33,86 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
 }) => {
   const [showAllMunicipalities, setShowAllMunicipalities] = useState(false);
   
-  // Query per ottenere la regione (se siamo in provincia o comune) - React Query provides caching
+
+  
+  // Query per ottenere la regione - OTTIMIZZATA con dati statici
   const { data: regionData } = useQuery({
-    queryKey: ["region", regionId, lang],
-    queryFn: () => regionId ? directusClient.getDestinationById(regionId, lang) : null,
+    queryKey: ["region-static", regionId, lang],
+    queryFn: () => regionId ? getDestinationDetails(regionId, lang) : null,
     enabled: !!regionId && (type === "province" || type === "municipality"),
-    staleTime: 1000 * 60 * 30, // 30 minuti
+    staleTime: 1000 * 60 * 60 * 24 * 30, // 30 giorni - dati statici
+    gcTime: 1000 * 60 * 60 * 24 * 60, // 60 giorni in cache
   });
 
-  // Query per ottenere la provincia (se siamo in un comune) - React Query provides caching
+  // Query per ottenere la provincia - OTTIMIZZATA con dati statici
   const { data: provinceData } = useQuery({
-    queryKey: ["province", provinceId, lang],
-    queryFn: () => provinceId ? directusClient.getDestinationById(provinceId, lang) : null,
+    queryKey: ["province-static", provinceId, lang],
+    queryFn: () => provinceId ? getDestinationDetails(provinceId, lang) : null,
     enabled: !!provinceId && type === "municipality",
-    staleTime: 1000 * 60 * 30, // 30 minuti
+    staleTime: 1000 * 60 * 60 * 24 * 30, // 30 giorni - dati statici
+    gcTime: 1000 * 60 * 60 * 24 * 60, // 60 giorni in cache
   });
 
-  // Query per ottenere le altre province della stessa regione (se siamo in una provincia) - React Query provides caching
+  // Query per ottenere le altre province - ULTRA-OTTIMIZZATA con dati statici
   const { data: otherProvinces } = useQuery({
-    queryKey: ["other-provinces", regionId, currentDestinationId, lang],
-    queryFn: () => regionId ? directusClient.getDestinations({
-      type: "province",
-      region_id: regionId,
-      exclude_id: currentDestinationId,
-      lang,
-    }) : [],
+    queryKey: ["provinces-static", regionId, currentDestinationId, lang],
+    queryFn: async () => {
+      if (!regionId) return [];
+      
+      // Usa dati statici per ottenere tutte le province della regione
+      const allProvinces = await getProvincesForRegion(regionId, lang);
+      
+      // Filtra quella corrente
+      return allProvinces.filter(province => province.id !== currentDestinationId);
+    },
     enabled: !!regionId && type === "province",
-    staleTime: 1000 * 60 * 60, // 1 ora
+    staleTime: 1000 * 60 * 60 * 24 * 30, // 30 giorni - dati completamente statici
+    gcTime: 1000 * 60 * 60 * 24 * 60, // 60 giorni in cache
   });
 
-  // Query per ottenere i comuni/province (limitati direttamente nella query)
+  // Query per ottenere i comuni/province - ULTRA-OTTIMIZZATA con dati statici
   const { data: municipalities, isLoading } = useQuery({
-    queryKey: ["municipalities", provinceId || currentDestinationId, showAllMunicipalities, type, lang],
+    queryKey: ["municipalities-static", provinceId || currentDestinationId, showAllMunicipalities, type, lang],
     queryFn: async () => {
-      const requestLimit = showAllMunicipalities ? 100 : 15; // Limita direttamente la query
+      const requestLimit = showAllMunicipalities ? 500 : 15; // Limite più alto per i dati statici
       
       if (type === "region") {
-        // Per le regioni, ottieni le province
-        return await directusClient.getDestinations({
-          type: "province",
-          region_id: currentDestinationId,
-          lang,
-          limit: requestLimit, // Passa il limit alla query
-        });
+        // Per le regioni, ottieni le province (ULTRA-VELOCE)
+        const provinces = await getProvincesForRegion(currentDestinationId, lang);
+        return provinces.slice(0, requestLimit);
       } else {
-        // Per province e comuni, ottieni i comuni
+        // Per province e comuni, ottieni i comuni (ULTRA-VELOCE)
         const targetProvinceId = type === "province" ? currentDestinationId : provinceId;
         if (!targetProvinceId) return [];
         
-        return await directusClient.getDestinations({
-          type: "municipality",
-          province_id: targetProvinceId,
-          exclude_id: type === "municipality" ? currentDestinationId : undefined,
-          lang,
-          limit: requestLimit, // Passa il limit alla query
-        });
+        const municipalities = await getMunicipalitiesForProvince(targetProvinceId, lang);
+        
+        // Filtra quello corrente se siamo in un comune
+        const filtered = type === "municipality" 
+          ? municipalities.filter(m => m.id !== currentDestinationId)
+          : municipalities;
+        
+        return filtered.slice(0, requestLimit);
       }
     },
-    enabled: !!(currentDestinationId && (type === "region" || provinceId || (type === "province"))),
-    staleTime: 1000 * 60 * 60, // 1 ora
+    enabled: !!(currentDestinationId && (type === "region" || provinceId || (type === "province") || (type === "municipality" && provinceId))),
+    staleTime: 1000 * 60 * 60 * 24 * 30, // 30 giorni - dati completamente statici
+    gcTime: 1000 * 60 * 60 * 24 * 60, // 60 giorni in cache
   });
 
-  // Query per ottenere il conteggio totale (limitato per performance)
-  const { data: totalMunicipalities } = useQuery({
-    queryKey: ["total-municipalities", provinceId || currentDestinationId, type, lang],
-    queryFn: async () => {
-      if (type === "region") {
-        // Per le regioni, conta le province (max 50)
-        const provinces = await directusClient.getDestinations({
-          type: "province",
-          region_id: currentDestinationId,
-          lang,
-          limit: 50, // Limite ragionevole per conteggio
-        });
-        return provinces.length;
-      } else {
-        // Per province e comuni, conta i comuni (max 200)
-        const targetProvinceId = type === "province" ? currentDestinationId : provinceId;
-        if (!targetProvinceId) return 0;
-        
-        const municipalities = await directusClient.getDestinations({
-          type: "municipality",
-          province_id: targetProvinceId,
-          exclude_id: type === "municipality" ? currentDestinationId : undefined,
-          lang,
-          limit: 200, // Limite ragionevole per conteggio
-        });
-        
-        return municipalities.length;
-      }
-    },
-    enabled: !!(currentDestinationId && (type === "region" || provinceId || (type === "province"))),
-    staleTime: 1000 * 60 * 60 * 2, // 2 ore
-  });
+  // 🚀 OTTIMIZZAZIONE: Calcola il totale dalla query esistente invece di fare una query separata
+  const totalMunicipalities = useMemo(() => {
+    if (!municipalities) return 0;
+    
+    // Se abbiamo caricato meno del limite, il totale è quello che vediamo
+    const currentLimit = showAllMunicipalities ? 100 : 15;
+    if (municipalities.length < currentLimit) {
+      return municipalities.length;
+    }
+    
+    // Altrimenti, stimiamo che ce ne siano di più (per mostrare il bottone "Carica altri")
+    return municipalities.length + 1; // +1 per indicare che ce ne sono altri
+  }, [municipalities, showAllMunicipalities]);
 
   if (isLoading) return <div>Loading...</div>;
 
@@ -205,13 +197,13 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
                 ))}
               </div>
               
-              {/* Bottone "Carica altri" se ci sono più di 15 comuni */}
-              {totalMunicipalities && totalMunicipalities > 15 && !showAllMunicipalities && (
+              {/* Bottone "Carica altri" se abbiamo raggiunto il limite */}
+              {municipalities && municipalities.length >= 15 && !showAllMunicipalities && (
                 <button
                   onClick={() => setShowAllMunicipalities(true)}
                   className="w-full mt-4 px-4 py-2 text-blue-600 rounded-lg hover:text-green-600 transition-colors"
                 >
-                  Load more ({totalMunicipalities - 15})
+                  Carica altri comuni
                 </button>
               )}
             </div>
@@ -248,13 +240,13 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
                 ))}
               </div>
               
-              {/* Bottone "Carica altri" se ci sono più di 15 comuni */}
-              {totalMunicipalities && totalMunicipalities > 15 && !showAllMunicipalities && (
+              {/* Bottone "Carica altri" se abbiamo raggiunto il limite */}
+              {municipalities && municipalities.length >= 15 && !showAllMunicipalities && (
                 <button
                   onClick={() => setShowAllMunicipalities(true)}
                   className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
-                  Carica altri ({totalMunicipalities - 15} rimanenti)
+                  Carica altri comuni
                 </button>
               )}
             </div>

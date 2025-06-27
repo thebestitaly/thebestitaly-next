@@ -90,11 +90,11 @@ export const CACHE_TTL = {
 // 🚨 CRITICAL EMERGENCY: 21.87GB/DAY = 650GB/MONTH DISASTER!
 export const IMAGE_SIZES = {
   // MINIMALI ASSOLUTI - Railway sta bruciando soldi
-  MICRO: { width: 24, height: 24, quality: 25 },           // DRASTICO: era 50x50
-  THUMBNAIL: { width: 60, height: 60, quality: 35 },       // DRASTICO: era 120x120  
-  CARD: { width: 150, height: 100, quality: 40 },          // DRASTICO: era 320x200
-  HERO_MOBILE: { width: 250, height: 130, quality: 45 },   // DRASTICO: era 375x200
-  HERO_DESKTOP: { width: 400, height: 180, quality: 50 },  // DRASTICO: era 1000x350
+  MICRO: { width: 50, height: 50, quality: 30 },           // DRASTICO: era 50x50
+  THUMBNAIL: { width: 120, height: 120, quality: 70 },       // DRASTICO: era 120x120  
+  CARD: { width: 320, height: 200, quality: 70 },          // DRASTICO: era 320x200
+  HERO_MOBILE: { width: 375, height: 200, quality: 70 },   // DRASTICO: era 375x200
+  HERO_DESKTOP: { width: 1000, height: 350, quality: 70 },  // DRASTICO: era 1000x350
   
   // EMERGENCY SIZES
   SIDEBAR: { width: 48, height: 48, quality: 30 },         

@@ -9,6 +9,10 @@ import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
+import DestinationCompanies from "@/components/destinations/DestinationCompanies";
+import DestinationArticlesSidebar from "@/components/destinations/DestinationArticlesSidebar";
+import DestinationSidebar from "@/components/destinations/DestinationSidebar";
+import GetYourGuideWidget from "@/components/widgets/GetYourGuideWidget";
 import { Suspense } from "react";
 
 // Custom components for ReactMarkdown
@@ -151,8 +155,21 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
   }
 
   const translation = destination.translations[0];
-  const provinceId = destination.province_id?.id || null; // Estrai l'ID corretto
-  const regionId = destination.region_id?.id || null; // Estrai l'ID della regione
+  
+  // Estrai gli ID in modo più robusto - Directus può restituire l'ID direttamente o come oggetto
+  const provinceId = destination.province_id?.id || destination.province_id || null;
+  const regionId = destination.region_id?.id || destination.region_id || null;
+  
+  // Debug per verificare i valori - rimuovi dopo il test
+  console.log('🐛 DestinationLayout Debug:', {
+    type,
+    destinationId: destination.id,
+    provinceId,
+    regionId,
+    province_id_raw: destination.province_id,
+    region_id_raw: destination.region_id
+  });
+  
   // Determina gli slug e gli ID per il breadcrumb e la sidebar
   const regionSlug = slugData.regionSlug || parentSlug || "";
   const provinceSlug = slugData.provinceSlug || (type === "province" ? slug : "");
@@ -262,7 +279,7 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
           <div className="container mx-auto relative h-60 md:h-80 rounded-lg overflow-hidden">
             {/* Unified responsive image */}
             <Image
-              src={getOptimizedImageUrl(destination.image, 'HERO_MOBILE')}
+              src={getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}
               alt={translation?.destination_name || ""}
               fill
               className="object-cover"
@@ -292,12 +309,52 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
 
             {translation?.description && (
               <article className="prose prose-base md:prose-lg max-w-none mb-6 md:mb-8">
-                <ReactMarkdown components={markdownComponents}>{translation.description}</ReactMarkdown>
+                {(() => {
+                  let h2Count = 0;
+                  const content = translation.description;
+                  
+                  return (
+                    <ReactMarkdown
+                      components={{
+                        ...markdownComponents,
+                        h2: ({ node, ...props }) => {
+                          h2Count++;
+                          const text = props.children?.toString() || '';
+                          const cleanText = text
+                            .replace(/\*\*(.*?)\*\*/g, '$1')
+                            .replace(/\*(.*?)\*/g, '$1')
+                            .replace(/`(.*?)`/g, '$1')
+                            .replace(/\[(.*?)\]\(.*?\)/g, '$1');
+                          
+                          const id = cleanText.toLowerCase().replace(/\W+/g, '-').replace(/^-+|-+$/g, '');
+                          
+                          return (
+                            <>
+                              {h2Count === 2 && (
+                                <div className="not-prose my-8">
+                                  <div className="rounded-lg p-2">
+                                    <GetYourGuideWidget 
+                                      lang={lang} 
+                                      destinationName={translation?.destination_name || "Italy"}
+                                      numberOfItems={4}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                              <h2 id={id} {...props} />
+                            </>
+                          );
+                        },
+                      }}
+                    >
+                      {content}
+                    </ReactMarkdown>
+                  );
+                })()}
               </article>
             )}
 
-            {/* TEMPORARILY REMOVED: DestinationCompanies causing memory crash */}
-            {/* 
+            {/* ✅ RE-ENABLED: DestinationCompanies with optimized queries */}
             <div className="my-6 md:my-8">
               <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
                 <DestinationCompanies 
@@ -308,25 +365,51 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                 />
               </Suspense>
             </div>
-            */}
-            
-            {/* Lightweight replacement */}
-            <div className="my-6 md:my-8 bg-blue-50 p-6 rounded-lg">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">
-                Scopri {translation?.destination_name}
-              </h3>
-              <p className="text-gray-600">
-                Questa destinazione offre numerose attrazioni e servizi per i visitatori. 
-                Stiamo ottimizzando questa sezione per una migliore esperienza utente.
-              </p>
+
+            {/* Second GetYourGuide Widget at the end */}
+            <div className="my-6 md:my-8">
+              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
+                <GetYourGuideWidget 
+                  lang={lang} 
+                  destinationName={translation?.destination_name || "Italy"}
+                  numberOfItems={6}
+                />
+              </Suspense>
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Table of Contents - Sticky - Desktop only */}
-            <div className="hidden md:block sticky top-16 z-10 mb-10">
+            <div className="hidden md:block sticky top-16 z-10 space-y-6">
               <TableOfContents content={tocContent} />
+              
+              {/* Sub-destinations Sidebar - Desktop only */}
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>}>
+                  <DestinationSidebar 
+                    currentDestinationId={destination.id.toString()}
+                    regionSlug={regionSlug}
+                    provinceSlug={provinceSlug}
+                    currentSlug={slug}
+                    provinceId={provinceId?.toString()}
+                    regionId={regionId?.toString()}
+                    lang={lang}
+                    type={type}
+                  />
+                </Suspense>
+              </div>
+
+              {/* Articles Sidebar - Desktop only */}
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <Suspense fallback={<div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>}>
+                  <DestinationArticlesSidebar 
+                    lang={lang}
+                    destinationId={destination.id.toString()}
+                  />
+                </Suspense>
+              </div>
+              
               {/* Lightweight alternative */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <h3 className="font-bold text-gray-900 mb-3">Esplora {translation?.destination_name}</h3>

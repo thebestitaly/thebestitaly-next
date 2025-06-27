@@ -69,7 +69,7 @@ export async function getRedisClient() {
 // Cache durations ottimizzate per contenuti statici (valori sicuri per 32-bit)
 export const CACHE_DURATIONS = {
   // Contenuti principali - CACHE ULTRA-AGGRESSIVA per contenuti stabili
-  DESTINATIONS: 60 * 60 * 24 * 14, // 14 GIORNI (era 7) - destinazioni cambiano raramente
+  DESTINATIONS: 60 * 60 * 24 * 30, // 30 GIORNI (era 14) - destinazioni sono dati quasi statici
   COMPANIES: 60 * 60 * 24 * 14, // 14 GIORNI (era 7) - aziende cambiano raramente
   ARTICLES: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - articoli sono contenuti statici
   
@@ -79,7 +79,7 @@ export const CACHE_DURATIONS = {
   CATEGORIES: 60 * 60 * 24 * 14, // 14 giorni (era 7) - categorie quasi mai cambiano
   
   // Menu navigation - CACHE ULTRA-LUNGA
-  MENU_DESTINATIONS: 60 * 60 * 24 * 21, // 21 GIORNI (era 7) - menu regioni/province stabile
+  MENU_DESTINATIONS: 60 * 60 * 24 * 30, // 30 GIORNI (era 21) - menu regioni/province completamente stabile
   
   // Homepage e liste - CACHE PIÙ AGGRESSIVA per contenuti più visti
   HOMEPAGE_DESTINATIONS: 60 * 60 * 24 * 3, // 3 GIORNI (era 1) - featured homepage
@@ -93,7 +93,7 @@ export const CACHE_DURATIONS = {
   // Sidebar components - cache MOLTO aggressiva per performance
   DESTINATION_SIDEBAR: 60 * 60 * 24, // 24 ORE (era 12) - sidebar destinazioni
   ARTICLES_SIDEBAR: 60 * 60 * 12, // 12 ORE (era 6) - sidebar articoli
-  RELATED_DESTINATIONS: 60 * 60 * 24 * 2, // 2 GIORNI (era 1) - destinazioni correlate
+  RELATED_DESTINATIONS: 60 * 60 * 24 * 14, // 14 GIORNI (era 2) - liste province/comuni statiche
   
   // API responses - cache estesa per ridurre traffico Directus
   SEARCH_RESULTS: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - risultati ricerca stabili

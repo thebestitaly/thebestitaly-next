@@ -33,10 +33,10 @@ export const getOptimizedImageUrl = (
   
   const presets = {
     MICRO: { width: 48, height: 48, quality: 45 },
-    THUMBNAIL: { width: 100, height: 80, quality: 55 },
-    CARD: { width: 200, height: 150, quality: 60 },
-    HERO_MOBILE: { width: 300, height: 200, quality: 60 },
-    HERO_DESKTOP: { width: 600, height: 400, quality: 60 }
+    THUMBNAIL: { width: 150, height: 120, quality: 55 },
+    CARD: { width: 300, height: 200, quality: 60 },
+    HERO_MOBILE: { width: 800, height: 500, quality: 75 },
+    HERO_DESKTOP: { width: 980, height: 560, quality: 80 }
   };
   
   return getDirectusImageUrl(assetId, { ...presets[preset], fit: 'cover' });
