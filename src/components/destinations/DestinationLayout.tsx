@@ -11,13 +11,6 @@ import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
 import { Suspense } from "react";
 
-// Componenti importati normalmente per evitare problemi
-import GetYourGuideWidget from "@/components/widgets/GetYourGuideWidget";
-import DestinationSidebar from "@/components/destinations/DestinationSidebar";
-import DestinationArticlesSidebar from "@/components/destinations/DestinationArticlesSidebar";
-import GoogleMaps from "@/components/widgets/GoogleMaps";
-import DestinationCompanies from "@/components/destinations/DestinationCompanies";
-
 // Custom components for ReactMarkdown
 const markdownComponents = {
   h2: ({ node, ...props }: any) => {
@@ -303,7 +296,8 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </article>
             )}
 
-            {/* Destination Companies/Points of Interest */}
+            {/* TEMPORARILY REMOVED: DestinationCompanies causing memory crash */}
+            {/* 
             <div className="my-6 md:my-8">
               <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
                 <DestinationCompanies 
@@ -313,6 +307,18 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                   destinationName={translation?.destination_name}
                 />
               </Suspense>
+            </div>
+            */}
+            
+            {/* Lightweight replacement */}
+            <div className="my-6 md:my-8 bg-blue-50 p-6 rounded-lg">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Scopri {translation?.destination_name}
+              </h3>
+              <p className="text-gray-600">
+                Questa destinazione offre numerose attrazioni e servizi per i visitatori. 
+                Stiamo ottimizzando questa sezione per una migliore esperienza utente.
+              </p>
             </div>
           </div>
 

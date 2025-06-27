@@ -1873,15 +1873,16 @@ class DirectusClient {
       const filter: any = { active: { _eq: true } };
       
       if (destinationType === 'region') {
-        // Per le regioni, dobbiamo prendere tutte le companies delle province di quella regione
-        // Prima otteniamo tutte le province di questa regione
+        // 🚀 OTTIMIZZAZIONE CRITICA: Per le regioni, limitiamo drasticamente
+        // Prima otteniamo solo le prime 10 province di questa regione
         const provincesResponse = await this.client.get('/items/destinations', {
           params: {
             filter: {
               region_id: { _eq: destinationId },
               type: { _eq: 'province' }
             },
-            fields: ['id']
+            fields: ['id'],
+            limit: 10 // ⚡ LIMITE CRITICO: solo prime 10 province
           }
         });
         
@@ -1903,15 +1904,10 @@ class DirectusClient {
           filter,
           fields: [
             'id',
-            'website',
             'company_name',
             'slug_permalink',
             'featured_image',
-            'phone',
-            'category_id',
-            'destination_id',
-            'socials',
-            'translations.*'
+            'translations.seo_title'
           ],
           deep: {
             translations: {
@@ -1923,7 +1919,7 @@ class DirectusClient {
             }
           },
           sort: ['company_name'],
-          limit: 100
+          limit: destinationType === 'region' ? 30 : 100 // ⚡ LIMITE SPECIFICO: regioni max 30, altri 100
         }
       });
 
