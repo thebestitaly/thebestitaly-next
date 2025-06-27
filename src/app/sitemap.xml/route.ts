@@ -1,3 +1,7 @@
+// Force dynamic rendering - NON pre-generare durante il build
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const languages = [
     'af', 'am', 'ar', 'az', 'bg', 'bn', 'ca', 'cs', 'da', 'de', 
