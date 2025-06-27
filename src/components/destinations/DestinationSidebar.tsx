@@ -152,7 +152,7 @@ const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
         className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
       >
         {destination.image && (
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0" style={{ minWidth: '48px', minHeight: '48px' }}>
             <img
               src={getOptimizedImageUrl(destination.image, 'THUMBNAIL')}
               alt={translation?.destination_name}
