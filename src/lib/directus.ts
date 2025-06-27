@@ -1385,7 +1385,7 @@ class DirectusClient {
             'translations.slug_permalink',
           ],
           'deep[translations][_filter][languages_code][_eq]': lang,
-          limit: -1, // Ottieni tutti i record
+          limit: 100, // LIMITATO a 100 invece di -1 per evitare crash
         },
       });
   
