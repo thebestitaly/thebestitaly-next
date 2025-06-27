@@ -37,17 +37,19 @@ widgetDirectusClient.interceptors.response.use(
   }
 );
 
-// Log configuration per debug
-console.log('🔧 Widget API Configuration:', {
-  DIRECTUS_URL: process.env.DIRECTUS_URL ? 'SET' : 'NOT SET',
-  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ? 'SET' : 'NOT SET',
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ? 'SET' : 'NOT SET',
-  NEXT_PUBLIC_DIRECTUS_URL: process.env.NEXT_PUBLIC_DIRECTUS_URL ? 'SET' : 'NOT SET',
-  DIRECTUS_TOKEN: process.env.DIRECTUS_TOKEN ? 'SET' : 'NOT SET',
-  NEXT_PUBLIC_DIRECTUS_TOKEN: process.env.NEXT_PUBLIC_DIRECTUS_TOKEN ? 'SET' : 'NOT SET',
-  NODE_ENV: process.env.NODE_ENV,
-  directusClient: !!directusClient
-});
+// Log configuration per debug (solo in development)
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔧 Widget API Configuration:', {
+    DIRECTUS_URL: process.env.DIRECTUS_URL ? 'SET' : 'NOT SET',
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ? 'SET' : 'NOT SET',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ? 'SET' : 'NOT SET',
+    NEXT_PUBLIC_DIRECTUS_URL: process.env.NEXT_PUBLIC_DIRECTUS_URL ? 'SET' : 'NOT SET',
+    DIRECTUS_TOKEN: process.env.DIRECTUS_TOKEN ? 'SET' : 'NOT SET',
+    NEXT_PUBLIC_DIRECTUS_TOKEN: process.env.NEXT_PUBLIC_DIRECTUS_TOKEN ? 'SET' : 'NOT SET',
+    NODE_ENV: process.env.NODE_ENV,
+    directusClient: !!directusClient
+  });
+}
 
 interface SearchParams {
   type: 'articolo' | 'destinazione' | 'azienda';
@@ -187,13 +189,15 @@ export async function POST(request: NextRequest) {
 
     console.log('🚀 Widget Search Request:', { type, query, language, limit });
     
-    // Test environment variables
-    console.log('🔍 Environment check:', {
-      NODE_ENV: process.env.NODE_ENV,
-      DIRECTUS_URL: process.env.DIRECTUS_URL?.substring(0, 50) + '...',
-      NEXT_PUBLIC_DIRECTUS_URL: process.env.NEXT_PUBLIC_DIRECTUS_URL?.substring(0, 50) + '...',
-      hasDirectusToken: !!(process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN)
-    });
+    // Test environment variables (solo in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Environment check:', {
+        NODE_ENV: process.env.NODE_ENV,
+        DIRECTUS_URL: process.env.DIRECTUS_URL?.substring(0, 50) + '...',
+        NEXT_PUBLIC_DIRECTUS_URL: process.env.NEXT_PUBLIC_DIRECTUS_URL?.substring(0, 50) + '...',
+        hasDirectusToken: !!(process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN)
+      });
+    }
 
     if (!type || !query || !language) {
       console.log('❌ Missing parameters:', { type, query, language });

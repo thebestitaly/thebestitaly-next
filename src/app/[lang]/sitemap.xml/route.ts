@@ -59,37 +59,23 @@ async function generateSitemap(lang: string): Promise<string> {
 
   console.log(`✅ Added ${staticPages.length} static pages`);
 
-  // 2. Articles (Magazine) - quello che già funzionava
+  // 2. Articles (Magazine) - Usa il metodo ottimizzato esistente
   try {
-    console.log(`📰 Fetching articles for ${lang}...`);
+    console.log(`📰 Fetching articles using optimized method for ${lang}...`);
     
-    const articlesResponse = await directusClient.get('/items/articles', {
-      params: {
-        filter: { status: { _eq: 'published' } },
-        fields: ['date_created', 'translations.slug_permalink'],
-        deep: {
-          translations: {
-            _filter: { languages_code: { _eq: lang } }
-          }
-        },
-        limit: 1000,
-        sort: ['-date_created']
-      }
-    });
-
-    const articles = articlesResponse.data?.data || [];
-    console.log(`📰 Found ${articles.length} articles`);
+    // Usa il metodo esistente che ha fallback e caching
+    const articles = await directusClient.getArticlesForSitemap(lang);
+    console.log(`📰 Found ${articles.length} articles from optimized method`);
 
     articles.forEach((article: any) => {
-      const translation = article.translations?.[0];
-      if (translation?.slug_permalink && 
-          typeof translation.slug_permalink === 'string' &&
-          translation.slug_permalink.length > 0 &&
-          !translation.slug_permalink.includes('<') && 
-          !translation.slug_permalink.includes('>') &&
-          !translation.slug_permalink.includes('&')) {
+      if (article.slug_permalink && 
+          typeof article.slug_permalink === 'string' &&
+          article.slug_permalink.length > 0 &&
+          !article.slug_permalink.includes('<') && 
+          !article.slug_permalink.includes('>') &&
+          !article.slug_permalink.includes('&')) {
         entries.push({
-          url: `${baseUrl}/${lang}/magazine/${encodeURIComponent(translation.slug_permalink)}`,
+          url: `${baseUrl}/${lang}/magazine/${encodeURIComponent(article.slug_permalink)}`,
           lastModified: article.date_created || currentDate,
           changeFrequency: 'monthly',
           priority: 0.7
@@ -101,20 +87,13 @@ async function generateSitemap(lang: string): Promise<string> {
     console.error('❌ Error fetching articles:', error);
   }
 
-  // 3. Companies (POI) - quello che già funzionava
+  // 3. Companies (POI) - Usa il metodo ottimizzato esistente
   try {
-    console.log(`🏢 Fetching companies...`);
+    console.log(`🏢 Fetching companies using optimized method...`);
     
-    const companiesResponse = await directusClient.get('/items/companies', {
-      params: {
-        filter: { active: { _eq: true } },
-        fields: ['slug_permalink'],
-        limit: 2000
-      }
-    });
-
-    const companies = companiesResponse.data?.data || [];
-    console.log(`🏢 Found ${companies.length} companies`);
+    // Usa il metodo esistente che ha fallback e caching
+    const companies = await directusClient.getCompaniesForSitemap();
+    console.log(`🏢 Found ${companies.length} companies from optimized method`);
 
     companies.forEach((company: any) => {
       if (company.slug_permalink && 
@@ -136,31 +115,23 @@ async function generateSitemap(lang: string): Promise<string> {
     console.error('❌ Error fetching companies:', error);
   }
 
-  // 4. Categories
+  // 4. Categories - Usa il metodo ottimizzato esistente
   try {
-    console.log(`📂 Fetching categories for ${lang}...`);
+    console.log(`📂 Fetching categories using optimized method for ${lang}...`);
     
-    const categoriesResponse = await directusClient.get('/items/categorias', {
-      params: {
-        filter: { visible: { _eq: true } },
-        fields: ['translations.slug_permalink'],
-        deep: {
-          translations: {
-            _filter: { languages_code: { _eq: lang } }
-          }
-        },
-        limit: 100
-      }
-    });
-
-    const categories = categoriesResponse.data?.data || [];
-    console.log(`📂 Found ${categories.length} categories`);
+    // Usa il metodo esistente che ha fallback e caching
+    const categories = await directusClient.getCategoriesForSitemap(lang);
+    console.log(`📂 Found ${categories.length} categories from optimized method`);
 
     categories.forEach((category: any) => {
-      const translation = category.translations?.[0];
-      if (translation?.slug_permalink && !translation.slug_permalink.includes('<') && !translation.slug_permalink.includes('>')) {
+      if (category.slug_permalink && 
+          typeof category.slug_permalink === 'string' &&
+          category.slug_permalink.length > 0 &&
+          !category.slug_permalink.includes('<') && 
+          !category.slug_permalink.includes('>') &&
+          !category.slug_permalink.includes('&')) {
         entries.push({
-          url: `${baseUrl}/${lang}/magazine/c/${translation.slug_permalink}`,
+          url: `${baseUrl}/${lang}/magazine/c/${encodeURIComponent(category.slug_permalink)}`,
           lastModified: currentDate,
           changeFrequency: 'weekly',
           priority: 0.8
@@ -172,43 +143,9 @@ async function generateSitemap(lang: string): Promise<string> {
     console.error('❌ Error fetching categories:', error);
   }
 
-  // 5. Destinations - SOLO REGIONI per evitare crash memoria
-  try {
-    console.log(`🗺️ Fetching ONLY regions for ${lang} (memory optimization)...`);
-    
-    const regionsResponse = await directusClient.get('/items/destinations', {
-      params: {
-        fields: [
-          'translations.slug_permalink'
-        ],
-        filter: {
-          type: { _eq: 'region' },
-          'translations.languages_code': { _eq: lang }
-        },
-        limit: 50
-      }
-    });
-
-    const regions = regionsResponse.data?.data || [];
-    console.log(`🗺️ Found ${regions.length} regions`);
-
-    regions.forEach((region: any) => {
-      const translation = region.translations?.[0];
-      if (translation?.slug_permalink) {
-        entries.push({
-          url: `${baseUrl}/${lang}/${translation.slug_permalink}`,
-          lastModified: currentDate,
-          changeFrequency: 'monthly',
-          priority: 0.8
-        });
-      }
-    });
-
-    console.log(`🗺️ Added ${regions.length} regions to sitemap (provinces/municipalities skipped for memory)`);
-
-  } catch (error) {
-    console.error('❌ Error fetching regions:', error);
-  }
+  // 5. Destinations - RIMOSSO: Le destinazioni sono servite da /sitemap-destinations.xml
+  // Non includiamo destinazioni nella sitemap principale per evitare duplicati
+  console.log(`🗺️ Destinations skipped: served by dedicated /sitemap-destinations.xml`)
 
   // Genera XML con escape dei caratteri speciali
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

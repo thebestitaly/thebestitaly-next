@@ -299,12 +299,16 @@ export async function getProvincesForRegion(regionId: string, lang: string): Pro
   const staticData = await loadStaticData(lang);
   
   if (staticData?.data.regionProvinces[regionId]?.[lang]) {
-    console.log(`🚀 STATIC HIT: Province per regione ${regionId} (${lang})`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🚀 STATIC HIT: Province per regione ${regionId} (${lang})`);
+    }
     return staticData.data.regionProvinces[regionId][lang];
   }
   
   // Fallback to regular API
-  console.log(`📡 STATIC MISS: Province per regione ${regionId} (${lang}) - usando API`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📡 STATIC MISS: Province per regione ${regionId} (${lang}) - usando API`);
+  }
   return await directusClient.getDestinations({
     type: 'province',
     region_id: regionId,
@@ -318,12 +322,16 @@ export async function getMunicipalitiesForProvince(provinceId: string, lang: str
   const staticData = await loadStaticData(lang);
   
   if (staticData?.data.provinceMunicipalities[provinceId]?.[lang]) {
-    console.log(`🚀 STATIC HIT: Comuni per provincia ${provinceId} (${lang})`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🚀 STATIC HIT: Comuni per provincia ${provinceId} (${lang})`);
+    }
     return staticData.data.provinceMunicipalities[provinceId][lang];
   }
   
   // Fallback to regular API
-  console.log(`📡 STATIC MISS: Comuni per provincia ${provinceId} (${lang}) - usando API`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📡 STATIC MISS: Comuni per provincia ${provinceId} (${lang}) - usando API`);
+  }
   return await directusClient.getDestinations({
     type: 'municipality',
     province_id: provinceId,
@@ -337,12 +345,16 @@ export async function getDestinationDetails(destinationId: string, lang: string)
   const staticData = await loadStaticData(lang);
   
   if (staticData?.data.destinationDetails[destinationId]?.[lang]) {
-    console.log(`🚀 STATIC HIT: Dettagli destinazione ${destinationId} (${lang})`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🚀 STATIC HIT: Dettagli destinazione ${destinationId} (${lang})`);
+    }
     return staticData.data.destinationDetails[destinationId][lang];
   }
   
   // Fallback to regular API
-  console.log(`📡 STATIC MISS: Dettagli destinazione ${destinationId} (${lang}) - usando API`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`📡 STATIC MISS: Dettagli destinazione ${destinationId} (${lang}) - usando API`);
+  }
   return await directusClient.getDestinationById(destinationId, lang);
 }
 

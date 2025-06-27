@@ -7,17 +7,19 @@ let STAGING_DB_URL: string;
 let PRODUCTION_DB_URL: string;
 
 try {
-  // Debug delle variabili d'ambiente
-  console.log('🔧 Environment variables check:', {
-    NODE_ENV: process.env.NODE_ENV,
-    DATABASE_URL: !!process.env.DATABASE_URL,
-    STAGING_DATABASE_URL: !!process.env.STAGING_DATABASE_URL,
-    PRODUCTION_DATABASE_URL: !!process.env.PRODUCTION_DATABASE_URL,
-    DATABASE_URL_length: process.env.DATABASE_URL?.length || 0,
-    STAGING_DATABASE_URL_length: process.env.STAGING_DATABASE_URL?.length || 0,
-    DATABASE_URL_preview: process.env.DATABASE_URL?.substring(0, 50) + '...',
-    STAGING_DATABASE_URL_preview: process.env.STAGING_DATABASE_URL?.substring(0, 50) + '...'
-  });
+  // Debug delle variabili d'ambiente (solo in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Environment variables check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      DATABASE_URL: !!process.env.DATABASE_URL,
+      STAGING_DATABASE_URL: !!process.env.STAGING_DATABASE_URL,
+      PRODUCTION_DATABASE_URL: !!process.env.PRODUCTION_DATABASE_URL,
+      DATABASE_URL_length: process.env.DATABASE_URL?.length || 0,
+      STAGING_DATABASE_URL_length: process.env.STAGING_DATABASE_URL?.length || 0,
+      DATABASE_URL_preview: process.env.DATABASE_URL?.substring(0, 50) + '...',
+      STAGING_DATABASE_URL_preview: process.env.STAGING_DATABASE_URL?.substring(0, 50) + '...'
+    });
+  }
 
   const stagingConfig = getDatabaseConfig(true);
   const productionConfig = getDatabaseConfig(false);
@@ -25,14 +27,16 @@ try {
   STAGING_DB_URL = stagingConfig.url;
   PRODUCTION_DB_URL = productionConfig.url;
   
-  console.log('🔧 Database config loaded:', {
-    staging: !!STAGING_DB_URL,
-    production: !!PRODUCTION_DB_URL,
-    stagingLength: STAGING_DB_URL?.length || 0,
-    productionLength: PRODUCTION_DB_URL?.length || 0,
-    stagingPreview: STAGING_DB_URL?.substring(0, 50) + '...',
-    productionPreview: PRODUCTION_DB_URL?.substring(0, 50) + '...'
-  });
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Database config loaded:', {
+      staging: !!STAGING_DB_URL,
+      production: !!PRODUCTION_DB_URL,
+      stagingLength: STAGING_DB_URL?.length || 0,
+      productionLength: PRODUCTION_DB_URL?.length || 0,
+      stagingPreview: STAGING_DB_URL?.substring(0, 50) + '...',
+      productionPreview: PRODUCTION_DB_URL?.substring(0, 50) + '...'
+    });
+  }
 } catch (configError) {
   console.error('❌ Error loading database config:', configError);
   // Fallback diretto alle variabili d'ambiente

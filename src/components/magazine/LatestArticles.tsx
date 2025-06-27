@@ -38,15 +38,6 @@ const LatestArticles: React.FC<LatestArticlesProps> = ({ lang }) => {
   // Estrarre articoli dalla risposta
   const articles = articlesData || [];
 
-  // Debug logging
-  console.log('🔧 LatestArticles Debug:', {
-    lang,
-    isLoading,
-    error: error?.message,
-    articlesData,
-    articlesLength: articles?.length,
-    isClient
-  });
 
   // Error State
   if (error) {

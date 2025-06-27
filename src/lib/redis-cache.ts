@@ -208,11 +208,15 @@ export class RedisCache {
       const data = await client.get(key);
       
       if (!data) {
-        console.log(`📭 Redis Cache MISS: ${key}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`📭 Redis Cache MISS: ${key}`);
+        }
         return null;
       }
       
-      console.log(`✅ Redis Cache HIT: ${key}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Redis Cache HIT: ${key}`);
+      }
       return JSON.parse(data) as T;
     } catch (error) {
       console.error(`❌ Redis GET error for key ${key}:`, error);
@@ -237,7 +241,9 @@ export class RedisCache {
       
       const serialized = JSON.stringify(value);
       await client.setEx(key, ttl, serialized);
-      console.log(`💾 Redis Cache SET: ${key} (TTL: ${ttl}s = ${Math.round(ttl/3600)}h)`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`💾 Redis Cache SET: ${key} (TTL: ${ttl}s = ${Math.round(ttl/3600)}h)`);
+      }
       
       // Also set in memory cache as backup
       MemoryCache.set(key, value, ttl);
@@ -420,7 +426,9 @@ export async function withCache<T>(
     }
 
     // Fetch dai dati
-    console.log(`🔄 Fetching fresh data for: ${key}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔄 Fetching fresh data for: ${key}`);
+    }
     const freshData = await fetchFunction();
     
     // Salva in cache (non bloccante)

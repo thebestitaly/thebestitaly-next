@@ -2176,49 +2176,87 @@ class DirectusClient {
   // Metodi semplici per sitemap - solo URLs essenziali
   public async getDestinationsForSitemap(lang: string): Promise<Array<{slug_permalink: string, type: string}>> {
     try {
-      // Query molto semplice per evitare errori 500
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          'fields': ['type', 'translations.*'],
-          'limit': 200
+      // 🚀 Usa il sistema static-destinations per massima velocità e affidabilità
+      const { getProvincesForRegion } = await import('./static-destinations');
+      
+      const destinations: Array<{slug_permalink: string, type: string}> = [];
+      
+      // 1. Ottieni tutte le regioni usando il metodo esistente
+      const regions = await this.getDestinationsByType('region', lang);
+      regions.forEach((region: Destination) => {
+        const slug = region.translations[0]?.slug_permalink;
+        if (slug) {
+          destinations.push({
+            slug_permalink: slug,
+            type: 'region'
+          });
         }
       });
-
-      const destinations = response.data?.data || [];
-      console.log(`Raw destinations data:`, destinations.length);
       
-      // Filtra manualmente per lingua e mappa i risultati
-      const filtered = destinations
-        .map((dest: any) => {
-          // Trova la traduzione per la lingua corrente
-          const translation = dest.translations?.find((t: any) => t.languages_code === lang);
-          if (translation?.slug_permalink && dest.type) {
-            return {
-              slug_permalink: translation.slug_permalink,
-              type: dest.type
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
+      // 2. Ottieni alcune province (solo prime per evitare sitemap troppo grandi)
+      for (const region of regions.slice(0, 10)) { // Solo prime 10 regioni per limitare dimensioni
+        try {
+          const provinces = await getProvincesForRegion(region.id, lang);
+          provinces.slice(0, 5).forEach((province: Destination) => { // Max 5 province per regione
+            const slug = province.translations[0]?.slug_permalink;
+            if (slug) {
+              destinations.push({
+                slug_permalink: slug,
+                type: 'province'
+              });
+            }
+          });
+        } catch (err) {
+          // Ignora errori su singole regioni
+          console.warn(`Error fetching provinces for region ${region.id}:`, err);
+        }
+      }
       
-      console.log(`Filtered destinations for ${lang}:`, filtered.length);
-      return filtered;
+      console.log(`✅ Static-destinations sitemap: ${destinations.length} destinations for ${lang}`);
+      return destinations;
         
-    } catch (error) {
-      console.error('Error fetching destinations for sitemap:', error);
-      // Proviamo con una query ancora più semplice
+    } catch (staticError) {
+      console.warn('Static-destinations not available, using fallback method:', staticError);
+      
+      // 🔄 Fallback: Usa metodo tradizionale più semplice (senza traduzioni)
       try {
-        console.log('Trying simpler destinations query...');
-        const simpleResponse = await this.client.get('/items/destinations', {
+        const response = await this.client.get('/items/destinations', {
           params: {
-            'limit': 50
+            'fields': ['id', 'type'],
+            'filter': { 'type': { '_eq': 'region' } },
+            'limit': 20
           }
         });
-        console.log('Simple query worked, destinations available:', simpleResponse.data?.data?.length || 0);
-        return [];
-      } catch (simpleError) {
-        console.error('Even simple destinations query failed:', simpleError);
+        
+        const regions = response.data?.data || [];
+        
+        // Fallback manuale con slug statici per le regioni principali
+        const staticRegionMap: Record<string, string> = {
+          '1': 'lazio', '2': 'lombardia', '3': 'campania', '4': 'sicilia',
+          '5': 'veneto', '6': 'emilia-romagna', '7': 'piemonte', '8': 'puglia',
+          '9': 'toscana', '10': 'calabria', '11': 'sardegna', '12': 'liguria',
+          '13': 'marche', '14': 'abruzzo', '15': 'umbria', '16': 'friuli-venezia-giulia',
+          '17': 'trentino-alto-adige', '18': 'basilicata', '19': 'molise', '20': 'valle-d-aosta'
+        };
+        
+        const destinations = regions
+          .map((region: any) => {
+            const slug = staticRegionMap[region.id.toString()];
+            if (slug) {
+              return {
+                slug_permalink: slug,
+                type: 'region'
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
+          
+        console.log(`📍 Fallback destinations: ${destinations.length} regions`);
+        return destinations;
+        
+      } catch (fallbackError) {
+        console.error('Even fallback destinations method failed:', fallbackError);
         return [];
       }
     }
@@ -2230,7 +2268,7 @@ class DirectusClient {
         params: {
           'filter': { 'active': { '_eq': true } },
           'fields': ['slug_permalink'],
-          'limit': 1000
+          'limit': 5000 // Aumentato da 1000 per includere più POI
         }
       });
 
