@@ -116,7 +116,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
                     {/* Mobile Layout - Stack vertically */}
                     <div className="block md:hidden">
                       {/* Mobile Image */}
-                      <div className="w-full h-48 relative rounded-2xl overflow-hidden mb-4" style={{ minHeight: '192px' }}>
+                      <div className="w-full h-48 relative rounded-2xl overflow-hidden mb-4">
                         {article.image ? (
                           <Image
                             src={getOptimizedImageUrl(article.image, 'CARD')}
@@ -190,7 +190,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
                       </div>
                       
                       {/* Right Image - Exactly 50% and taller */}
-                      <div className="w-1/2 h-full relative rounded-2xl overflow-hidden" style={{ minHeight: '384px' }}>
+                      <div className="w-1/2 h-full relative rounded-2xl overflow-hidden">
                         {article.image ? (
                           <Image
                             src={getOptimizedImageUrl(article.image, 'CARD')}

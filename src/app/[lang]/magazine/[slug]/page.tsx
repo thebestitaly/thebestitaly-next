@@ -268,7 +268,7 @@ export default async function MagazineArticlePage({ params }: PageProps) {
           {/* Hero Image - Right side on desktop (60%) */}
           {article.image && (
             <div className="w-full md:w-half">
-              <div className="relative aspect-[16/9] md:aspect-[4/3] lg:aspect-[1/1] overflow-hidden rounded-xl md:rounded-2xl" style={{ minHeight: '300px' }}>
+              <div className="relative aspect-[16/9] md:aspect-[4/3] lg:aspect-[1/1] overflow-hidden rounded-xl md:rounded-2xl">
                 <Image
                   src={getOptimizedImageUrl(article.image, 'HERO_DESKTOP')}
                   alt={translation?.titolo_articolo || ''}

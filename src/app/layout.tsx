@@ -78,21 +78,16 @@ export default function RootLayout({
         
         {/* 🚫 BLOCCA Cloudflare RUM per evitare errori 404 */}
         <meta name="cf-rum" content="disabled" />
-        <meta httpEquiv="Content-Security-Policy" content="connect-src 'self' https://www.googletagmanager.com https://fonts.googleapis.com https://widget.getyourguide.com https://region1.google-analytics.com https://www.google-analytics.com https://analytics.google.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://widget.getyourguide.com https://static.cloudflareinsights.com https://cs.iubenda.com https://www.clarity.ms; object-src 'none';" />
+        <meta httpEquiv="Content-Security-Policy" content="connect-src 'self' https://www.googletagmanager.com https://fonts.googleapis.com https://widget.getyourguide.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://widget.getyourguide.com; object-src 'none';" />
         
         {/* Removed preconnect to Railway to force using our proxy */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://widget.getyourguide.com" />
-        <link rel="dns-prefetch" href="https://region1.google-analytics.com" />
         
         <link rel="preload" href="/images/logo-black.webp" as="image" type="image/webp" />
         <link rel="preload" href="/images/logo-white.webp" as="image" type="image/webp" />
-        <link rel="preload" href="/images/magazine.webp" as="image" type="image/webp" />
         <link rel="preload" href="/fonts/poppins-v20-latin-regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        
-        {/* Critical CSS preload */}
-        <link rel="preload" href="/_next/static/css/app.css" as="style" />
         
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#1e40af" />

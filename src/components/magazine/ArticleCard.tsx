@@ -26,7 +26,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, lang }) => {
     >
       <div className="overflow-hidden">
         {article.image && (
-          <div className="relative w-full h-[250px] overflow-hidden rounded-lg" style={{ minHeight: '250px' }}>
+          <div className="relative w-full h-[250px] overflow-hidden rounded-lg">
             <Image
               src={getOptimizedImageUrl(article.image, 'HERO_MOBILE')}
               alt={translation?.titolo_articolo}

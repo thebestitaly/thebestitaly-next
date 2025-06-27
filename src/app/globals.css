@@ -771,52 +771,16 @@ img:hover {
   }
 
   /* Aspect ratios standardizzati per prevenire CLS */
-  .aspect-video {
-    aspect-ratio: 16 / 9;
-    min-height: 200px;
+  .aspect-hero {
+    aspect-ratio: 21/9;
+  }
+  
+  .aspect-card {
+    aspect-ratio: 16/9;
   }
   
   .aspect-square {
-    aspect-ratio: 1 / 1;
-    min-height: 200px;
-  }
-  
-  .aspect-portrait {
-    aspect-ratio: 3 / 4;
-    min-height: 250px;
-  }
-
-  /* Magazine specific CLS prevention */
-  .magazine-hero-mobile {
-    height: 192px;
-    min-height: 192px;
-  }
-  
-  .magazine-hero-desktop {
-    height: 384px;
-    min-height: 384px;
-  }
-  
-  .magazine-article-image {
-    height: 250px;
-    min-height: 250px;
-  }
-  
-  .magazine-card-container {
-    min-height: 350px;
-  }
-  
-  /* Prevent flash of unstyled content */
-  .image-container {
-    background-color: #f3f4f6;
-    background-image: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-  
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    aspect-ratio: 1/1;
   }
 }
 

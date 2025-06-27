@@ -75,7 +75,7 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
           )}
           
           {/* Hero Image - Mobile */}
-          <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl" style={{ minHeight: '200px' }}>
+          <div className="relative aspect-[16/9] mb-4 overflow-hidden rounded-xl">
             <Image
               src="/images/magazine.webp"
               alt={magazineTranslation?.seo_title || "Magazine"}
@@ -175,7 +175,7 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
                       >
                         <div className="rounded-lg overflow-hidden">
                           {article.image && (
-                            <div className="aspect-[16/9] overflow-hidden rounded-lg" style={{ minHeight: '225px' }}>
+                            <div className="aspect-[16/9] overflow-hidden rounded-lg">
                               <Image
                                 src={getOptimizedImageUrl(article.image, 'CARD')}
                                 alt={articleTranslation?.titolo_articolo}
