@@ -263,32 +263,19 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
         )}
       </div>
       
-      {/* Hero Image - OTTIMIZZATO per ridurre Egress */}
+      {/* Hero Image - OTTIMIZZATO per performance */}
       {destination.image && (
         <div className="px-4 mt-6 md:mt-12">
-          <div className="container mx-auto relative h-60 md:h-96 rounded-lg overflow-hidden">
-            {/* Mobile: immagine più piccola */}
-            <div className="block md:hidden w-full h-full relative">
-              <Image
-                src={getOptimizedImageUrl(destination.image, 'HERO_MOBILE')}
-                alt={translation?.destination_name || ""}
-                fill
-                className="object-cover"
-                priority
-                sizes="100vw"
-              />
-            </div>
-            {/* Desktop: immagine ottimizzata */}
-            <div className="hidden md:block w-full h-full relative">
-              <Image
-                src={getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}
-                alt={translation?.destination_name || ""}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 1200px) 80vw, 60vw"
-              />
-            </div>
+          <div className="container mx-auto relative h-60 md:h-80 rounded-lg overflow-hidden">
+            {/* Unified responsive image */}
+            <Image
+              src={getOptimizedImageUrl(destination.image, 'HERO_MOBILE')}
+              alt={translation?.destination_name || ""}
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, 80vw"
+            />
           </div>
         </div>
       )}
@@ -299,13 +286,6 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-20">
           {/* Content Column */}
           <div className="lg:col-span-2">
-            {/* Widget solo su desktop per performance mobile */}
-            <div className="hidden md:block mb-6 md:mb-8">
-              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>}>
-                <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
-              </Suspense>
-            </div>
-
             {/* Video Section - SOLO DESKTOP per performance mobile */}
             {destination.video_url && (
               <div className="hidden md:block mb-8">
@@ -323,19 +303,6 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
               </article>
             )}
 
-            {/* Google Maps Widget - SOLO DESKTOP per performance mobile */}
-            {destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 && (
-              <div className="hidden md:block my-6 md:my-8">
-                <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-lg"></div>}>
-                  <GoogleMaps 
-                    lat={destination.lat} 
-                    lng={destination.long} 
-                    name={translation?.destination_name || "Destinazione"} 
-                  />
-                </Suspense>
-              </div>
-            )}
-
             {/* Destination Companies/Points of Interest */}
             <div className="my-6 md:my-8">
               <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
@@ -347,13 +314,6 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
                 />
               </Suspense>
             </div>
-
-            {/* Widget finale solo su desktop */}
-            <div className="hidden md:block my-6 md:my-8">
-              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>}>
-                <GetYourGuideWidget lang={lang} destinationName={translation?.destination_name || "Italy"} />
-              </Suspense>
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -361,21 +321,13 @@ export default function DestinationLayout({ slug, lang, type, parentSlug }: Dest
             {/* Table of Contents - Sticky - Desktop only */}
             <div className="hidden md:block sticky top-16 z-10 mb-10">
               <TableOfContents content={tocContent} />
-              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-64 rounded-lg mb-4"></div>}>
-                <DestinationSidebar
-                  currentDestinationId={destination.id}
-                  regionSlug={slugData.regionSlug}
-                  provinceSlug={slugData.provinceSlug}
-                  currentSlug={translation?.slug_permalink || ""}
-                  provinceId={provinceId || undefined}  // Passa solo l'ID della provincia come stringa
-                  regionId={regionId || undefined}  // Passa l'ID della regione
-                  lang={lang}
-                  type={destination.type}
-                />
-              </Suspense>
-              <Suspense fallback={<div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>}>
-                <DestinationArticlesSidebar lang={lang} destinationId={destination.id} />
-              </Suspense>
+              {/* Lightweight alternative */}
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="font-bold text-gray-900 mb-3">Esplora {translation?.destination_name}</h3>
+                <p className="text-sm text-gray-600">
+                  Scopri di più su questa destinazione e le sue attrazioni principali.
+                </p>
+              </div>
             </div>
             
             {/* Mobile: Solo contenuto essenziale, niente sidebar pesanti */}
