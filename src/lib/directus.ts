@@ -246,7 +246,7 @@ class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
   private static readonly MAX_CONCURRENT_CALLS = 5; // REDUCED from 10
-  private static readonly REQUEST_TIMEOUT = 3000; // 🚨 ULTRA-AGGRESSIVE: 3 seconds (was 8!)
+  private static readonly REQUEST_TIMEOUT = 12000; // ⚖️ BALANCED: 12 seconds - prevents timeout while limiting memory leak
   private static readonly CIRCUIT_BREAKER_THRESHOLD = 3;
   private static circuitBreakerFailures = 0;
   private static circuitBreakerOpen = false;
