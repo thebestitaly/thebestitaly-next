@@ -245,7 +245,7 @@ interface GetDestinationsParams {
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 5; // REDUCED from 10
+  private static readonly MAX_CONCURRENT_CALLS = 20; // 🚀 PRODUCTION: Allows normal site operation
   private static readonly REQUEST_TIMEOUT = 12000; // ⚖️ BALANCED: 12 seconds - prevents timeout while limiting memory leak
   private static readonly CIRCUIT_BREAKER_THRESHOLD = 3;
   private static circuitBreakerFailures = 0;
@@ -323,9 +323,9 @@ class DirectusClient {
         // Check circuit breaker first
         this.checkCircuitBreaker();
         
-        // Ultra-strict concurrency limit
+        // Production concurrency limit
         if (DirectusClient.activeCalls >= DirectusClient.MAX_CONCURRENT_CALLS) {
-          throw new Error('Too many concurrent requests - memory protection (5 max)');
+          throw new Error(`Too many concurrent requests - memory protection (${DirectusClient.MAX_CONCURRENT_CALLS} max)`);
         }
 
         DirectusClient.activeCalls++;
