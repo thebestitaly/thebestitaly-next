@@ -272,8 +272,12 @@ interface GetDestinationsParams {
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 10;
-  private static readonly REQUEST_TIMEOUT = 8000; // 🚨 CRITICAL: 8 seconds max (was 60!)
+  private static readonly MAX_CONCURRENT_CALLS = 5; // REDUCED from 10
+  private static readonly REQUEST_TIMEOUT = 3000; // 🚨 ULTRA-AGGRESSIVE: 3 seconds (was 8!)
+  private static readonly CIRCUIT_BREAKER_THRESHOLD = 3;
+  private static circuitBreakerFailures = 0;
+  private static circuitBreakerOpen = false;
+  private static circuitBreakerResetTime = 0;
 
   constructor() {
     // DirectusClient per LETTURA - usa proxy per evitare CORS
@@ -302,29 +306,57 @@ class DirectusClient {
       
     this.client = axios.create({
       baseURL,
-      timeout: DirectusClient.REQUEST_TIMEOUT, // 🚨 CRITICAL: 8 seconds (was 60!)
-      maxRedirects: 3, // Reduced from 5
-      // 🚨 MEMORY LEAK FIX: Connection limits
-      maxContentLength: 50 * 1024 * 1024, // 50MB max response
-      maxBodyLength: 10 * 1024 * 1024, // 10MB max request
-      validateStatus: (status) => status < 500, // Don't retry on 4xx errors
+      timeout: DirectusClient.REQUEST_TIMEOUT, // 🚨 ULTRA-AGGRESSIVE: 3 seconds!
+      maxRedirects: 2, // Further reduced
+      // 🚨 MEMORY LEAK FIX: Ultra-strict limits
+      maxContentLength: 10 * 1024 * 1024, // 10MB max (was 50MB)
+      maxBodyLength: 2 * 1024 * 1024, // 2MB max (was 10MB)
+      validateStatus: (status) => status < 500,
     });
   
     this.setupInterceptors();
   }
 
+  // 🚨 CIRCUIT BREAKER: Stop requests when system is failing
+  private checkCircuitBreaker(): void {
+    const now = Date.now();
+    
+    // Reset circuit breaker after 30 seconds
+    if (DirectusClient.circuitBreakerOpen && now > DirectusClient.circuitBreakerResetTime) {
+      DirectusClient.circuitBreakerOpen = false;
+      DirectusClient.circuitBreakerFailures = 0;
+      console.log('🔄 Circuit breaker reset');
+    }
+    
+    if (DirectusClient.circuitBreakerOpen) {
+      throw new Error('Circuit breaker open - system overloaded');
+    }
+  }
+
+  private handleCircuitBreakerFailure(): void {
+    DirectusClient.circuitBreakerFailures++;
+    
+    if (DirectusClient.circuitBreakerFailures >= DirectusClient.CIRCUIT_BREAKER_THRESHOLD) {
+      DirectusClient.circuitBreakerOpen = true;
+      DirectusClient.circuitBreakerResetTime = Date.now() + 30000; // 30 seconds
+      console.log('🚨 Circuit breaker OPEN - too many failures');
+    }
+  }
+
   private setupInterceptors() {
-    // 🚨 MEMORY LEAK FIX: Request interceptor with concurrency control
+    // 🚨 ULTRA-AGGRESSIVE: Request interceptor with circuit breaker
     this.client.interceptors.request.use(
       async (request) => {
-        // Limit concurrent requests to prevent memory explosion
+        // Check circuit breaker first
+        this.checkCircuitBreaker();
+        
+        // Ultra-strict concurrency limit
         if (DirectusClient.activeCalls >= DirectusClient.MAX_CONCURRENT_CALLS) {
-          throw new Error('Too many concurrent requests - memory protection');
+          throw new Error('Too many concurrent requests - memory protection (5 max)');
         }
 
         DirectusClient.activeCalls++;
 
-        // Add authorization header dynamically on each request
         const token = process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
         if (token) {
           request.headers['Authorization'] = `Bearer ${token}`;
@@ -335,17 +367,23 @@ class DirectusClient {
       },
       (error) => {
         DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
+        this.handleCircuitBreakerFailure();
         return Promise.reject(error);
       }
     );
 
-    // 🚨 MEMORY LEAK FIX: Response interceptor with cleanup
+    // 🚨 ULTRA-AGGRESSIVE: Response interceptor with forced cleanup
     this.client.interceptors.response.use(
       (response) => {
         DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
         
-        // Force garbage collection for large responses
-        if (response.data && JSON.stringify(response.data).length > 1024 * 1024) { // 1MB
+        // Reset circuit breaker on success
+        if (DirectusClient.circuitBreakerFailures > 0) {
+          DirectusClient.circuitBreakerFailures = Math.max(0, DirectusClient.circuitBreakerFailures - 1);
+        }
+        
+        // AGGRESSIVE garbage collection for ANY response > 500KB
+        if (response.data && JSON.stringify(response.data).length > 512 * 1024) {
           if (global.gc) {
             global.gc();
           }
@@ -355,12 +393,16 @@ class DirectusClient {
       },
       (error) => {
         DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
+        this.handleCircuitBreakerFailure();
         
-        // Only log critical errors in production
+        // Silent errors in production except for circuit breaker
         if (process.env.NODE_ENV === 'development') {
-          console.error('🚨 Directus Error:', error.response?.status, error.response?.statusText || error.message);
-        } else if (error.code !== 'ECONNABORTED' && error.response?.status >= 500) {
-          console.error('🚨 Directus Error:', error.response?.status);
+          console.error('🚨 Directus Error:', error.response?.status, error.code);
+        }
+        
+        // Force cleanup on ANY error
+        if (global.gc) {
+          global.gc();
         }
         
         return Promise.reject(error);

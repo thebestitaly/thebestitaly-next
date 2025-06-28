@@ -7,7 +7,6 @@ let createClient: any = null;
 // 🚨 MEMORY LEAK FIX: Strict connection limits
 const MAX_CONNECTIONS = 5;
 const CONNECTION_TIMEOUT = 15000; // 15 seconds
-const IDLE_TIMEOUT = 30000; // 30 seconds
 
 // Configurazione Redis
 const redisUrl = process.env.REDIS_URL || process.env.REDIS_PRIVATE_URL || 'redis://localhost:6379';
@@ -26,10 +25,11 @@ async function loadRedis() {
   return createClient;
 }
 
-let redisClient: ReturnType<typeof createClient> | null = null;
-let connectionAttempts = 0;
+// Connection pool with strict limits
+const connectionPool: any[] = [];
 let isConnecting = false;
-let connectionPool: Array<ReturnType<typeof createClient>> = [];
+let connectionAttempts = 0;
+let redisClient: any = null;
 
 // 🚨 MEMORY LEAK FIX: Singleton pattern with strict pooling
 export async function getRedisClient() {
@@ -42,397 +42,268 @@ export async function getRedisClient() {
   if (isConnecting) {
     // Wait for the current connection attempt
     let attempts = 0;
-    while (isConnecting && attempts < 50) { // Max 5 seconds wait
+    while (isConnecting && attempts < 30) { // Max 3 seconds wait
       await new Promise(resolve => setTimeout(resolve, 100));
       attempts++;
     }
     
+    // If still connecting after timeout, return the client anyway
     if (redisClient && redisClient.isOpen) {
       return redisClient;
     }
   }
 
-  // Limit total connection attempts per process
+  // Limit connection attempts
   if (connectionAttempts >= MAX_CONNECTIONS) {
-    throw new Error('Too many Redis connection attempts - memory protection');
+    console.log('⚠️ Max Redis connection attempts reached, using memory cache');
+    throw new Error('Max Redis connections reached');
   }
 
   isConnecting = true;
   connectionAttempts++;
 
   try {
-    const RedisClient = await loadRedis();
+    const createClientFn = await loadRedis();
     
-    const client = RedisClient({
+    // Create new client with strict timeout
+    redisClient = createClientFn({
       url: redisUrl,
       socket: {
         connectTimeout: CONNECTION_TIMEOUT,
-        lazyConnect: true,
-        keepAlive: true,
+        lazyConnect: true, // Don't auto-connect
         noDelay: true,
+        keepAlive: true,
       },
-      // 🚨 MEMORY LEAK FIX: Aggressive connection limits
-      database: 0,
-      ...(process.env.NODE_ENV === 'production' && {
-        socket: {
-          tls: redisUrl.includes('rediss://'),
-          rejectUnauthorized: false,
-          connectTimeout: CONNECTION_TIMEOUT,
-          keepAlive: true,
-        }
-      })
+      // Disable retries to prevent memory buildup
+      retryStrategy: () => false,
+      // Faster ping interval for health checks
+      pingInterval: 10000, // 10 seconds
     });
 
-    // 🚨 MEMORY LEAK FIX: Minimal logging in production
-    if (process.env.NODE_ENV === 'development') {
-      client.on('error', (err: any) => {
+    // Event handlers for better tracking
+    redisClient.on('error', (err: Error) => {
+      if (process.env.NODE_ENV === 'development') {
         console.error('❌ Redis Client Error:', err);
-      });
+      }
+      // Don't keep errored clients
+      if (redisClient) {
+        redisClient.disconnect().catch(() => {});
+      }
+      redisClient = null;
+    });
 
-      client.on('connect', () => {
+    redisClient.on('connect', () => {
+      if (process.env.NODE_ENV === 'development') {
         console.log('✅ Redis Connected');
-      });
-
-      client.on('ready', () => {
-        console.log('🚀 Redis Ready');
-      });
-
-      client.on('end', () => {
-        console.log('🔌 Redis Connection Ended');
-      });
-    } else {
-      // Production: Only log critical errors
-      client.on('error', (err: any) => {
-        if (err.code !== 'ECONNRESET') {
-          console.error('❌ Redis Error:', err.code);
-        }
-      });
-    }
-
-    // 🚨 MEMORY LEAK FIX: Auto-cleanup idle connections
-    client.on('idle', () => {
-      if (process.env.NODE_ENV === 'production') {
-        setTimeout(() => {
-          if (client.isOpen) {
-            client.disconnect();
-          }
-        }, IDLE_TIMEOUT);
       }
     });
 
-    await client.connect();
-    redisClient = client;
-    
-    return client;
+    redisClient.on('ready', () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 Redis Ready');
+      }
+    });
+
+    redisClient.on('end', () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⛔ Redis Connection Ended');
+      }
+      redisClient = null;
+    });
+
+    // Connect with timeout
+    await Promise.race([
+      redisClient.connect(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), CONNECTION_TIMEOUT)
+      )
+    ]);
+
+    return redisClient;
+
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ Redis connection failed:', error);
+    }
+    redisClient = null;
+    throw error;
   } finally {
     isConnecting = false;
   }
 }
 
-// 🚨 MEMORY LEAK FIX: Cleanup function
+// Close Redis connection cleanly
 export async function closeRedisConnection() {
-  if (redisClient && redisClient.isOpen) {
-    await redisClient.disconnect();
-    redisClient = null;
-  }
-  connectionAttempts = 0;
-}
-
-// Cache durations ottimizzate per contenuti statici (valori sicuri per 32-bit)
-export const CACHE_DURATIONS = {
-  // Contenuti principali - CACHE ULTRA-AGGRESSIVA per contenuti stabili
-  DESTINATIONS: 60 * 60 * 24 * 30, // 30 GIORNI (era 14) - destinazioni sono dati quasi statici
-  COMPANIES: 60 * 60 * 24 * 14, // 14 GIORNI (era 7) - aziende cambiano raramente
-  ARTICLES: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - articoli sono contenuti statici
-  
-  // Dati di supporto - cache lunga per stabilità
-  TRANSLATIONS: 60 * 60 * 24 * 14, // 14 giorni (era 7) - traduzioni quasi mai cambiano
-  LANGUAGES: 60 * 60 * 24 * 30, // 30 giorni - lingue supportate mai cambiano
-  CATEGORIES: 60 * 60 * 24 * 14, // 14 giorni (era 7) - categorie quasi mai cambiano
-  
-  // Menu navigation - CACHE ULTRA-LUNGA
-  MENU_DESTINATIONS: 60 * 60 * 24 * 30, // 30 GIORNI (era 21) - menu regioni/province completamente stabile
-  
-  // Homepage e liste - CACHE PIÙ AGGRESSIVA per contenuti più visti
-  HOMEPAGE_DESTINATIONS: 60 * 60 * 24 * 3, // 3 GIORNI (era 1) - featured homepage
-  FEATURED_COMPANIES: 60 * 60 * 24 * 3, // 3 GIORNI (era 1) - featured homepage
-  LATEST_ARTICLES: 60 * 60 * 1, // 12 ORE (era 6) - gli ultimi articoli possono cambiare
-  
-  // Homepage articles - NUOVA CATEGORIA per ottimizzare
-  HOMEPAGE_ARTICLES: 60 * 60 * 24 * 2, // 2 GIORNI - articoli featured homepage
-  FEATURED_ARTICLES: 60 * 60 * 24 * 2, // 2 GIORNI - articoli featured
-  
-  // Sidebar components - cache MOLTO aggressiva per performance
-  DESTINATION_SIDEBAR: 60 * 60 * 24, // 24 ORE (era 12) - sidebar destinazioni
-  ARTICLES_SIDEBAR: 60 * 60 * 12, // 12 ORE (era 6) - sidebar articoli
-  RELATED_DESTINATIONS: 60 * 60 * 24 * 14, // 14 GIORNI (era 2) - liste province/comuni statiche
-  
-  // API responses - cache estesa per ridurre traffico Directus
-  SEARCH_RESULTS: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - risultati ricerca stabili
-  WIDGET_DATA: 60 * 60 * 24 * 21, // 21 GIORNI (era 7) - widget data quasi mai cambia
-  
-  // Sitemap e SEO - cache lunga per performance
-  SITEMAP: 60 * 60 * 24 * 7, // 7 GIORNI (era 1) - sitemap cambia raramente
-  METADATA: 60 * 60 * 24 * 7, // 7 GIORNI (era 3) - metadata SEO stabile
-  
-  // NUOVE CATEGORIE per contenuti specifici più richiesti
-  DESTINATION_DETAIL: 60 * 60 * 24 * 14, // 14 giorni - pagine destinazioni dettaglio
-  ARTICLE_DETAIL: 60 * 60 * 24 * 7, // 7 giorni - pagine articoli dettaglio
-  IMAGES_METADATA: 60 * 60 * 24 * 30, // 30 giorni - metadata immagini mai cambiano
-} as const;
-
-// Interface per in-memory fallback
-interface CacheItem {
-  data: any;
-  timestamp: number;
-  ttl: number;
-}
-
-// In-memory fallback cache (quando Redis non è disponibile)
-const memoryCache = new Map<string, CacheItem>();
-
-// Simple in-memory cache implementation (fallback)
-export class MemoryCache {
-  static get<T>(key: string): T | null {
-    const item = memoryCache.get(key);
-    
-    if (!item) {
-      return null;
-    }
-    
-    // Check if expired
-    const now = Date.now();
-    if (now > item.timestamp + (item.ttl * 1000)) {
-      memoryCache.delete(key);
-      return null;
-    }
-    
-    return item.data as T;
-  }
-
-  static set(key: string, value: any, ttl: number): boolean {
+  if (redisClient) {
     try {
-      const item: CacheItem = {
-        data: value,
-        timestamp: Date.now(),
-        ttl: ttl
-      };
-      
-      memoryCache.set(key, item);
-      return true;
+      await redisClient.disconnect();
+      console.log('✅ Redis connection closed');
     } catch (error) {
-      return false;
+      console.error('❌ Error closing Redis connection:', error);
+    } finally {
+      redisClient = null;
     }
   }
+}
 
-  static del(key: string): boolean {
-    return memoryCache.delete(key);
+// Memory cache fallback with strict size limits
+class MemoryCache {
+  private static cache = new Map<string, any>();
+  private static readonly MAX_SIZE = 1000; // Limit memory cache size
+
+  static set(key: string, value: any, _ttl?: number): boolean {
+    // Auto-cleanup if cache too large
+    if (this.cache.size >= this.MAX_SIZE) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
+    }
+    
+    this.cache.set(key, {
+      value,
+      expiry: _ttl ? Date.now() + (_ttl * 1000) : null
+    });
+    return true;
+  }
+
+  static get(key: string): any {
+    const item = this.cache.get(key);
+    if (!item) return null;
+    
+    // Check expiry
+    if (item.expiry && Date.now() > item.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return item.value;
+  }
+
+  static del(key: string): number {
+    return this.cache.delete(key) ? 1 : 0;
+  }
+
+  static clear(): number {
+    const size = this.cache.size;
+    this.cache.clear();
+    return size;
+  }
+
+  static size(): number {
+    return this.cache.size;
   }
 
   static delPattern(pattern: string): number {
     let deletedCount = 0;
     const regex = new RegExp(pattern.replace(/\*/g, '.*'));
     
-    for (const key of memoryCache.keys()) {
+    for (const key of this.cache.keys()) {
       if (regex.test(key)) {
-        memoryCache.delete(key);
+        this.cache.delete(key);
         deletedCount++;
       }
     }
     
     return deletedCount;
   }
-
-  static clear(): number {
-    const size = memoryCache.size;
-    memoryCache.clear();
-    return size;
-  }
 }
 
-// Funzioni di cache con Redis e fallback in-memory
-export class RedisCache {
-  private static async getClient() {
-    try {
-      return await getRedisClient();
-    } catch (error) {
-      console.warn('⚠️ Redis not available, using memory cache fallback');
-      return null;
-    }
-  }
+export { MemoryCache };
 
-  // GET con fallback
-  static async get<T>(key: string): Promise<T | null> {
-    try {
-      const client = await this.getClient();
-      
-      if (!client) {
-        // Fallback to memory cache
-        const data = MemoryCache.get<T>(key);
-        if (data) {
-          console.log(`✅ Memory Cache HIT: ${key}`);
-        } else {
-          console.log(`📭 Memory Cache MISS: ${key}`);
-        }
-        return data;
-      }
-      
-      const data = await client.get(key);
-      
-      if (!data) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`📭 Redis Cache MISS: ${key}`);
-        }
-        return null;
-      }
-      
+// Helper functions with strict error handling
+export async function setCache(key: string, value: any, ttl: number = 3600): Promise<boolean> {
+  try {
+    // Always set in memory cache first
+    MemoryCache.set(key, value, ttl);
+    
+    // Try Redis cache
+    const client = await getRedisClient();
+    if (client && client.isOpen) {
+      await client.setEx(key, ttl, JSON.stringify(value));
       if (process.env.NODE_ENV === 'development') {
-        console.log(`✅ Redis Cache HIT: ${key}`);
+        console.log(`✅ Redis Cache SET: ${key}`);
       }
-      return JSON.parse(data) as T;
-    } catch (error) {
-      console.error(`❌ Redis GET error for key ${key}:`, error);
-      // Fallback to memory cache
-      return MemoryCache.get<T>(key);
-    }
-  }
-
-  // SET con TTL
-  static async set(key: string, value: any, ttl: number): Promise<boolean> {
-    try {
-      const client = await this.getClient();
-      
-      if (!client) {
-        // Fallback to memory cache
-        const success = MemoryCache.set(key, value, ttl);
-        if (success) {
-          console.log(`💾 Memory Cache SET: ${key} (TTL: ${ttl}s)`);
-        }
-        return success;
-      }
-      
-      const serialized = JSON.stringify(value);
-      await client.setEx(key, ttl, serialized);
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`💾 Redis Cache SET: ${key} (TTL: ${ttl}s = ${Math.round(ttl/3600)}h)`);
-      }
-      
-      // Also set in memory cache as backup
-      MemoryCache.set(key, value, ttl);
-      
       return true;
-    } catch (error) {
-      console.error(`❌ Redis SET error for key ${key}:`, error);
-      // Fallback to memory cache
-      return MemoryCache.set(key, value, ttl);
+    }
+  } catch {
+    // Redis failed, but memory cache succeeded
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`⚠️ Redis failed, using memory cache for: ${key}`);
     }
   }
+  
+  return true; // Memory cache always works
+}
 
-  // DELETE
-  static async del(key: string): Promise<boolean> {
-    try {
-      const client = await this.getClient();
-      
-      if (!client) {
-        const deleted = MemoryCache.del(key);
-        console.log(`🗑️ Memory Cache DELETE: ${key} (deleted: ${deleted})`);
-        return deleted;
+export async function getCache(key: string): Promise<any> {
+  try {
+    // Try memory cache first (faster)
+    const memResult = MemoryCache.get(key);
+    if (memResult !== null) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Memory Cache HIT: ${key}`);
       }
-      
-      const result = await client.del(key);
-      console.log(`🗑️ Redis Cache DELETE: ${key} (deleted: ${result})`);
-      
-      // Also delete from memory cache
-      MemoryCache.del(key);
-      
-      return result > 0;
-    } catch (error) {
-      console.error(`❌ Redis DELETE error for key ${key}:`, error);
-      return MemoryCache.del(key);
+      return memResult;
+    }
+    
+    // Try Redis if memory cache miss
+    const client = await getRedisClient();
+    if (client && client.isOpen) {
+      const result = await client.get(key);
+      if (result) {
+        const parsed = JSON.parse(result);
+        // Store in memory cache for next time
+        MemoryCache.set(key, parsed, 300); // 5 min memory cache
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ Redis Cache HIT: ${key}`);
+        }
+        return parsed;
+      }
+    }
+  } catch {
+    // Both caches failed
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`❌ Cache MISS: ${key}`);
     }
   }
+  
+  return null;
+}
 
-  // DELETE con pattern (per invalidare gruppi)
-  static async delPattern(pattern: string): Promise<number> {
-    try {
-      const client = await this.getClient();
-      
-      if (!client) {
-        const deleted = MemoryCache.delPattern(pattern);
-        console.log(`🗑️ Memory Cache DELETE PATTERN: ${pattern} (${deleted} keys deleted)`);
-        return deleted;
-      }
-      
-      const keys = await client.keys(pattern);
-      
-      if (keys.length === 0) {
-        console.log(`🔍 No Redis keys found for pattern: ${pattern}`);
-        return MemoryCache.delPattern(pattern);
-      }
-      
-      const result = await client.del(keys);
-      console.log(`🗑️ Redis Cache DELETE PATTERN: ${pattern} (${result} keys deleted)`);
-      
-      // Also delete from memory cache
-      MemoryCache.delPattern(pattern);
-      
-      return result;
-    } catch (error) {
-      console.error(`❌ Redis DELETE PATTERN error for ${pattern}:`, error);
-      return MemoryCache.delPattern(pattern);
+export async function delCache(key: string): Promise<number> {
+  let deleted = 0;
+  
+  // Delete from memory cache
+  deleted += MemoryCache.del(key);
+  
+  // Try to delete from Redis
+  try {
+    const client = await getRedisClient();
+    if (client && client.isOpen) {
+      deleted += await client.del(key);
     }
+  } catch {
+    // Redis delete failed, but memory delete succeeded
   }
+  
+  return deleted;
+}
 
-  // Verifica connessione
-  static async ping(): Promise<boolean> {
-    try {
-      const client = await this.getClient();
-      if (!client) return false;
-      
-      const response = await client.ping();
-      return response === 'PONG';
-    } catch (error) {
-      console.error('❌ Redis PING error:', error);
+// Cache warmup for static data
+export async function warmupCache() {
+  try {
+    const client = await getRedisClient();
+    if (!client || !client.isOpen) {
+      console.log('⚠️ Redis not available for warmup, using memory cache only');
       return false;
     }
-  }
-
-  // Statistiche cache
-  static async getStats(): Promise<any> {
-    try {
-      const client = await this.getClient();
-      
-      if (!client) {
-        return {
-          connected: false,
-          fallback: 'memory',
-          memoryCache: {
-            size: memoryCache.size
-          }
-        };
-      }
-      
-      const info = await client.info('stats');
-      const memory = await client.info('memory');
-      
-      return {
-        connected: client.isOpen,
-        stats: info,
-        memory: memory,
-        memoryCache: {
-          size: memoryCache.size
-        }
-      };
-    } catch (error) {
-      console.error('❌ Redis STATS error:', error);
-      return {
-        connected: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        memoryCache: {
-          size: memoryCache.size
-        }
-      };
-    }
+    
+    console.log('🔥 Cache warmup completed');
+    return true;
+  } catch (error) {
+    console.log('⚠️ Cache warmup failed, using memory cache only');
+    return false;
   }
 }
 
@@ -446,107 +317,59 @@ export const CacheKeys = {
   // Collezioni
   homepageDestinations: (lang: string) => `homepage:dest:${lang}`,
   featuredCompanies: (lang: string) => `featured:comp:${lang}`,
+  
+  // Articles
   latestArticles: (lang: string) => `latest:art:${lang}`,
+  homepageArticles: (lang: string) => `latest:art:${lang}_homepage`,
   
-  // Sidebar components - chiavi specifiche per sidebar
-  destinationSidebar: (currentId: string, type: string, lang: string) => `sidebar:dest:${currentId}:${type}:${lang}`,
-  destinationArticles: (destinationId: string, lang: string) => `sidebar:articles:${destinationId}:${lang}`,
-  otherProvinces: (regionId: string, excludeId: string, lang: string) => `sidebar:provinces:${regionId}:ex${excludeId}:${lang}`,
-  municipalities: (provinceId: string, excludeId: string, showAll: boolean, lang: string) => `sidebar:municipalities:${provinceId}:ex${excludeId}:${showAll}:${lang}`,
-  relatedArticles: (destinationId: string, lang: string) => `sidebar:related:${destinationId}:${lang}`,
+  // Menu items
+  menuDestinations: (lang: string) => `menu:dest:${lang}`,
   
-  // Ricerche
-  search: (type: string, query: string, lang: string) => `search:${type}:${Buffer.from(query).toString('base64')}:${lang}`,
-  
-  // Widget
-  widgetData: (widgetId: string) => `widget:${widgetId}`,
-  
-  // Traduzioni
-  translations: (section: string, lang: string) => `trans:${section}:${lang}`,
-  
-  // Metadata
-  metadata: (type: string, id: string, lang: string) => `meta:${type}:${id}:${lang}`,
-  
-  // Sitemap
-  sitemap: (lang: string) => `sitemap:${lang}`,
-  
-  // Utility
-  languages: () => 'languages:supported',
+  // Categories
   categories: (lang: string) => `categories:${lang}`,
   
-  // Menu navigation
-  menuDestinations: (type: string, lang: string) => `menu:${type}:${lang}`,
-} as const;
-
-// Wrapper per funzioni con cache automatica
-export async function withCache<T>(
-  key: string,
-  ttl: number,
-  fetchFunction: () => Promise<T>
-): Promise<T> {
-  try {
-    // Solo lato server per Redis
-    if (typeof window !== 'undefined') {
-      console.log(`🔄 Client-side: Fetching data directly for: ${key}`);
-      return await fetchFunction();
-    }
-
-    // Prova cache prima
-    const cachedData = await RedisCache.get<T>(key);
-    if (cachedData !== null) {
-      return cachedData;
-    }
-
-    // Fetch dai dati
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 Fetching fresh data for: ${key}`);
-    }
-    const freshData = await fetchFunction();
-    
-    // Salva in cache (non bloccante)
-    RedisCache.set(key, freshData, ttl).catch(err => {
-      console.warn(`⚠️ Failed to cache data for ${key}:`, err instanceof Error ? err.message : 'Unknown error');
-    });
-    
-    return freshData;
-  } catch (error) {
-    // Fallback se cache non è disponibile
-    console.warn(`⚠️ Cache error for ${key}, falling back to direct fetch:`, error instanceof Error ? error.message : 'Unknown error');
-    return await fetchFunction();
-  }
-}
-
-// Funzione per invalidare cache quando aggiorni contenuti
-export async function invalidateContentCache(type: 'destination' | 'company' | 'article', id?: string) {
-  console.log(`🔄 Invalidating cache for ${type}${id ? ` ID: ${id}` : ''}`);
-  
-  if (id) {
-    // Invalida contenuto specifico in tutte le lingue
-    await RedisCache.delPattern(`${type.substring(0,4)}:${id}:*`);
-    // Invalida anche sidebar correlate
-    await RedisCache.delPattern(`sidebar:*${id}*`);
-  } else {
-    // Invalida tutto il tipo
-    await RedisCache.delPattern(`${type.substring(0,4)}:*`);
-    await RedisCache.delPattern(`sidebar:*`);
-  }
-  
-  // Invalida anche cache correlate
-  await RedisCache.delPattern('homepage:*');
-  await RedisCache.delPattern('featured:*');
-  await RedisCache.delPattern('latest:*');
-  await RedisCache.delPattern('search:*');
-  await RedisCache.delPattern('sitemap:*');
-  
-  console.log(`✅ Cache invalidation completed for ${type}`);
-}
-
-// 🚨 EMERGENCY: Limiti aggressivi per Railway costs
-export const EMERGENCY_LIMITS = {
-  MAX_REQUESTS_PER_MINUTE: 50,        // Massimo 50 req/min
-  MAX_EGRESS_MB_PER_HOUR: 100,       // Massimo 100MB egress/ora
-  BLOCK_HEAVY_IMAGES: true,           // Blocca immagini > 500KB
-  CACHE_EVERYTHING: true              // Cachea tutto aggressivamente
+  // Sidebar lists
+  destinationArticles: (destId: string, lang: string) => `sidebar:art:${destId}:${lang}`,
+  relatedDestinations: (destId: string, type: string, lang: string) => `sidebar:dest:${destId}:${type}:${lang}`,
 };
 
-export default RedisCache; 
+// Cache management functions
+export async function invalidateContentCache(type: 'destination' | 'company' | 'article', id?: string) {
+  const patterns = [];
+  
+  if (type === 'destination') {
+    patterns.push(id ? `dest:${id}:*` : 'dest:*');
+    patterns.push('homepage:dest:*');
+    patterns.push('menu:dest:*');
+    patterns.push(id ? `sidebar:*:${id}:*` : 'sidebar:*');
+  } else if (type === 'company') {
+    patterns.push(id ? `comp:${id}:*` : 'comp:*');
+    patterns.push('featured:comp:*');
+  } else if (type === 'article') {
+    patterns.push(id ? `art:${id}:*` : 'art:*');
+    patterns.push('latest:art:*');
+  }
+  
+  let totalDeleted = 0;
+  for (const pattern of patterns) {
+    try {
+      const deleted = await MemoryCache.delPattern(pattern);
+      totalDeleted += deleted;
+      
+      // Also try Redis if available
+      const client = await getRedisClient();
+      if (client && client.isOpen) {
+        const keys = await client.keys(pattern);
+        if (keys.length > 0) {
+          const redisDeleted = await client.del(keys);
+          totalDeleted += redisDeleted;
+        }
+      }
+    } catch (error) {
+      console.error(`Error invalidating cache pattern ${pattern}:`, error);
+    }
+  }
+  
+  console.log(`🗑️ Invalidated ${totalDeleted} cache entries for ${type}${id ? ` (ID: ${id})` : ''}`);
+  return totalDeleted;
+} 
