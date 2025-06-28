@@ -279,12 +279,20 @@ class DirectusClient {
       
     this.client = axios.create({
       baseURL,
-      timeout: DirectusClient.REQUEST_TIMEOUT, // 🚨 ULTRA-AGGRESSIVE: 3 seconds!
-      maxRedirects: 2, // Further reduced
-      // 🚨 MEMORY LEAK FIX: Ultra-strict limits
-      maxContentLength: 10 * 1024 * 1024, // 10MB max (was 50MB)
-      maxBodyLength: 2 * 1024 * 1024, // 2MB max (was 10MB)
+      timeout: DirectusClient.REQUEST_TIMEOUT,
+      maxRedirects: 2,
+      // 🚨 EXTERNAL MEMORY LEAK FIX: Force connection cleanup
+      maxContentLength: 5 * 1024 * 1024, // 5MB max (reduced from 10MB)
+      maxBodyLength: 1 * 1024 * 1024, // 1MB max (reduced from 2MB)
       validateStatus: (status) => status < 500,
+      // 🚨 CRITICAL: Force connection close to prevent buffer accumulation
+      headers: {
+        'Connection': 'close',
+        'Keep-Alive': 'timeout=1, max=1'
+      },
+      // Force new connections instead of pooling
+      httpAgent: false,
+      httpsAgent: false,
     });
   
     this.setupInterceptors();
@@ -355,11 +363,19 @@ class DirectusClient {
           DirectusClient.circuitBreakerFailures = Math.max(0, DirectusClient.circuitBreakerFailures - 1);
         }
         
-        // AGGRESSIVE garbage collection for ANY response > 500KB
-        if (response.data && JSON.stringify(response.data).length > 512 * 1024) {
+        // 🚨 ULTRA-AGGRESSIVE: Force cleanup for ANY response > 100KB
+        if (response.data && JSON.stringify(response.data).length > 100 * 1024) {
           if (global.gc) {
             global.gc();
           }
+        }
+        
+        // 🚨 EXTERNAL MEMORY LEAK FIX: Force buffer cleanup
+        if (response.config && response.config.data) {
+          response.config.data = null;
+        }
+        if (response.request) {
+          response.request._data = null;
         }
         
         return response;
