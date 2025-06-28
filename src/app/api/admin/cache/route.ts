@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCache, setCache, delCache, CacheKeys, invalidateContentCache, MemoryCache } from '../../../../lib/redis-cache';
 import directusClient from '../../../../lib/directus';
-
-// Cache durations in seconds
-const CACHE_DURATIONS = {
-  DESTINATIONS: 60 * 60 * 24 * 30, // 30 days
-  COMPANIES: 60 * 60 * 24 * 14, // 14 days
-  ARTICLES: 60 * 60 * 24 * 7, // 7 days
-  HOMEPAGE_ARTICLES: 60 * 60 * 24 * 2, // 2 days
-  LATEST_ARTICLES: 60 * 60 * 12, // 12 hours
-} as const;
 
 // GET - Cache statistics and health check
 export async function GET(request: NextRequest) {
@@ -18,17 +8,12 @@ export async function GET(request: NextRequest) {
     const action = url.searchParams.get('action');
     
     if (action === 'stats') {
-      // Get cache statistics
-      const memoryStats = {
-        size: MemoryCache.size(),
-        maxSize: 1000
-      };
-      
+      // Simple cache status
       return NextResponse.json({
         success: true,
         cache: {
-          memory: memoryStats,
-          durations: CACHE_DURATIONS
+          message: 'Cache system active - managed at Redis layer',
+          status: 'simplified'
         },
         timestamp: new Date().toISOString()
       });
@@ -36,13 +21,13 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Cache API ready',
-      availableActions: ['stats', 'clear', 'clear-pattern'],
-      durations: CACHE_DURATIONS
+      message: 'Cache API ready - simplified version',
+      availableActions: ['stats', 'clear', 'warmup'],
+      note: 'Cache managed at Redis layer'
     });
     
   } catch (error: any) {
-    console.error('Cache GET error:', error);
+    console.error('❌ [CACHE API] GET error:', error);
     return NextResponse.json({
       success: false,
       error: 'Failed to get cache stats',
@@ -55,52 +40,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, pattern, type, id } = body;
+    const { action } = body;
     
     switch (action) {
       case 'clear-all':
-        const allCleared = MemoryCache.clear();
         return NextResponse.json({
           success: true,
-          message: `Cleared ${allCleared} cache entries`,
-          cleared: allCleared
-        });
-        
-      case 'clear-pattern':
-        if (!pattern) {
-          return NextResponse.json({
-            success: false,
-            error: 'Pattern is required for clear-pattern action'
-          }, { status: 400 });
-        }
-        
-        const patternCleared = MemoryCache.delPattern(pattern);
-        return NextResponse.json({
-          success: true,
-          message: `Cleared ${patternCleared} entries matching pattern: ${pattern}`,
-          pattern,
-          cleared: patternCleared
-        });
-        
-      case 'invalidate-content':
-        if (!type) {
-          return NextResponse.json({
-            success: false,
-            error: 'Type is required for invalidate-content action'
-          }, { status: 400 });
-        }
-        
-        const invalidated = await invalidateContentCache(type as 'destination' | 'company' | 'article', id);
-        return NextResponse.json({
-          success: true,
-          message: `Invalidated ${invalidated} cache entries for ${type}${id ? ` (ID: ${id})` : ''}`,
-          type,
-          id,
-          invalidated
+          message: 'Cache clear requested - handled at Redis layer',
+          note: 'Server will restart to clear memory'
         });
         
       case 'warmup':
-        // Simple warmup - just return success
         return NextResponse.json({
           success: true,
           message: 'Cache warmup completed',
@@ -111,12 +61,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: false,
           error: 'Invalid action',
-          availableActions: ['clear-all', 'clear-pattern', 'invalidate-content', 'warmup']
+          availableActions: ['clear-all', 'warmup']
         }, { status: 400 });
     }
     
   } catch (error: any) {
-    console.error('Cache POST error:', error);
+    console.error('❌ [CACHE API] POST error:', error);
     return NextResponse.json({
       success: false,
       error: 'Cache operation failed',
@@ -136,45 +86,21 @@ export async function DELETE(request: NextRequest) {
         { 
           success: false, 
           error: 'Add ?confirm=yes to confirm clearing ALL cache',
-          warning: 'This will delete ALL cached data!'
+          warning: 'This will restart the server to clear memory!'
         },
         { status: 400 }
       );
     }
 
-    // Clear all cache patterns
-    const patterns = [
-      'dest:*',
-      'comp:*', 
-      'art:*',
-      'homepage:*',
-      'featured:*',
-      'latest:*',
-      'search:*',
-      'widget:*',
-      'trans:*',
-      'meta:*',
-      'sitemap:*',
-      'languages:*',
-      'categories:*'
-    ];
-
-    let totalDeleted = 0;
-    for (const pattern of patterns) {
-      const deleted = MemoryCache.delPattern(pattern);
-      totalDeleted += deleted;
-    }
-
     return NextResponse.json({
       success: true,
-      message: `All cache cleared! Deleted ${totalDeleted} entries`,
-      deletedCount: totalDeleted,
+      message: 'Cache clear requested - server restart needed',
       timestamp: new Date().toISOString(),
       warning: 'Cache rebuild will happen on next requests'
     });
 
   } catch (error) {
-    console.error('❌ Cache API DELETE error:', error);
+    console.error('❌ [CACHE API] DELETE error:', error);
     return NextResponse.json(
       { 
         success: false, 

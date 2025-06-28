@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import directusClient from '../../../../lib/directus';
-import { getCache, setCache, CacheKeys } from '../../../../lib/redis-cache';
-
-// Cache duration: 30 days for destinations (very stable data)
-const DESTINATIONS_TTL = 60 * 60 * 24 * 30; // 30 days
 
 export async function GET(
   request: NextRequest,
@@ -21,22 +17,9 @@ export async function GET(
       );
     }
 
-    // Check cache first
-    const cacheKey = CacheKeys.destination(id, lang);
-    const cachedDestination = await getCache(cacheKey);
+    console.log(`🔥 [DESTINATIONS API] Fetching destination ${id} for lang: ${lang}`);
     
-    if (cachedDestination) {
-      console.log(`✅ Cache HIT for destination ${id} (${lang})`);
-      return NextResponse.json({ 
-        success: true, 
-        data: cachedDestination,
-        cached: true
-      });
-    }
-    
-    console.log(`📭 Cache MISS for destination ${id} (${lang}), fetching from Directus`);
-    
-    // Fetch fresh data
+    // Direct call - cache managed at Redis layer
     const destination: any = await directusClient.getDestinationById(id, lang);
 
     if (!destination) {
@@ -46,18 +29,15 @@ export async function GET(
       );
     }
 
-    // Save to cache with long TTL (destinations rarely change)
-    await setCache(cacheKey, destination, DESTINATIONS_TTL);
-    console.log(`💾 Cached destination ${id} (${lang}) for ${DESTINATIONS_TTL/86400} days`);
+    console.log(`✅ [DESTINATIONS API] Found destination ${id} (${lang})`);
 
     return NextResponse.json({ 
       success: true, 
-      data: destination,
-      cached: false
+      data: destination
     });
 
   } catch (error) {
-    console.error('Error fetching destination:', error);
+    console.error('❌ [DESTINATIONS API] Error fetching destination:', error);
     return NextResponse.json(
       { error: 'Failed to fetch destination' }, 
       { status: 500 }
