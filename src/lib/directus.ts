@@ -10,34 +10,7 @@ export interface Translation {
   slug_permalink?: string;
 }
 
-// Import Redis cache only on server side
-let RedisCache: any = null;
-let withCache: any = null;
-let CacheKeys: any = null;
-let CACHE_DURATIONS: any = null;
-
-// Dynamically import Redis cache only on server side
-async function loadRedisCache() {
-  if (typeof window !== 'undefined') {
-    // Client side - no Redis
-    return null;
-  }
-  
-  if (!RedisCache) {
-    try {
-      const redisModule = await import('./redis-cache');
-      RedisCache = redisModule.RedisCache;
-      withCache = redisModule.withCache;
-      CacheKeys = redisModule.CacheKeys;
-      CACHE_DURATIONS = redisModule.CACHE_DURATIONS;
-      console.log('✅ Redis cache loaded for DirectusClient');
-    } catch (error) {
-      console.warn('⚠️ Redis cache not available, using direct API calls');
-    }
-  }
-  
-  return RedisCache;
-}
+// No cache imports needed - cache handled at Redis layer
 
 export interface Destination {
   id: string;
@@ -1098,20 +1071,7 @@ class DirectusClient {
   }
 
   public async getDestinationsByType(type: string, languageCode: string): Promise<Destination[]> {
-    // Try Redis cache first for menu destinations (server-side only)
-    await loadRedisCache();
-    
-    if (withCache && CacheKeys && CACHE_DURATIONS && type === 'region') {
-      return await withCache(
-        CacheKeys.menuDestinations(type, languageCode),
-        CACHE_DURATIONS.MENU_DESTINATIONS,
-        async () => {
-          return await this._getDestinationsByTypeDirect(type, languageCode);
-        }
-      );
-    }
-    
-    // For non-menu destinations, use direct call
+    // Direct call - cache handled at Redis level
     return await this._getDestinationsByTypeDirect(type, languageCode);
   }
 
@@ -1161,24 +1121,7 @@ class DirectusClient {
     limit: number = 10
   ): Promise<Article[]> {
     try {
-      // Try Redis cache first (server-side only)
-      await loadRedisCache();
-      
-      if (withCache && CacheKeys && CACHE_DURATIONS) {
-        // Create cache key based on filters
-        const filterKey = JSON.stringify(filters);
-        const cacheKey = `articles-sidebar:${languageCode}:${limit}:${Buffer.from(filterKey).toString('base64')}`;
-        
-        return await withCache(
-          cacheKey,
-          CACHE_DURATIONS.ARTICLES_SIDEBAR, // 12 ore
-          async () => {
-            return await this._getArticlesForSidebarDirect(languageCode, filters, limit);
-          }
-        );
-      }
-      
-      // Fallback to direct call
+      // Direct call - cache managed at Redis layer
       return await this._getArticlesForSidebarDirect(languageCode, filters, limit);
 
     } catch (error: any) {
@@ -1244,26 +1187,7 @@ class DirectusClient {
     limit: number = 15
   ): Promise<Article[]> {
     try {
-      // Try Redis cache first with longer TTL for generic content
-      await loadRedisCache();
-      
-      if (withCache && CacheKeys && CACHE_DURATIONS) {
-        const cacheKey = `latest-articles-sidebar:${languageCode}:${limit}`;
-        
-        return await withCache(
-          cacheKey,
-          CACHE_DURATIONS.LATEST_ARTICLES, // 12 ore - cache molto lunga per contenuti generici
-          async () => {
-            return await this._getArticlesForSidebarDirect(
-              languageCode,
-              { category_id: { _neq: 9 } }, // Solo escludi categoria 9
-              limit
-            );
-          }
-        );
-      }
-      
-      // Fallback
+      // Direct call - cache managed at Redis layer
       return await this._getArticlesForSidebarDirect(
         languageCode,
         { category_id: { _neq: 9 } },
@@ -1548,32 +1472,7 @@ class DirectusClient {
     lang: string;
     limit?: number; // Nuovo parametro opzionale
   }): Promise<Destination[]> {
-    // Try Redis cache first (server-side only)
-    await loadRedisCache();
-    
-    if (withCache && CacheKeys && CACHE_DURATIONS) {
-      // Create a unique cache key based on parameters
-      const regionIdStr = typeof region_id === 'object' ? region_id?.id?.toString() : region_id?.toString();
-      const provinceIdStr = typeof province_id === 'object' ? province_id?.id?.toString() : province_id?.toString();
-      const cacheKey = `destinations:${type}:r${regionIdStr || 'none'}:p${provinceIdStr || 'none'}:ex${exclude_id || 'none'}:${lang}`;
-      
-      return await withCache(
-        cacheKey,
-        CACHE_DURATIONS.RELATED_DESTINATIONS,
-        async () => {
-          return await this._getDestinationsDirect({
-            type,
-            region_id,
-            province_id,
-            exclude_id,
-            lang,
-            limit,
-          });
-        }
-      );
-    }
-    
-    // Fallback to direct call
+    // Direct call - cache managed at Redis layer
     return await this._getDestinationsDirect({
       type,
       region_id,
@@ -1697,20 +1596,7 @@ class DirectusClient {
     }
   }
   public async getDestinationById(id: string, languageCode: string): Promise<Destination | null> {
-    // Try Redis cache first (server-side only)
-    await loadRedisCache();
-    
-    if (withCache && CacheKeys && CACHE_DURATIONS) {
-      return await withCache(
-        CacheKeys.destination(id, languageCode),
-        CACHE_DURATIONS.DESTINATIONS,
-        async () => {
-          return await this._getDestinationByIdDirect(id, languageCode);
-        }
-      );
-    }
-    
-    // Fallback to direct call
+    // Direct call - cache managed at Redis layer
     return await this._getDestinationByIdDirect(id, languageCode);
   }
 
