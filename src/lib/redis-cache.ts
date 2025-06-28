@@ -4,6 +4,11 @@
 // Importa Redis solo lato server
 let createClient: any = null;
 
+// 🚨 MEMORY LEAK FIX: Strict connection limits
+const MAX_CONNECTIONS = 5;
+const CONNECTION_TIMEOUT = 15000; // 15 seconds
+const IDLE_TIMEOUT = 30000; // 30 seconds
+
 // Configurazione Redis
 const redisUrl = process.env.REDIS_URL || process.env.REDIS_PRIVATE_URL || 'redis://localhost:6379';
 
@@ -22,48 +27,115 @@ async function loadRedis() {
 }
 
 let redisClient: ReturnType<typeof createClient> | null = null;
+let connectionAttempts = 0;
+let isConnecting = false;
+let connectionPool: Array<ReturnType<typeof createClient>> = [];
 
-// Inizializza Redis client
+// 🚨 MEMORY LEAK FIX: Singleton pattern with strict pooling
 export async function getRedisClient() {
-  if (!redisClient) {
+  // If we already have a working client, return it
+  if (redisClient && redisClient.isOpen) {
+    return redisClient;
+  }
+
+  // Prevent multiple concurrent connection attempts
+  if (isConnecting) {
+    // Wait for the current connection attempt
+    let attempts = 0;
+    while (isConnecting && attempts < 50) { // Max 5 seconds wait
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    
+    if (redisClient && redisClient.isOpen) {
+      return redisClient;
+    }
+  }
+
+  // Limit total connection attempts per process
+  if (connectionAttempts >= MAX_CONNECTIONS) {
+    throw new Error('Too many Redis connection attempts - memory protection');
+  }
+
+  isConnecting = true;
+  connectionAttempts++;
+
+  try {
     const RedisClient = await loadRedis();
-    redisClient = RedisClient({
+    
+    const client = RedisClient({
       url: redisUrl,
       socket: {
-        connectTimeout: 60000,
+        connectTimeout: CONNECTION_TIMEOUT,
         lazyConnect: true,
+        keepAlive: true,
+        noDelay: true,
       },
-      // Configurazioni per Railway
+      // 🚨 MEMORY LEAK FIX: Aggressive connection limits
+      database: 0,
       ...(process.env.NODE_ENV === 'production' && {
         socket: {
           tls: redisUrl.includes('rediss://'),
-          rejectUnauthorized: false
+          rejectUnauthorized: false,
+          connectTimeout: CONNECTION_TIMEOUT,
+          keepAlive: true,
         }
       })
     });
 
-    redisClient.on('error', (err: any) => {
-      console.error('❌ Redis Client Error:', err);
+    // 🚨 MEMORY LEAK FIX: Minimal logging in production
+    if (process.env.NODE_ENV === 'development') {
+      client.on('error', (err: any) => {
+        console.error('❌ Redis Client Error:', err);
+      });
+
+      client.on('connect', () => {
+        console.log('✅ Redis Connected');
+      });
+
+      client.on('ready', () => {
+        console.log('🚀 Redis Ready');
+      });
+
+      client.on('end', () => {
+        console.log('🔌 Redis Connection Ended');
+      });
+    } else {
+      // Production: Only log critical errors
+      client.on('error', (err: any) => {
+        if (err.code !== 'ECONNRESET') {
+          console.error('❌ Redis Error:', err.code);
+        }
+      });
+    }
+
+    // 🚨 MEMORY LEAK FIX: Auto-cleanup idle connections
+    client.on('idle', () => {
+      if (process.env.NODE_ENV === 'production') {
+        setTimeout(() => {
+          if (client.isOpen) {
+            client.disconnect();
+          }
+        }, IDLE_TIMEOUT);
+      }
     });
 
-    redisClient.on('connect', () => {
-      console.log('✅ Redis Connected');
-    });
-
-    redisClient.on('ready', () => {
-      console.log('🚀 Redis Ready');
-    });
-
-    redisClient.on('end', () => {
-      console.log('🔌 Redis Connection Ended');
-    });
+    await client.connect();
+    redisClient = client;
+    
+    return client;
+  } finally {
+    isConnecting = false;
   }
+}
 
-  if (!redisClient.isOpen) {
-    await redisClient.connect();
+// 🚨 MEMORY LEAK FIX: Cleanup function
+export async function closeRedisConnection() {
+  if (redisClient && redisClient.isOpen) {
+    await redisClient.disconnect();
+    redisClient = null;
   }
-
-  return redisClient;
+  connectionAttempts = 0;
 }
 
 // Cache durations ottimizzate per contenuti statici (valori sicuri per 32-bit)

@@ -271,6 +271,9 @@ interface GetDestinationsParams {
 }
 class DirectusClient {
   private client: AxiosInstance;
+  private static activeCalls = 0;
+  private static readonly MAX_CONCURRENT_CALLS = 10;
+  private static readonly REQUEST_TIMEOUT = 8000; // 🚨 CRITICAL: 8 seconds max (was 60!)
 
   constructor() {
     // DirectusClient per LETTURA - usa proxy per evitare CORS
@@ -299,85 +302,156 @@ class DirectusClient {
       
     this.client = axios.create({
       baseURL,
-      timeout: 60000, // Aumentato a 60 secondi per connessioni lente
-      maxRedirects: 5,
+      timeout: DirectusClient.REQUEST_TIMEOUT, // 🚨 CRITICAL: 8 seconds (was 60!)
+      maxRedirects: 3, // Reduced from 5
+      // 🚨 MEMORY LEAK FIX: Connection limits
+      maxContentLength: 50 * 1024 * 1024, // 50MB max response
+      maxBodyLength: 10 * 1024 * 1024, // 10MB max request
+      validateStatus: (status) => status < 500, // Don't retry on 4xx errors
     });
   
     this.setupInterceptors();
   }
 
   private setupInterceptors() {
-    this.client.interceptors.request.use(request => {
-      // Add authorization header dynamically on each request
-      // Use server-side token if available, otherwise use public token
-      const token = process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
-      if (token) {
-        request.headers['Authorization'] = `Bearer ${token}`;
-      }
-      request.headers['Content-Type'] = 'application/json';
-      
-      
-      return request;
-    });
+    // 🚨 MEMORY LEAK FIX: Request interceptor with concurrency control
+    this.client.interceptors.request.use(
+      async (request) => {
+        // Limit concurrent requests to prevent memory explosion
+        if (DirectusClient.activeCalls >= DirectusClient.MAX_CONCURRENT_CALLS) {
+          throw new Error('Too many concurrent requests - memory protection');
+        }
 
+        DirectusClient.activeCalls++;
+
+        // Add authorization header dynamically on each request
+        const token = process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+        if (token) {
+          request.headers['Authorization'] = `Bearer ${token}`;
+        }
+        request.headers['Content-Type'] = 'application/json';
+        
+        return request;
+      },
+      (error) => {
+        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
+        return Promise.reject(error);
+      }
+    );
+
+    // 🚨 MEMORY LEAK FIX: Response interceptor with cleanup
     this.client.interceptors.response.use(
-      response => {
+      (response) => {
+        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
+        
+        // Force garbage collection for large responses
+        if (response.data && JSON.stringify(response.data).length > 1024 * 1024) { // 1MB
+          if (global.gc) {
+            global.gc();
+          }
+        }
+        
         return response;
       },
-      error => {
-        console.error('🚨 Directus Error:', error.response?.status, error.response?.statusText || error.message);
+      (error) => {
+        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
+        
+        // Only log critical errors in production
+        if (process.env.NODE_ENV === 'development') {
+          console.error('🚨 Directus Error:', error.response?.status, error.response?.statusText || error.message);
+        } else if (error.code !== 'ECONNABORTED' && error.response?.status >= 500) {
+          console.error('🚨 Directus Error:', error.response?.status);
+        }
+        
         return Promise.reject(error);
       }
     );
   }
-  public async get(url: string, config?: object) {
+
+  // 🚨 MEMORY LEAK FIX: Wrapper with timeout and cleanup
+  private async makeRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+    const timeoutId = setTimeout(() => {
+      if (global.gc) {
+        global.gc();
+      }
+    }, DirectusClient.REQUEST_TIMEOUT + 1000);
+
     try {
-      const response = await this.client.get(url, config);
-      return response;
+      const result = await requestFn();
+      clearTimeout(timeoutId);
+      return result;
     } catch (error) {
-      console.error(`Error fetching data from ${url}:`, error);
+      clearTimeout(timeoutId);
+      
+      // Force cleanup on error
+      if (global.gc) {
+        global.gc();
+      }
+      
       throw error;
     }
+  }
+
+  public async get(url: string, config?: object) {
+    return this.makeRequest(async () => {
+      try {
+        const response = await this.client.get(url, config);
+        return response;
+      } catch (error) {
+        console.error(`Error fetching data from ${url}:`, error);
+        throw error;
+      }
+    });
   }
 
   public async post(url: string, data?: any, config?: object) {
-    try {
-      const response = await this.client.post(url, data, config);
-      return response;
-    } catch (error) {
-      console.error('DirectusClient POST error:', error);
-      throw error;
-    }
+    return this.makeRequest(async () => {
+      try {
+        const response = await this.client.post(url, data, config);
+        return response;
+      } catch (error) {
+        console.error('DirectusClient POST error:', error);
+        throw error;
+      }
+    });
   }
 
   public async put(url: string, data?: any, config?: object) {
-    try {
-      const response = await this.client.put(url, data, config);
-      return response;
-    } catch (error) {
-      console.error('DirectusClient PUT error:', error);
-      throw error;
-    }
+    return this.makeRequest(async () => {
+      try {
+        const response = await this.client.put(url, data, config);
+        return response;
+      } catch (error) {
+        console.error('DirectusClient PUT error:', error);
+        throw error;
+      }
+    });
   }
 
   public async delete(url: string, config?: object) {
-    try {
-      const response = await this.client.delete(url, config);
-      return response;
-    } catch (error) {
-      console.error('DirectusClient DELETE error:', error);
-      throw error;
-    }
+    return this.makeRequest(async () => {
+      try {
+        const response = await this.client.delete(url, config);
+        return response;
+      } catch (error) {
+        console.error('DirectusClient DELETE error:', error);
+        throw error;
+      }
+    });
   }
+
   public async testAuth(): Promise<boolean> {
-    try {
-      await this.client.get('/users/me');
-      return true;
-    } catch (error) {
-      console.error('Auth test failed:', error);
-      return false;
-    }
+    return this.makeRequest(async () => {
+      try {
+        await this.client.get('/users/me');
+        return true;
+      } catch (error) {
+        console.error('Auth test failed:', error);
+        return false;
+      }
+    });
   }
+
   async getCompaniesForListing(lang: string, filters: Record<string, any> = {}, limit?: number) {
     try {
       const response = await this.client.get('/items/companies', {
