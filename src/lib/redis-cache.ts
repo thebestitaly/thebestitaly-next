@@ -55,7 +55,9 @@ export async function getRedisClient() {
 
   // Limit connection attempts
   if (connectionAttempts >= MAX_CONNECTIONS) {
-    console.log('⚠️ Max Redis connection attempts reached, using memory cache');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ Max Redis connection attempts reached, using memory cache');
+    }
     throw new Error('Max Redis connections reached');
   }
 
@@ -135,10 +137,12 @@ export async function getRedisClient() {
 // Close Redis connection cleanly
 export async function closeRedisConnection() {
   if (redisClient) {
-    try {
-      await redisClient.disconnect();
+      try {
+    await redisClient.disconnect();
+    if (process.env.NODE_ENV === 'development') {
       console.log('✅ Redis connection closed');
-    } catch (error) {
+    }
+  } catch (error) {
       console.error('❌ Error closing Redis connection:', error);
     } finally {
       redisClient = null;
@@ -295,14 +299,20 @@ export async function warmupCache() {
   try {
     const client = await getRedisClient();
     if (!client || !client.isOpen) {
-      console.log('⚠️ Redis not available for warmup, using memory cache only');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⚠️ Redis not available for warmup, using memory cache only');
+      }
       return false;
     }
     
-    console.log('🔥 Cache warmup completed');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔥 Cache warmup completed');
+    }
     return true;
   } catch (error) {
-    console.log('⚠️ Cache warmup failed, using memory cache only');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ Cache warmup failed, using memory cache only');
+    }
     return false;
   }
 }
@@ -370,6 +380,8 @@ export async function invalidateContentCache(type: 'destination' | 'company' | '
     }
   }
   
-  console.log(`🗑️ Invalidated ${totalDeleted} cache entries for ${type}${id ? ` (ID: ${id})` : ''}`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🗑️ Invalidated ${totalDeleted} cache entries for ${type}${id ? ` (ID: ${id})` : ''}`);
+  }
   return totalDeleted;
 } 
