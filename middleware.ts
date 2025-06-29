@@ -74,7 +74,8 @@ function getRedirectUrl(pathname: string): string | null {
 }
 
 // Lingue supportate
-const supportedLanguages = ['it', 'en', 'es', 'fr', 'de', 'pt', 'ru', 'zh', 'ja', 'ar', 'hi', 'bn', 'ur', 'ko', 'vi', 'th', 'tr', 'pl', 'nl', 'sv', 'da', 'no', 'fi', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sr', 'sl', 'et', 'lv', 'lt', 'el', 'he', 'fa', 'am', 'az', 'ka', 'hy', 'tk', 'tl', 'sw', 'ms', 'id', 'is', 'mk', 'af'];
+// 🔧 FIX: Aggiunto zh-tw
+const supportedLanguages = ['it', 'en', 'es', 'fr', 'de', 'pt', 'ru', 'zh', 'zh-tw', 'ja', 'ar', 'hi', 'bn', 'ur', 'ko', 'vi', 'th', 'tr', 'pl', 'nl', 'sv', 'da', 'no', 'fi', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sr', 'sl', 'et', 'lv', 'lt', 'el', 'he', 'fa', 'am', 'az', 'ka', 'hy', 'tk', 'tl', 'sw', 'ms', 'id', 'is', 'mk', 'af'];
 
 export function middleware(request: NextRequest) {
   const userAgent = request.headers.get('user-agent') || '';

@@ -245,9 +245,9 @@ interface GetDestinationsParams {
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 20; // 🚀 PRODUCTION: Allows normal site operation
-  private static readonly REQUEST_TIMEOUT = 12000; // ⚖️ BALANCED: 12 seconds - prevents timeout while limiting memory leak
-  private static readonly CIRCUIT_BREAKER_THRESHOLD = 3;
+  private static readonly MAX_CONCURRENT_CALLS = 5; // 🚨 EMERGENCY: Compromesso tra scalabilità e stabilità
+  private static readonly REQUEST_TIMEOUT = 8000; // 🚨 EMERGENCY: Timeout ridotto per prevenire accumulo  
+  private static readonly CIRCUIT_BREAKER_THRESHOLD = 5; // 🚨 EMERGENCY: Più restrittivo
   private static circuitBreakerFailures = 0;
   private static circuitBreakerOpen = false;
   private static circuitBreakerResetTime = 0;
@@ -285,22 +285,24 @@ class DirectusClient {
       maxContentLength: 5 * 1024 * 1024, // 5MB max (reduced from 10MB)
       maxBodyLength: 1 * 1024 * 1024, // 1MB max (reduced from 2MB)
       validateStatus: (status) => status < 500,
-      // 🚨 CRITICAL: Force connection close to prevent buffer accumulation
-      headers: {
-        'Connection': 'close',
-        'Keep-Alive': 'timeout=1, max=1'
-      },
-      // Force new connections instead of pooling
-      httpAgent: false,
-      httpsAgent: false,
+      // Remove forced connection close - was causing memory explosion
     });
   
     this.setupInterceptors();
   }
 
-  // 🚨 CIRCUIT BREAKER: Stop requests when system is failing
+  // 🚨 EMERGENCY KILL SWITCH: Stop everything when memory is critical
   private checkCircuitBreaker(): void {
     const now = Date.now();
+    
+    // 🚨 EMERGENCY: Check memory usage and kill switch
+    const memUsage = process.memoryUsage();
+    const totalMB = Math.round((memUsage.heapUsed + memUsage.external) / 1024 / 1024);
+    
+    if (totalMB > 400) { // 🚨 EMERGENCY: Ridotto da 1GB a 400MB per prevenire crash
+      if (global.gc) global.gc(); // Force immediate cleanup
+      throw new Error(`🚨 EMERGENCY KILL SWITCH: Memory too high (${totalMB}MB)`);
+    }
     
     // Reset circuit breaker after 30 seconds
     if (DirectusClient.circuitBreakerOpen && now > DirectusClient.circuitBreakerResetTime) {
@@ -363,11 +365,16 @@ class DirectusClient {
           DirectusClient.circuitBreakerFailures = Math.max(0, DirectusClient.circuitBreakerFailures - 1);
         }
         
-        // 🚨 ULTRA-AGGRESSIVE: Force cleanup for ANY response > 100KB
-        if (response.data && JSON.stringify(response.data).length > 100 * 1024) {
+        // 🚨 EMERGENCY: Force cleanup for ANY response > 5KB (ridotto)
+        if (response.data && JSON.stringify(response.data).length > 5 * 1024) {
           if (global.gc) {
             global.gc();
           }
+        }
+        
+        // 🚨 EMERGENCY: Force GC every 3 requests (più frequente)
+        if (DirectusClient.activeCalls % 3 === 0 && global.gc) {
+          global.gc();
         }
         
         // 🚨 EXTERNAL MEMORY LEAK FIX: Force buffer cleanup

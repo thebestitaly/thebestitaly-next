@@ -5,11 +5,12 @@ let memoryStats: any[] = [];
 let lastCleanup = 0;
 const MAX_STATS_HISTORY = 50;
 
-// Memory thresholds (MB)
+// Memory thresholds (MB) - 🚨 EMERGENCY: Ridotti per prevenire crash
 const MEMORY_THRESHOLDS = {
-  WARNING: 200,   // 200MB warning
-  CRITICAL: 300,  // 300MB critical 
-  EMERGENCY: 400, // 400MB emergency cleanup
+  GOOD: 80,       // <80MB = performance eccellente
+  WARNING: 150,   // 80-150MB = buona performance
+  CRITICAL: 250,  // 150-250MB = attenzione
+  EMERGENCY: 350, // >250MB = kill switch a 400MB
 };
 
 function getMemoryUsage() {
@@ -52,17 +53,19 @@ function trackMemory() {
     memoryStats = memoryStats.slice(-MAX_STATS_HISTORY);
   }
   
-  // Check thresholds
+  // Check thresholds ottimizzati per scalabilità
   if (currentMemory.heapUsed > MEMORY_THRESHOLDS.EMERGENCY) {
     forceCleanup();
-    return { level: 'EMERGENCY', ...currentMemory };
+    return { level: 'EMERGENCY', ...currentMemory, message: 'Memoria critica! Cleanup forzato' };
   } else if (currentMemory.heapUsed > MEMORY_THRESHOLDS.CRITICAL) {
-    return { level: 'CRITICAL', ...currentMemory };
+    return { level: 'CRITICAL', ...currentMemory, message: 'Memoria alta, monitorare' };
   } else if (currentMemory.heapUsed > MEMORY_THRESHOLDS.WARNING) {
-    return { level: 'WARNING', ...currentMemory };
+    return { level: 'WARNING', ...currentMemory, message: 'Performance buona, scalabile' };
+  } else if (currentMemory.heapUsed <= MEMORY_THRESHOLDS.GOOD) {
+    return { level: 'EXCELLENT', ...currentMemory, message: 'Performance eccellente!' };
   }
   
-  return { level: 'OK', ...currentMemory };
+  return { level: 'GOOD', ...currentMemory, message: 'Performance ottima' };
 }
 
 // GET: Monitor memory usage

@@ -92,7 +92,8 @@ export function middleware(request: NextRequest) {
   }
 
   // Controlla se il pathname inizia già con un codice lingua supportato
-  const langMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
+  // 🔧 FIX: Supporta anche zh-tw (lingue con trattino)
+  const langMatch = pathname.match(/^\/([a-z]{2}(?:-[a-z]{2})?)(\/|$)/);
   
   if (langMatch) {
     const lang = langMatch[1];
@@ -118,7 +119,8 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Match ALL language paths and root paths for language detection
-    '/(it|en|es|fr|de|pt|ru|zh|ja|ar|hi|bn|ur|ko|vi|th|tr|pl|nl|sv|da|no|fi|cs|sk|hu|ro|bg|hr|sr|sl|et|lv|lt|el|he|fa|am|az|ka|hy|tk|tl|sw|ms|id|is|mk|af)/:path*',
+    // 🔧 FIX: Aggiunto zh-tw alla lista
+    '/(it|en|es|fr|de|pt|ru|zh|zh-tw|ja|ar|hi|bn|ur|ko|vi|th|tr|pl|nl|sv|da|no|fi|cs|sk|hu|ro|bg|hr|sr|sl|et|lv|lt|el|he|fa|am|az|ka|hy|tk|tl|sw|ms|id|is|mk|af)/:path*',
     '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images).*)',
   ],
 };
