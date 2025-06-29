@@ -5,12 +5,12 @@ let memoryStats: any[] = [];
 let lastCleanup = 0;
 const MAX_STATS_HISTORY = 50;
 
-// Memory thresholds (MB) - 🚨 EMERGENCY: Ridotti per prevenire crash
+// Memory thresholds (MB) - 🎯 BALANCED: Ragionevoli per produzione
 const MEMORY_THRESHOLDS = {
-  GOOD: 80,       // <80MB = performance eccellente
-  WARNING: 150,   // 80-150MB = buona performance
-  CRITICAL: 250,  // 150-250MB = attenzione
-  EMERGENCY: 350, // >250MB = kill switch a 400MB
+  GOOD: 100,      // <100MB = performance eccellente
+  WARNING: 200,   // 100-200MB = buona performance
+  CRITICAL: 350,  // 200-350MB = monitora da vicino
+  EMERGENCY: 450, // >350MB = kill switch a 500MB
 };
 
 function getMemoryUsage() {

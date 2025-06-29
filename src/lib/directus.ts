@@ -245,9 +245,9 @@ interface GetDestinationsParams {
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 5; // 🚨 EMERGENCY: Compromesso tra scalabilità e stabilità
-  private static readonly REQUEST_TIMEOUT = 8000; // 🚨 EMERGENCY: Timeout ridotto per prevenire accumulo  
-  private static readonly CIRCUIT_BREAKER_THRESHOLD = 5; // 🚨 EMERGENCY: Più restrittivo
+  private static readonly MAX_CONCURRENT_CALLS = 8; // 🎯 SWEET SPOT: Scalabile ma sicuro
+  private static readonly REQUEST_TIMEOUT = 10000; // 🎯 REASONABLE: Abbastanza per query complesse  
+  private static readonly CIRCUIT_BREAKER_THRESHOLD = 7; // 🎯 BALANCED: Non troppo severo
   private static circuitBreakerFailures = 0;
   private static circuitBreakerOpen = false;
   private static circuitBreakerResetTime = 0;
@@ -299,9 +299,9 @@ class DirectusClient {
     const memUsage = process.memoryUsage();
     const totalMB = Math.round((memUsage.heapUsed + memUsage.external) / 1024 / 1024);
     
-    if (totalMB > 400) { // 🚨 EMERGENCY: Ridotto da 1GB a 400MB per prevenire crash
+    if (totalMB > 500) { // 🎯 REASONABLE: Limite di sicurezza a 512MB
       if (global.gc) global.gc(); // Force immediate cleanup
-      throw new Error(`🚨 EMERGENCY KILL SWITCH: Memory too high (${totalMB}MB)`);
+      throw new Error(`🚨 MEMORY LIMIT: Preventing crash at ${totalMB}MB`);
     }
     
     // Reset circuit breaker after 30 seconds
@@ -365,15 +365,15 @@ class DirectusClient {
           DirectusClient.circuitBreakerFailures = Math.max(0, DirectusClient.circuitBreakerFailures - 1);
         }
         
-        // 🚨 EMERGENCY: Force cleanup for ANY response > 5KB (ridotto)
-        if (response.data && JSON.stringify(response.data).length > 5 * 1024) {
+        // 🎯 REASONABLE: Cleanup per response grandi
+        if (response.data && JSON.stringify(response.data).length > 20 * 1024) {
           if (global.gc) {
             global.gc();
           }
         }
         
-        // 🚨 EMERGENCY: Force GC every 3 requests (più frequente)
-        if (DirectusClient.activeCalls % 3 === 0 && global.gc) {
+        // 🎯 BALANCED: GC periodico ogni 15 requests
+        if (DirectusClient.activeCalls % 15 === 0 && global.gc) {
           global.gc();
         }
         
@@ -2386,6 +2386,12 @@ class DirectusClient {
       return [];
     }
   }
+
+  // 🔧 MEMORY LEAK FIX: Public cleanup method
+  public cleanup() {
+    this.client.interceptors.request.clear();
+    this.client.interceptors.response.clear();
+  }
 }
 // Assicurati che non sia dentro un blocco come una funzione o un'istruzione condizionale
 
@@ -2425,7 +2431,26 @@ export const fetchArticleBySlug = async (slug: string, languageCode: string) => 
 };
 
 
-const directusClient = new DirectusClient();
+// 🔧 MEMORY LEAK FIX: True Singleton Pattern
+let _directusClientInstance: DirectusClient | null = null;
+
+function getDirectusClientInstance(): DirectusClient {
+  if (!_directusClientInstance) {
+    _directusClientInstance = new DirectusClient();
+  }
+  return _directusClientInstance;
+}
+
+// 🔧 MEMORY LEAK FIX: Cleanup function for hot reload  
+export function resetDirectusClient() {
+  if (_directusClientInstance) {
+    _directusClientInstance.cleanup();
+    _directusClientInstance = null;
+  }
+}
+
+// Export singleton instance with guaranteed initialization
+const directusClient = getDirectusClientInstance();
 export default directusClient;
 
 // Add interface for hreflang data
