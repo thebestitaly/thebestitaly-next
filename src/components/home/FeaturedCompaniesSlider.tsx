@@ -55,7 +55,6 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ initi
         >
           {companies.map((company: Company) => {
             const translation = company.translations?.[0];
-            const categoryTranslation = company.category_id?.translations?.[0];
 
             return (
               <div key={company.id} className="w-full flex-shrink-0">
@@ -86,14 +85,7 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ initi
                       
                       {/* Mobile Content */}
                       <div className="text-left">
-                        {/* Category Badge */}
-                        {categoryTranslation?.name && (
-                          <div className="mb-2">
-                            <span className="inline-flex items-center text-lg bold text-bold font-small text-blue-800">
-                              {categoryTranslation.name}
-                            </span>
-                          </div>
-                        )}
+                        {/* Category Badge - Removed temporarily */}
                         {/* Company Name */}
                         <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
                           {company.company_name}
@@ -129,14 +121,7 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ initi
                       
                       {/* Right Content - 50% */}
                       <div className="w-1/2">
-                        {/* Category Badge */}
-                        {categoryTranslation?.name && (
-                          <div className="mb-6">
-                            <span className="inline-flex items-center text-lg font-medium text-blue-800">
-                              {categoryTranslation.name}
-                            </span>
-                          </div>
-                        )}
+                        {/* Category Badge - Removed temporarily */}
                         
                         {/* Company Name */}
                         <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">

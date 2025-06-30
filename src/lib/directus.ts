@@ -145,6 +145,7 @@ export interface Company {
   active: boolean;
   images: CompanyImage[];
   featured: boolean;
+  featured_image?: string; // Immagine in evidenza
   socials: any;
   translations: CompanyTranslation[];
 }
@@ -2614,11 +2615,12 @@ function getSafeId(value: any): string | null {
 }
 
 export async function getSidebarData(destinationId: string, lang: string) {
+    const client = new DirectusClient();
     let destination;
     try {
-        destination = await getDestinationDetails(destinationId, lang);
+        destination = await client.getDestinationById(destinationId, lang);
     } catch (error) {
-        console.error(`[Sidebar] Fallito caricamento getDestinationDetails per id ${destinationId}`, error);
+        console.error(`[Sidebar] Fallito caricamento destinazione per id ${destinationId}`, error);
         return { region: null, province: null, relatedProvinces: [], relatedMunicipalities: [] };
     }
     
@@ -2641,7 +2643,7 @@ export async function getSidebarData(destinationId: string, lang: string) {
         if (provinceId) {
             try {
                 const [province, municipalities] = await Promise.all([
-                    getDestinationDetails(provinceId, lang),
+                    client.getDestinationById(provinceId, lang),
                     getMunicipalitiesForProvince(provinceId, lang)
                 ]);
                 sidebarData.province = province;
@@ -2653,7 +2655,7 @@ export async function getSidebarData(destinationId: string, lang: string) {
         
         if (regionId) {
             try {
-                sidebarData.region = await getDestinationDetails(regionId, lang);
+                sidebarData.region = await client.getDestinationById(regionId, lang);
             } catch (error) {
                 console.error(`[Sidebar] Fallito caricamento regione per id ${regionId}`, error);
             }
@@ -2663,7 +2665,7 @@ export async function getSidebarData(destinationId: string, lang: string) {
         const regionId = getSafeId(destination.region_id);
         if (regionId) {
             try {
-                sidebarData.region = await getDestinationDetails(regionId, lang);
+                sidebarData.region = await client.getDestinationById(regionId, lang);
             } catch (error) {
                 console.error(`[Sidebar] Fallito caricamento regione per id ${regionId}`, error);
             }
