@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       const fileStream = fs.createWriteStream(filePath);
       snapshotStream.pipe(fileStream);
 
-      return new Promise((resolve) => {
+      return new Promise<Response>((resolve) => {
         fileStream.on('finish', () => {
           resolve(NextResponse.json({
             success: true,
