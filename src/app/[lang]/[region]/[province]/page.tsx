@@ -18,19 +18,20 @@ interface ProvincePageProps {
 
 export async function generateMetadata({ params }: ProvincePageProps): Promise<Metadata> {
   const { lang, region, province } = params;
-  const destination = await directusClient.getDestinationBySlug(province, lang);
+  // Usa gli stessi dati statici per consistenza
+  const destination = await getDestinationDetails(province, lang, 'province');
   if (!destination) return generateSEO({ title: "Not Found", description: "This page could not be found." });
 
   const translation = destination.translations?.[0];
   const canonicalUrl = generateCanonicalUrl(lang, [region, province]);
-  const hreflangs = destination?.id ? await getDestinationHreflang(destination.id) : {};
+  // Per ora non generiamo hreflangs per i dati statici
   const metaDescription = translation?.seo_summary || `Discover ${translation?.destination_name || province}, Italy.`;
 
   return generateSEO({
     title: `${translation?.seo_title || translation?.destination_name || province} | TheBestItaly`,
     description: metaDescription,
     canonicalUrl,
-    hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
+    hreflangs: undefined, // Temporaneamente disabilitato per i dati mock
   });
 }
 

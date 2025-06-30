@@ -21,13 +21,17 @@ const Footer: React.FC<FooterProps> = ({ regions, categories }) => {
  const getDestinationInfo = () => {
    const pathParts = pathname?.split("/").filter(Boolean) || [];
    
-   if (pathParts.includes('region')) {
+   // Controlliamo la struttura dell'URL per le destinazioni
+   // /lang/region = 2 parts
+   // /lang/region/province = 3 parts  
+   // /lang/region/province/municipality = 4 parts
+   if (pathParts.length === 2 && !['magazine', 'poi', 'experience', 'landing', 'reserved'].includes(pathParts[1])) {
      return { isDestination: true, type: 'region' };
    }
-   if (pathParts.includes('province')) {
+   if (pathParts.length === 3 && !['magazine', 'poi', 'experience', 'landing', 'reserved'].includes(pathParts[1])) {
      return { isDestination: true, type: 'province' };
    }
-   if (pathParts.includes('municipality')) {
+   if (pathParts.length === 4 && !['magazine', 'poi', 'experience', 'landing', 'reserved'].includes(pathParts[1])) {
      return { isDestination: true, type: 'municipality' };
    }
 
@@ -46,13 +50,21 @@ const Footer: React.FC<FooterProps> = ({ regions, categories }) => {
  const shouldShowLanguageSwitcher = () => {
    if (!pathname) return false;
    const pathSegments = pathname.split('/').filter(Boolean);
-   // Mostra sempre lo switcher se siamo in homepage o pagine statiche
-   if (pathSegments.length <= 2) return true;  // copre /, /it, /it/experience, ecc.
    
-   // Per magazine, destinazioni E POI (eccellenze)
-   if (pathSegments.length >= 3) {
+   // Mostra sempre lo switcher se siamo in homepage
+   if (pathSegments.length <= 1) return true;  // /, /it
+   
+   // Per pagine specifiche come magazine, poi, experience
+   if (pathSegments.length >= 2) {
      const [, pageType] = pathSegments;
-     return ["magazine", "region", "province", "municipality", "poi"].includes(pageType);
+     if (["magazine", "poi", "experience"].includes(pageType)) {
+       return true;
+     }
+   }
+   
+   // Per destinazioni (detectate dalla funzione getDestinationInfo)
+   if (isDestination) {
+     return true;
    }
    
    return false;
