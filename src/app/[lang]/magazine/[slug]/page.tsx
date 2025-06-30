@@ -1,3 +1,6 @@
+// 🔄 ISR (Incremental Static Regeneration) per gli articoli
+// Gli articoli si rigenerano automaticamente quando cambiano
+
 import React from 'react';
 import { Metadata } from 'next';
 import ReactMarkdown from 'react-markdown';
@@ -13,6 +16,9 @@ import { getArticleHreflang } from '@/lib/directus';
 import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
 import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
+
+// 🔄 ISR: Rigenera gli articoli ogni ora
+export const revalidate = 3600; // 1 ora
 
 interface PageProps {
   params: Promise<{

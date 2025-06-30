@@ -270,7 +270,7 @@ async function loadStaticData(lang: string): Promise<StaticDestinationData | nul
 
 // API OTTIMIZZATE PER DATI STATICI
 
-// Ottieni province di una regione (ULTRA-VELOCE)
+// Ottieni province di una regione (ULTRA-VELOCE) - SOLO FILE STATICI
 export async function getProvincesForRegion(regionId: string, lang: string): Promise<Destination[]> {
   const staticData = await loadStaticData(lang);
   
@@ -281,19 +281,14 @@ export async function getProvincesForRegion(regionId: string, lang: string): Pro
     return staticData.data.regionProvinces[regionId][lang];
   }
   
-  // Fallback to regular API
+  // 🚫 NO FALLBACK A DIRECTUS - Ritorna array vuoto
   if (process.env.NODE_ENV === 'development') {
-    console.log(`📡 STATIC MISS: Province per regione ${regionId} (${lang}) - usando API`);
+    console.log(`📝 EMPTY: Nessuna provincia trovata per regione ${regionId} (${lang}) - file vuoto`);
   }
-  return await directusClient.getDestinations({
-    type: 'province',
-    region_id: regionId,
-    lang,
-    limit: 200
-  });
+  return [];
 }
 
-// Ottieni comuni di una provincia (ULTRA-VELOCE)
+// Ottieni comuni di una provincia (ULTRA-VELOCE) - SOLO FILE STATICI
 export async function getMunicipalitiesForProvince(provinceId: string, lang: string): Promise<Destination[]> {
   const staticData = await loadStaticData(lang);
   
@@ -304,16 +299,11 @@ export async function getMunicipalitiesForProvince(provinceId: string, lang: str
     return staticData.data.provinceMunicipalities[provinceId][lang];
   }
   
-  // Fallback to regular API
+  // 🚫 NO FALLBACK A DIRECTUS - Ritorna array vuoto
   if (process.env.NODE_ENV === 'development') {
-    console.log(`📡 STATIC MISS: Comuni per provincia ${provinceId} (${lang}) - usando API`);
+    console.log(`📝 EMPTY: Nessun comune trovato per provincia ${provinceId} (${lang}) - file vuoto`);
   }
-  return await directusClient.getDestinations({
-    type: 'municipality',
-    province_id: provinceId,
-    lang,
-    limit: 500
-  });
+  return [];
 }
 
 function getSafeId(value: any): string | null {

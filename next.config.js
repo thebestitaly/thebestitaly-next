@@ -20,14 +20,6 @@ const nextConfig = {
   // Compressione
   compress: true,
   
-  // Configurazione cache aggressiva
-  experimental: {
-    staleTimes: {
-      dynamic: 30, // 30 secondi per contenuti dinamici
-      static: 180, // 3 minuti per contenuti statici
-    },
-  },
-  
   // Headers per caching e compressione AGGRESSIVA
   async headers() {
     return [
@@ -96,7 +88,63 @@ const nextConfig = {
         ],
       },
       {
-        // Cache per pagine contenuti + compressione
+        // 🎯 COMUNI: Cache lunghissima (quasi mai cambiano)
+        source: '/:lang(it|en|fr|de|es)/:region/:province/:municipality',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, stale-while-revalidate=86400', // 1 anno + 1 giorno stale
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      {
+        // 🔄 ARTICOLI: Cache media con ISR
+        source: '/:lang(it|en|fr|de|es)/magazine/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=3600, stale-while-revalidate=7200', // 1 ora + 2 ore stale
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      {
+        // 🌍 ECCELLENZE: Cache breve per multilingua
+        source: '/:lang(it|en|fr|de|es)/poi/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=1800, stale-while-revalidate=3600', // 30 min + 1 ora stale
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      {
+        // 🏠 HOMEPAGE: Cache breve per contenuto fresco
+        source: '/:lang(it|en|fr|de|es)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=900, stale-while-revalidate=1800', // 15 min + 30 min stale
+          },
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      {
+        // Cache per pagine contenuti + compressione (fallback)
         source: '/((?!reserved|admin).*)',
         headers: [
           {
@@ -126,10 +174,15 @@ const nextConfig = {
     ];
   },
 
-  // Ottimizzazioni build - SOLO QUELLE STABILI
+  // 🚀 OTTIMIZZAZIONI STABILI per evitare crash
   experimental: {
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
     // Rimosso optimizeCss che causava problemi
+    instrumentationHook: true,
+    staleTimes: {
+      dynamic: 30, // 30 secondi per contenuti dinamici
+      static: 180, // 3 minuti per contenuti statici
+    },
   },
 
   // Configurazione webpack per performance e Redis exclusion

@@ -1,8 +1,11 @@
+// 🚀 ISR per tutte le regioni italiane - genera on-demand e cache
+export const revalidate = 2592000; // 30 giorni (cambiano solo quando modificate dall'area riservata)
+
 import DestinationLayout from "@/components/destinations/DestinationLayout";
 import { Metadata } from 'next';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
-import directusClient, { getDestinationHreflang } from '@/lib/directus';
 import { getProvincesForRegion, getDestinationDetails } from '@/lib/static-destinations';
+import { generateRegionStaticParams, STATIC_GENERATION_CONFIG } from '@/lib/static-generation';
 import { Destination } from '@/lib/directus';
 import { notFound } from 'next/navigation';
 
@@ -13,22 +16,45 @@ interface RegionPageProps {
   };
 }
 
-// Generate metadata for region pages with CRITICAL PERFORMANCE OPTIMIZATIONS
+// 🚀 STATIC GENERATION: Pre-genera tutte le regioni italiane
+export async function generateStaticParams() {
+  console.log('🏗️ Generating static params for region pages...');
+  
+  try {
+    const params = await generateRegionStaticParams();
+    console.log(`✅ Generated ${params.length} region static params`);
+    
+    return params.map(param => ({
+      lang: param.lang,
+      region: param.region,
+    }));
+  } catch (error) {
+    console.error('❌ Error generating region static params:', error);
+    // Fallback: genera almeno le lingue principali per evitare crash
+    return STATIC_GENERATION_CONFIG.SUPPORTED_LANGUAGES.map(lang => ({
+      lang,
+      region: 'lombardia',
+    }));
+  }
+}
+
+// Generate metadata for region pages - STATIC VERSION
 export async function generateMetadata({ params }: RegionPageProps): Promise<Metadata> {
   const { lang, region } = params;
-  const destination = await directusClient.getDestinationBySlug(region, lang);
+  // Usa gli stessi dati statici per consistenza
+  const destination = await getDestinationDetails(region, lang, 'region');
   if (!destination) return generateSEO({ title: "Not Found", description: "This page could not be found." });
 
   const translation = destination.translations?.[0];
   const canonicalUrl = generateCanonicalUrl(lang, [region]);
-  const hreflangs = destination?.id ? await getDestinationHreflang(destination.id) : {};
+  // Per ora non generiamo hreflangs per i dati statici
   const metaDescription = translation?.seo_summary || `Discover ${translation?.destination_name || region}, Italy.`;
 
   return generateSEO({
     title: `${translation?.seo_title || translation?.destination_name || region} | TheBestItaly`,
     description: metaDescription,
     canonicalUrl,
-    hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
+    hreflangs: undefined, // Temporaneamente disabilitato per i dati mock
   });
 }
 

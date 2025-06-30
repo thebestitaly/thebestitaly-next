@@ -1,6 +1,11 @@
 // app/[lang]/page.tsx
+// 🏠 HOMEPAGE con ISR per contenuto sempre fresco
+
 import { Metadata } from 'next';
 import { Suspense } from 'react';
+
+// 🏠 Homepage: ISR con cache breve per contenuto sempre fresco
+export const revalidate = 900; // 15 minuti
 import directusClient, { getSupportedLanguages } from '@/lib/directus';
 import { getTranslationsForSection } from '@/lib/translations-server';
 import FeaturedDestinationsSlider from '../../components/home/FeaturedDestinationsSlider';

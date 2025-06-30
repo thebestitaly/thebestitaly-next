@@ -220,6 +220,8 @@ export default function EditDestinationPage({ params }: { params: Promise<{ id: 
 
       const data = await response.json();
       if (data.success) {
+        // 🔄 REVALIDATION ON-DEMAND dopo il salvataggio
+        await triggerRevalidation();
         alert('✅ Traduzioni inglesi salvate con successo!');
       } else {
         throw new Error(data.error);
@@ -227,6 +229,58 @@ export default function EditDestinationPage({ params }: { params: Promise<{ id: 
     } catch (error) {
       console.error('Error saving English translations:', error);
       alert('❌ Errore nel salvare le traduzioni inglesi');
+    }
+  };
+
+  // 🔄 Funzione per triggerare la revalidation delle pagine
+  const triggerRevalidation = async () => {
+    try {
+      const translation = destination?.translations?.[0];
+      const slug = translation?.slug_permalink;
+      
+      if (!slug) {
+        console.warn('⚠️ Slug non trovato per la revalidation');
+        return;
+      }
+
+      // Determina i parametri per la revalidation in base al tipo
+      let revalidationData: any = {
+        destinationId,
+        type: destination.type,
+        slug: slug,
+        languages: ['it', 'en', 'fr', 'de', 'es'] // Lingue principali per ora
+      };
+
+      // Aggiungi parent slugs se necessario
+      if (destination.type === 'province' && destination.region_id?.translations?.[0]?.slug_permalink) {
+        revalidationData.regionSlug = destination.region_id.translations[0].slug_permalink;
+      }
+      
+      if (destination.type === 'municipality') {
+        if (destination.region_id?.translations?.[0]?.slug_permalink) {
+          revalidationData.regionSlug = destination.region_id.translations[0].slug_permalink;
+        }
+        if (destination.province_id?.translations?.[0]?.slug_permalink) {
+          revalidationData.provinceSlug = destination.province_id.translations[0].slug_permalink;
+        }
+      }
+
+      console.log('🔄 Triggering revalidation with data:', revalidationData);
+
+      const revalidateResponse = await fetch('/api/admin/revalidate-destination', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(revalidationData)
+      });
+
+      const revalidateData = await revalidateResponse.json();
+      if (revalidateData.success) {
+        console.log('✅ Revalidation completata:', revalidateData.revalidatedPaths);
+      } else {
+        console.warn('⚠️ Revalidation fallita:', revalidateData.error);
+      }
+    } catch (error) {
+      console.error('❌ Errore nella revalidation:', error);
     }
   };
 

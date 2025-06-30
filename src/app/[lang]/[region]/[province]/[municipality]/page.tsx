@@ -1,10 +1,14 @@
 // app/[lang]/[region]/[province]/[municipality]/page.tsx
+// 🚀 STATIC GENERATION per tutti i comuni italiani
+
+// 🚀 ISR per tutti i comuni italiani - genera on-demand e cache
+export const revalidate = 2592000; // 30 giorni (cambiano solo quando modificati dall'area riservata)
 
 import DestinationLayout from "@/components/destinations/DestinationLayout";
 import { Metadata } from 'next';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
-import directusClient, { getDestinationHreflang } from '@/lib/directus';
 import { getMunicipalitiesForProvince, getDestinationDetails } from '@/lib/static-destinations';
+import { generateMunicipalityStaticParams, STATIC_GENERATION_CONFIG } from '@/lib/static-generation';
 import { Destination } from '@/lib/directus';
 import { notFound } from 'next/navigation';
 
@@ -15,6 +19,32 @@ interface MunicipalityPageProps {
     province: string;
     municipality: string;
   };
+}
+
+// 🚀 STATIC GENERATION: Pre-genera tutti i comuni italiani
+export async function generateStaticParams() {
+  console.log('🏗️ Generating static params for municipality pages...');
+  
+  try {
+    const params = await generateMunicipalityStaticParams();
+    console.log(`✅ Generated ${params.length} municipality static params`);
+    
+    return params.map(param => ({
+      lang: param.lang,
+      region: param.region,
+      province: param.province!,
+      municipality: param.municipality!,
+    }));
+  } catch (error) {
+    console.error('❌ Error generating municipality static params:', error);
+    // Fallback: genera almeno le lingue principali per evitare crash
+    return STATIC_GENERATION_CONFIG.SUPPORTED_LANGUAGES.map(lang => ({
+      lang,
+      region: 'lombardia',
+      province: 'milano', 
+      municipality: 'milano',
+    }));
+  }
 }
 
 // Generate metadata for municipality pages
