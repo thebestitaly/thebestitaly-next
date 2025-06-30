@@ -1,108 +1,81 @@
 // app/[lang]/[region]/[province]/[municipality]/page.tsx
 
-import { Metadata } from 'next';
-import { generateMetadata as generateSEO, generateCanonicalUrl } from "@/components/widgets/seo-utils";
 import DestinationLayout from "@/components/destinations/DestinationLayout";
+import { Metadata } from 'next';
+import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 import directusClient, { getDestinationHreflang } from '@/lib/directus';
+import { getMunicipalitiesForProvince, getDestinationDetails } from '@/lib/static-destinations';
+import { Destination } from '@/lib/directus';
+import { notFound } from 'next/navigation';
 
 interface MunicipalityPageProps {
-  params: Promise<{
+  params: {
     lang: string;
     region: string;
     province: string;
     municipality: string;
-  }>;
+  };
 }
 
 // Generate metadata for municipality pages
 export async function generateMetadata({ params }: MunicipalityPageProps): Promise<Metadata> {
-  const { lang, region, province, municipality } = await params;
-  
-  try {
-    // Try to get municipality data from Directus
-    let destination;
-    try {
-      destination = await directusClient.getDestinationBySlug(municipality, lang);
-    } catch (error) {
-      console.log('Could not fetch destination, using fallback metadata');
-    }
-    
-    const translation = destination?.translations?.[0];
-    
-    // Generate proper canonical URL for this municipality page using helper
-    const canonicalUrl = generateCanonicalUrl(lang, [region, province, municipality]);
-    
-    // Get hreflang links
-    const hreflangs = destination?.id ? await getDestinationHreflang(destination.id) : {};
-    
-    // Ensure we have a proper meta description
-    const metaDescription = translation?.seo_summary || 
-                          `Discover ${translation?.destination_name || municipality} in ${province}, ${region}, Italy. Complete guide to the best attractions, hotels, restaurants and local experiences.`;
-    
-    // Improved schema for municipality/city
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "City",
-      "name": translation?.destination_name || municipality,
-      "description": metaDescription,
-      "url": canonicalUrl,
-      "containedInPlace": [
-        {
-          "@type": "AdministrativeArea",
-          "name": province,
-          "containedInPlace": {
-            "@type": "AdministrativeArea", 
-            "name": region,
-            "containedInPlace": {
-              "@type": "Country",
-              "name": "Italy",
-              "url": "https://thebestitaly.eu"
-            }
-          }
-        }
-      ],
-      "geo": destination?.lat && destination?.long ? {
-        "@type": "GeoCoordinates",
-        "latitude": destination.lat,
-        "longitude": destination.long
-      } : undefined,
-              "image": destination?.image ? `${process.env.NEXT_PUBLIC_APP_URL}/api/directus/assets/${destination.image}?width=400&height=180&fit=cover&quality=50` : undefined,
-      "sameAs": Object.values(hreflangs)
-    };
+  const { lang, region, province, municipality } = params;
+  const destination = await directusClient.getDestinationBySlug(municipality, lang);
+  if (!destination) return generateSEO({ title: "Not Found", description: "This page could not be found." });
 
-    return generateSEO({
-      title: `${translation?.seo_title || translation?.destination_name || municipality} | TheBestItaly`,
-      description: metaDescription,
-      type: "website",
-      canonicalUrl,
-      hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
-      schema,
-    });
-  } catch (error) {
-    console.error("Error generating metadata:", error);
-    
-    // Generate proper canonical URL even for fallback using helper
-    const canonicalUrl = generateCanonicalUrl(lang, [region, province, municipality]);
-    
-    return generateSEO({
-      title: `${municipality} | TheBestItaly`,
-      description: `Discover the best destinations and experiences in ${municipality}, ${province}, ${region}, Italy.`,
-      type: "website",
-      canonicalUrl,
-    });
-  }
+  const translation = destination.translations?.[0];
+  const canonicalUrl = generateCanonicalUrl(lang, [region, province, municipality]);
+  const hreflangs = destination?.id ? await getDestinationHreflang(destination.id) : {};
+  const metaDescription = translation?.seo_summary || `Discover ${translation?.destination_name || municipality}, Italy.`;
+
+  return generateSEO({
+    title: `${translation?.seo_title || translation?.destination_name || municipality} | TheBestItaly`,
+    description: metaDescription,
+    canonicalUrl,
+    hreflangs: Object.keys(hreflangs).length > 0 ? hreflangs : undefined,
+  });
 }
 
-// Anche questa è un server component
-export default async function MunicipalityPage({ params }: MunicipalityPageProps) {
-  const { lang, province, municipality } = await params;
+export default async function MunicipalityPage({ params: { lang, region, province, municipality } }: { params: { lang: string, region: string, province: string, municipality: string } }) {
+  const municipalityDetails = await getDestinationDetails(municipality, lang, 'municipality') as Destination | null;
+
+  if (!municipalityDetails) {
+    notFound();
+  }
+  
+  // Per i comuni, carichiamo gli altri comuni della stessa provincia per la sidebar
+  const provinceId = municipalityDetails.province_id?.id;
+  let relatedMunicipalities: { id: string; name: string; slug: string; }[] = [];
+  if (provinceId) {
+      const allMunicipalities = await getMunicipalitiesForProvince(provinceId, lang) || [];
+      // Escludiamo il comune corrente dalla lista
+      relatedMunicipalities = allMunicipalities
+        .filter(m => m.id !== municipalityDetails.id)
+        .map((m: Destination) => ({
+            id: m.id,
+            name: m.translations[0]?.destination_name || '',
+            slug: m.translations[0]?.slug_permalink || '',
+        }));
+  }
+
+  const breadcrumbs = [
+    { name: region, href: `/${lang}/${region}` },
+    { name: province, href: `/${lang}/${region}/${province}` },
+    { name: municipalityDetails.translations[0]?.destination_name || municipality, href: `/${lang}/${region}/${province}/${municipality}` },
+  ];
+  
+  const municipalityName = municipalityDetails.translations[0]?.destination_name || municipality;
 
   return (
     <DestinationLayout
-      slug={municipality}
       lang={lang}
-      type="municipality"
-      parentSlug={province}
+      destination={municipalityDetails}
+      destinations={relatedMunicipalities}
+      title={`Scopri ${municipalityName}`}
+      description={`Esplora le meraviglie e le attrazioni di ${municipalityName}.`}
+      breadcrumbs={breadcrumbs}
+      destinationType="municipality"
+      sidebarData={null}
     />
   );
 }

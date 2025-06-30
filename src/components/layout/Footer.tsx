@@ -3,27 +3,19 @@
 import React from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import directusClient from "@/lib/directus";
 import LanguageSwitcher from "../../components/widgets/LanguageSwitcher";
 import { useSectionTranslations } from '@/hooks/useTranslations';
+import { Destination, Category } from "@/lib/directus";
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  regions: Destination[];
+  categories: Category[];
+}
+
+const Footer: React.FC<FooterProps> = ({ regions, categories }) => {
  const params = useParams();
  const pathname = usePathname();
  const lang = (params?.lang as string) || "it";
-
- // Query per ottenere le regioni
- const { data: regions } = useQuery({
-   queryKey: ['regions-footer', lang],
-   queryFn: () => directusClient.getDestinationsByType('region', lang),
- });
-
- // Query per ottenere le categorie del magazine
- const { data: categories } = useQuery({
-   queryKey: ['categories-footer', lang],
-   queryFn: () => directusClient.getCategories(lang),
- });
 
  // Funzione per determinare se siamo in una pagina destination e il suo tipo
  const getDestinationInfo = () => {

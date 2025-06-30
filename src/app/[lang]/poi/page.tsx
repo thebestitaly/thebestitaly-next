@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import directusClient from '@/lib/directus';
-import EccellenzeList from '../../../components/companies/EccellenzeList';
+import EccellenzeList from '@/components/companies/EccellenzeList';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
+import { getTranslations } from '@/lib/directus';
+
 const ExcellenceeroImage = '/images/excellence.webp';
 
 interface PageProps {
@@ -52,21 +54,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-export default async function EccellenzePage({ params }: PageProps) {
-  const { lang } = await params;
-
+export default async function EccellenzePage({ params: { lang } }: { params: { lang: string } }) {
+  
+  const [companies, categories, pageTranslations] = await Promise.all([
+    directusClient.getCompaniesForListing(lang, { active: { _eq: true } }, 50),
+    directusClient.getCompanyCategories(lang),
+    getTranslations(lang, 'eccellenze')
+  ]);
+  
   return (
     <div className="min-h-screen">
-      <Suspense fallback={
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p>Caricamento eccellenze...</p>
-          </div>
+      <div className="mx-auto px-4 py-8">
+        <div>
+          <EccellenzeList 
+             lang={lang}
+             initialCompanies={companies}
+             initialCategories={categories}
+             initialPageTranslations={pageTranslations}
+             initialPageTitles={{}}
+           />
         </div>
-      }>
-        <EccellenzeList lang={lang} />
-      </Suspense>
+      </div>
     </div>
   );
 } 

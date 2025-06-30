@@ -1,28 +1,22 @@
 "use client";
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import directusClient from '../../lib/directus';
 import { getOptimizedImageUrl } from '../../lib/imageUtils';
+import { Destination } from '@/lib/directus';
 
 interface HomepageDestinationsCarouselProps {
   lang: string;
+  initialRegions: Destination[];
 }
 
-const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> = ({ lang }) => {
+const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> = ({ lang, initialRegions: regions }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const itemsToShow = 5; // Show 5 regions at a time on desktop
   const mobileItemsToShow = 2; // Show 2 regions at a time on mobile
 
-  // Get all regions for the carousel
-  const { data: regions, isLoading } = useQuery({
-    queryKey: ['regions-carousel', lang],
-    queryFn: () => directusClient.getDestinationsByType('region', lang)
-  });
-
-  if (isLoading || !regions) {
+  if (!regions || !regions.length) {
     return (
       <div className="py-12">
         <div className="container mx-auto px-4">
@@ -42,10 +36,6 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
         </div>
       </div>
     );
-  }
-
-  if (!regions.length) {
-    return null;
   }
 
   const nextSlide = () => {

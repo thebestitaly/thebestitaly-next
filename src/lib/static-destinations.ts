@@ -2,35 +2,34 @@
 // Dato che province/comuni sono statici, possiamo generare questi dati
 // e servirli direttamente dal file system
 
-import { writeFile, readFile, mkdir } from 'fs/promises';
+import { promises as fs } from 'fs';
 import { existsSync } from 'fs';
 import path from 'path';
-import directusClient from './directus';
-import type { Destination } from './directus';
+import directusClient, { getSupportedLanguages, Destination } from './directus';
 
 const STATIC_DATA_DIR = path.join(process.cwd(), '.next', 'static-destinations');
-const CACHE_VERSION = '1.0'; // Incrementa per invalidare cache
+const CACHE_VERSION = '3.0-safe';
 
 interface StaticDestinationData {
   version: string;
   timestamp: number;
   data: {
-    regionProvinces: Record<string, Record<string, Destination[]>>; // regionId -> lang -> provinces[]
-    provinceMunicipalities: Record<string, Record<string, Destination[]>>; // provinceId -> lang -> municipalities[]
-    destinationDetails: Record<string, Record<string, Destination>>; // destinationId -> lang -> destination
+    regionProvinces: Record<string, Record<string, Destination[]>>;
+    provinceMunicipalities: Record<string, Record<string, Destination[]>>;
+    destinationDetails: Record<string, Record<string, Destination>>;
   };
 }
 
 // Assicurati che la directory esista
 async function ensureStaticDir() {
   if (!existsSync(STATIC_DATA_DIR)) {
-    await mkdir(STATIC_DATA_DIR, { recursive: true });
+    await fs.mkdir(STATIC_DATA_DIR, { recursive: true });
   }
 }
 
 // Genera il nome del file cache
 function getCacheFileName(type: string, lang: string): string {
-  return path.join(STATIC_DATA_DIR, `${type}-${lang}-${CACHE_VERSION}.json`);
+  return path.join(STATIC_DATA_DIR, `${type}-${lang}.json`);
 }
 
 // Controlla se il cache è valido (max 7 giorni per dati statici)
@@ -73,126 +72,103 @@ async function fetchWithRetry<T>(
   throw lastError;
 }
 
-// Genera tutti i dati statici delle destinazioni
-export async function generateStaticDestinations(languages: string[] = ['it', 'en', 'fr', 'de', 'es']) {
-  console.log('🚀 Generando dati statici delle destinazioni...');
-  
+// Genera tutti i dati statici delle destinazioni in modo efficiente
+export async function generateStaticDestinations(langsToGenerate?: string[]) {
+  console.log('--- ✅ INIZIO GENERAZIONE EFFICIENTE CACHE DESTINAZIONI ---');
   await ensureStaticDir();
-  
+
+  const languages = langsToGenerate || await getSupportedLanguages();
+  if (!languages || languages.length === 0) {
+    console.error('ERRORE FATALE: Lingue non trovate. Processo interrotto.');
+    return;
+  }
+  console.log(`Lingue da processare: ${languages.join(', ')}`);
+
+  // Prepara una struttura dati vuota per ogni lingua
+  const staticDataPerLang: Record<string, StaticDestinationData> = {};
   for (const lang of languages) {
-    console.log(`📝 Generando dati per lingua: ${lang}`);
-    
-    const staticData: StaticDestinationData = {
+    staticDataPerLang[lang] = {
       version: CACHE_VERSION,
-      timestamp: Date.now(),
+      timestamp: 0, // Verrà aggiornato alla fine
       data: {
         regionProvinces: {},
         provinceMunicipalities: {},
-        destinationDetails: {}
-      }
+        destinationDetails: {},
+      },
     };
+  }
 
-    const failedProvinces: Array<{province: any, error: string}> = [];
+  try {
+    // 1. Scarica TUTTE le regioni con TUTTE le loro traduzioni
+    console.log('PASSO 1: Scarico tutte le regioni...');
+    const allRegions = await directusClient.getDestinations({ type: 'region', limit: -1 });
+    console.log(`Trovate ${allRegions.length} regioni totali.`);
 
-    try {
-      // 1. Ottieni tutte le regioni
-      const regions = await fetchWithRetry(
-        () => directusClient.getDestinationsByType('region', lang),
-        `regioni per ${lang}`
-      );
-      console.log(`   → ${regions.length} regioni trovate`);
+    // 2. Itera su ogni regione per scaricare le sue province
+    for (const region of allRegions) {
+      console.log(`  - Processo regione: ${region.id}`);
+      const allProvinces = await directusClient.getDestinations({ type: 'province', region_id: region.id, limit: -1 });
 
-      // 2. Per ogni regione, ottieni le province
-      for (const region of regions) {
-        try {
-          const provinces = await fetchWithRetry(
-            () => directusClient.getDestinations({
-              type: 'province',
-              region_id: region.id,
-              lang,
-              limit: 200
-            }),
-            `province per regione ${region.translations[0]?.destination_name}`
-          );
+      // 3. Itera su ogni provincia per scaricare i suoi comuni
+      for (const province of allProvinces) {
+        const allMunicipalities = await directusClient.getDestinations({ type: 'municipality', province_id: province.id, limit: 30 }); // LIMITE TEMPORANEO PER ANDARE ONLINE
+
+        // 4. Ora distribuisci i dati raccolti (regione, province, comuni) nei secchi di ogni lingua
+        for (const lang of languages) {
+          const langData = staticDataPerLang[lang].data;
+
+          const regionT = region.translations.find(t => t.languages_code === lang);
+          const provinceT = province.translations.find(t => t.languages_code === lang);
+
+          if (!regionT || !provinceT) continue; // Se la regione o la provincia non è tradotta, salta
+
+          const regionForLang = { ...region, translations: [regionT] };
+          const provinceForLang = { ...province, translations: [provinceT] };
           
-          staticData.data.regionProvinces[region.id] = staticData.data.regionProvinces[region.id] || {};
-          staticData.data.regionProvinces[region.id][lang] = provinces;
-          
-          // Salva anche i dettagli della regione
-          staticData.data.destinationDetails[region.id] = staticData.data.destinationDetails[region.id] || {};
-          staticData.data.destinationDetails[region.id][lang] = region;
-          
-          console.log(`   → Regione ${region.translations[0]?.destination_name}: ${provinces.length} province`);
+          // Aggiungi dettagli
+          langData.destinationDetails[region.id] = { ...langData.destinationDetails[region.id], [lang]: regionForLang };
+          langData.destinationDetails[province.id] = { ...langData.destinationDetails[province.id], [lang]: provinceForLang };
 
-          // 3. Per ogni provincia, ottieni i comuni (CON RETRY)
-          for (const province of provinces) {
-            const provinceName = province.translations[0]?.destination_name || `Province ID ${province.id}`;
-            
-            try {
-              const municipalities = await fetchWithRetry(
-                () => directusClient.getDestinations({
-                  type: 'municipality',
-                  province_id: province.id,
-                  lang,
-                  limit: 500
-                }),
-                `comuni per provincia ${provinceName}`,
-                3, // 3 retry per i comuni (più critici)
-                10000 // 10 secondi di delay
-              );
-              
-              staticData.data.provinceMunicipalities[province.id] = staticData.data.provinceMunicipalities[province.id] || {};
-              staticData.data.provinceMunicipalities[province.id][lang] = municipalities;
-              
-              console.log(`     → Provincia ${provinceName}: ${municipalities.length} comuni`);
-              
-            } catch (error: any) {
-              console.error(`❌ ERRORE provincia ${provinceName}:`, error.message);
-              failedProvinces.push({
-                province: province,
-                error: error.message
-              });
-              
-              // Salva comunque la provincia con array vuoto per evitare errori
-              staticData.data.provinceMunicipalities[province.id] = staticData.data.provinceMunicipalities[province.id] || {};
-              staticData.data.provinceMunicipalities[province.id][lang] = [];
-            }
-            
-            // Salva i dettagli della provincia
-            staticData.data.destinationDetails[province.id] = staticData.data.destinationDetails[province.id] || {};
-            staticData.data.destinationDetails[province.id][lang] = province;
-            
-            // Breve pausa per non sovraccaricare Directus
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          // Aggiungi provincia alla sua regione
+          if (!langData.regionProvinces[region.id]) langData.regionProvinces[region.id] = {};
+          if (!langData.regionProvinces[region.id][lang]) langData.regionProvinces[region.id][lang] = [];
+          if (!langData.regionProvinces[region.id][lang].some(p => p.id === province.id)) {
+            langData.regionProvinces[region.id][lang].push(provinceForLang);
           }
+
+          // Prepara e aggiungi comuni alla loro provincia
+          if (!langData.provinceMunicipalities[province.id]) langData.provinceMunicipalities[province.id] = {};
           
-        } catch (error: any) {
-          console.error(`❌ ERRORE regione ${region.translations[0]?.destination_name}:`, error.message);
+          const municipalitiesForLang = allMunicipalities
+            .map(muni => {
+              const muniT = muni.translations.find(t => t.languages_code === lang);
+              if (!muniT) return null;
+              const muniForLang = { ...muni, translations: [muniT] };
+              langData.destinationDetails[muni.id] = { ...langData.destinationDetails[muni.id], [lang]: muniForLang };
+              return muniForLang;
+            })
+            .filter((m): m is Destination => m !== null);
+          
+          langData.provinceMunicipalities[province.id][lang] = municipalitiesForLang;
         }
       }
-
-      // Salva i dati statici per questa lingua
-      const fileName = getCacheFileName('destinations', lang);
-      await writeFile(fileName, JSON.stringify(staticData, null, 2));
-      
-      console.log(`✅ Dati statici salvati per ${lang}: ${fileName}`);
-      
-      // Report finale
-      if (failedProvinces.length > 0) {
-        console.log(`\n⚠️ ${failedProvinces.length} province hanno avuto problemi:`);
-        failedProvinces.forEach((item, i) => {
-          const provinceName = item.province.translations[0]?.destination_name || 'Sconosciuta';
-          console.log(`   ${i+1}. ${provinceName} - ${item.error}`);
-        });
-        console.log(`\n💡 Suggerimento: Riesegui lo script più tardi per recuperare le province mancanti`);
-      }
-      
-    } catch (error) {
-      console.error(`❌ Errore generando dati statici per ${lang}:`, error);
+       console.log(`    Completate ${allProvinces.length} province per la regione ${region.id}.`);
     }
+
+    // 5. Scrivi un file di cache per ogni lingua
+    const finalTimestamp = Date.now();
+    for (const lang of languages) {
+      staticDataPerLang[lang].timestamp = finalTimestamp;
+      const fileName = getCacheFileName('destinations', lang);
+      await fs.writeFile(fileName, JSON.stringify(staticDataPerLang[lang], null, 2));
+      console.log(`✅ FILE STATICO EFFICIENTE scritto per [${lang.toUpperCase()}] -> ${fileName}`);
+    }
+
+  } catch (error) {
+    console.error(`\n❌ ERRORE FATALE durante la generazione efficiente.`, error);
   }
-  
-  console.log('🎉 Generazione dati statici completata!');
+
+  console.log('\n--- 🎉 Processo di generazione EFFICIENTE completato. ---');
 }
 
 // 🆕 NUOVA: Funzione per recuperare solo le province mancanti
@@ -205,8 +181,8 @@ export async function fixMissingProvinces(lang: string = 'it') {
     return;
   }
   
-  const data = JSON.parse(await readFile(fileName, 'utf-8'));
-  const staticData: StaticDestinationData = data;
+  const data = await fs.readFile(fileName, 'utf-8');
+  const staticData: StaticDestinationData = JSON.parse(data);
   
   let fixed = 0;
   
@@ -260,7 +236,7 @@ export async function fixMissingProvinces(lang: string = 'it') {
     staticData.timestamp = Date.now();
     
     // Salva il file aggiornato
-    await writeFile(fileName, JSON.stringify(staticData, null, 2));
+    await fs.writeFile(fileName, JSON.stringify(staticData, null, 2));
     console.log(`✅ Aggiornato cache statico con ${fixed} province recuperate`);
   } else {
     console.log(`ℹ️ Nessuna provincia da recuperare`);
@@ -276,7 +252,7 @@ async function loadStaticData(lang: string): Promise<StaticDestinationData | nul
       return null;
     }
     
-    const data = await readFile(fileName, 'utf-8');
+    const data = await fs.readFile(fileName, 'utf-8');
     const staticData: StaticDestinationData = JSON.parse(data);
     
     // Verifica versione e validità
@@ -340,32 +316,69 @@ export async function getMunicipalitiesForProvince(provinceId: string, lang: str
   });
 }
 
-// Ottieni dettagli destinazione (ULTRA-VELOCE)
-export async function getDestinationDetails(destinationId: string, lang: string): Promise<Destination | null> {
-  const staticData = await loadStaticData(lang);
-  
-  if (staticData?.data.destinationDetails[destinationId]?.[lang]) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🚀 STATIC HIT: Dettagli destinazione ${destinationId} (${lang})`);
+function getSafeId(value: any): string | null {
+    if (typeof value === 'string' || typeof value === 'number') {
+        return String(value);
     }
-    return staticData.data.destinationDetails[destinationId][lang];
+    if (typeof value === 'object' && value !== null && value.id) {
+        return String(value.id);
+    }
+    return null;
+}
+
+// Ottieni dettagli destinazione (ULTRA-VELOCE)
+export async function getDestinationDetails(slug: string, lang: string, type: 'region' | 'province' | 'municipality'): Promise<Destination | null> {
+  try {
+    // La chiamata a loadStaticData qui è commentata perché la funzione non esiste più con questa firma
+    // const staticData = await loadStaticData(`destinations-${lang}`);
+    const filePath = getCacheFileName('destinations', lang);
+    if (!existsSync(filePath)) {
+         console.warn(`File statico non trovato per ${lang}, fallback a Directus per la destinazione ${slug}`);
+         return await directusClient.getDestinationBySlug(slug, lang);
+    }
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+    const staticData = JSON.parse(fileContent);
+
+    if (!staticData) {
+      console.warn(`Dati statici per ${lang} non trovati nel file, fallback a Directus per la destinazione ${slug}`);
+      return await directusClient.getDestinationBySlug(slug, lang);
+    }
+    
+    // Correzione del linter: Object.values() restituisce un array su cui possiamo usare .find()
+    const allDetails: Destination[] = Object.values(staticData.data.destinationDetails).flatMap((langDetails: any) => Object.values(langDetails));
+    
+    const destination = allDetails.find(
+      (d: Destination) => d.type === type && d.translations[0]?.slug_permalink === slug
+    );
+
+    if (destination) {
+      console.log(`🚀 STATIC HIT: Dettagli per ${slug} (${lang})`);
+      return destination;
+    }
+
+    console.warn(`Destinazione non trovata nei dati statici: ${slug} (${lang}), fallback a Directus.`);
+    return await directusClient.getDestinationBySlug(slug, lang);
+
+  } catch (error) {
+    console.error(`Errore nel caricare i dettagli della destinazione ${slug}:`, error);
+    return await directusClient.getDestinationBySlug(slug, lang);
   }
-  
-  // Fallback to regular API
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`📡 STATIC MISS: Dettagli destinazione ${destinationId} (${lang}) - usando API`);
-  }
-  return await directusClient.getDestinationById(destinationId, lang);
 }
 
 // Funzione per invalidare cache statico (da usare quando si aggiornano dati)
 export async function invalidateStaticCache(lang?: string) {
-  const languages = lang ? [lang] : ['it', 'en', 'fr', 'de', 'es'];
+  const languages = lang ? [lang] : [
+    'af', 'am', 'ar', 'az', 'bg', 'bn', 'ca', 'cs', 'da', 'de', 
+  'el', 'en', 'es', 'et', 'fa', 'fi', 'fr', 'he', 'hi', 'hr', 
+  'hu', 'hy', 'id', 'is', 'it', 'ja', 'ka', 'ko', 'lt', 'lv', 
+  'mk', 'ms', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 
+  'sv', 'sw', 'th', 'tl', 'tk', 'uk', 'ur', 'vi', 'zh', 'zh-tw'
+  ];
   
   for (const l of languages) {
     const fileName = getCacheFileName('destinations', l);
     if (existsSync(fileName)) {
-      await writeFile(fileName, JSON.stringify({ version: 'invalidated' }));
+      await fs.writeFile(fileName, JSON.stringify({ version: 'invalidated' }));
       console.log(`🗑️ Cache statico invalidato per ${l}`);
     }
   }
@@ -382,7 +395,7 @@ export async function getStaticCacheStatus(): Promise<Record<string, { exists: b
     
     if (exists) {
       try {
-        const data = await readFile(fileName, 'utf-8');
+        const data = await fs.readFile(fileName, 'utf-8');
         const staticData: StaticDestinationData = JSON.parse(data);
         
         status[lang] = {

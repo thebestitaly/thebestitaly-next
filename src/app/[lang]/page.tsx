@@ -170,6 +170,15 @@ export default async function Home({ params }: PageProps) {
   const { lang } = await params;
   const homeTranslations = await getTranslationsForSection('homepage', lang);
   
+  // Fetch regions on the server
+  const regions = await directusClient.getDestinationsByType('region', lang);
+  // Fetch featured destinations on the server
+  const featuredDestinations = await directusClient.getHomepageDestinations(lang);
+  // Fetch magazine categories on the server
+  const magazineCategories = await directusClient.getCategories(lang);
+  // Fetch featured companies on the server
+  const featuredCompanies = await directusClient.getHomepageCompanies(lang);
+
   // Generate schema for homepage
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
   const supportedLangs = await getSupportedLanguages();
@@ -208,15 +217,15 @@ export default async function Home({ params }: PageProps) {
     <div>
       <JsonLdSchema schema={schema} />
       <Suspense fallback={<div>Loading...</div>}>
-        <FeaturedDestinationsSlider />
+        <FeaturedDestinationsSlider initialDestinations={featuredDestinations} />
         <div className="container mx-auto px-4 py-12">
           <ProjectIntro />
         </div>
 
-        <HomepageDestinationsCarousel lang={lang} />
+        <HomepageDestinationsCarousel lang={lang} initialRegions={regions} />
         {/* Sezione Eccellenze/Companies */}
         <div className="py-12">
-          <FeaturedCompaniesSlider />
+          <FeaturedCompaniesSlider initialCompanies={featuredCompanies} />
         </div>
         
         <div className="container mx-auto px-4 py-12">
@@ -243,7 +252,7 @@ export default async function Home({ params }: PageProps) {
         <BookExperience />
         <div className="bg-gray-50 py-12">
           <div className="container mx-auto px-4">
-            <CategoriesList lang={lang} />
+            <CategoriesList lang={lang} initialCategories={magazineCategories} />
           </div>
         </div>
       </Suspense>

@@ -1,62 +1,26 @@
 "use client";
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import Breadcrumb from '../layout/Breadcrumb';
-import directusClient, { getTranslations, getPageTitles } from '../../lib/directus';
 import { getOptimizedImageUrl } from '../../lib/imageUtils';
+import { Company, Category } from '@/lib/directus'; // Import tipi
 
 interface EccellenzeListProps {
   lang: string;
+  initialCompanies: Company[];
+  initialCategories: Category[];
+  initialPageTranslations: any;
+  initialPageTitles: any;
 }
 
-const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
-  // Fetch all active companies
-  const { data: companies, isLoading, error } = useQuery({
-    queryKey: ['companies-eccellenze', lang],
-    queryFn: async () => {
-      console.log('🔍 Fetching companies for eccellenze page...');
-      const result = await directusClient.getCompaniesForListing(lang, {
-        active: { _eq: true }
-      }, 50); // Limite di 50 companies per la homepage
-      console.log('📊 Companies result:', result);
-      
-      // Triple-check: filter only active companies on client side as well
-      // This handles cases where active might be null or undefined
-      const activeCompanies = result.filter((company: any) => company.active === true);
-      console.log('✅ Active companies only:', activeCompanies.length, 'out of', result.length);
-      
-      // Log any non-active companies for debugging
-      const nonActiveCompanies = result.filter((company: any) => company.active !== true);
-      if (nonActiveCompanies.length > 0) {
-        console.log('⚠️ Found non-active companies:', nonActiveCompanies.map((c: any) => ({ id: c.id, name: c.company_name, active: c.active })));
-      }
-      
-      return activeCompanies;
-    }
-  });
-
-  // Fetch categories
-  const { data: categories } = useQuery({
-    queryKey: ['company-categories', lang],
-    queryFn: () => directusClient.getCompanyCategories(lang)
-  });
-
-  // Fetch page translations for Eccellenze page
-  const { data: pageTranslations } = useQuery({
-    queryKey: ['eccellenze-translations', lang],
-    queryFn: () => getTranslations(lang, 'eccellenze'),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-
-  // Fetch page titles from database (ID 3 = eccellenze page)
-  const { data: pageTitles } = useQuery({
-    queryKey: ['page-titles-eccellenze', lang],
-    queryFn: () => getPageTitles('3', lang),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-
+const EccellenzeList: React.FC<EccellenzeListProps> = ({ 
+  lang,
+  initialCompanies: companies,
+  initialCategories: categories,
+  initialPageTranslations: pageTranslations,
+  initialPageTitles: pageTitles,
+}) => {
   // Use database content first, then translations with simple fallbacks
   const pageTitle = pageTitles?.seo_title || pageTitles?.title || pageTranslations?.title || 'Eccellenze';
   const pageSubtitle = pageTranslations?.subtitle || 'Le Migliori Esperienze Italiane';
@@ -66,60 +30,6 @@ const EccellenzeList: React.FC<EccellenzeListProps> = ({ lang }) => {
   const errorMessage = pageTranslations?.error_message || 'Non è stato possibile caricare le eccellenze.';
   const noDataTitle = pageTranslations?.no_data_title || 'Eccellenze Italiane';
   const noDataMessage = pageTranslations?.no_data_message || 'Al momento non ci sono eccellenze disponibili.';
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white">
-        {/* Hero Section */}
-        <div className="relative h-64 sm:h-80 lg:h-[500px]">
-                  <div className="absolute inset-0 m-4 sm:m-6 lg:m-10 relative">
-          <Image
-            src="/images/excellence.webp"
-            alt={pageTitle}
-            fill
-            className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
-            sizes="100vw"
-            priority
-          />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
-          </div>
-          <div className="relative z-10 h-full flex items-end">
-            <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
-              <div className="max-w-4xl">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tighter">
-                  {pageTitle}
-                </h1>
-                <h2 className="text-base sm:text-lg lg:text-2xl font-light text-white/90 mb-3 sm:mb-4 lg:mb-6 leading-relaxed">
-                  {pageSubtitle}
-                </h2>
-                <p className="text-sm sm:text-base lg:text-lg text-white/80 max-w-3xl leading-relaxed">
-                  {pageDescription}
-                </p>
-              </div>
-            </div>        
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">{loadingText}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center text-red-600">
-          <h2 className="text-2xl font-bold mb-4">{errorTitle}</h2>
-          <p>{errorMessage}</p>
-        </div>
-      </div>
-    );
-  }
 
   if (!companies?.length) {
     return (

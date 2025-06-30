@@ -1,19 +1,20 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import { Search, X, Menu, ChevronDown, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
-import directusClient from '../../lib/directus';
 import { useSectionTranslations } from '@/hooks/useTranslations';
-import { getOptimizedImageUrl } from '../../lib/imageUtils';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 import InteractiveMap from './InteractiveMap';
 import SearchBar from '../../components/search/SearchBar';
+import { Destination, Category } from '@/lib/directus';
 
 interface HeaderProps {
   lang: string;
+  destinations: Destination[];
+  categories: Category[];
 }
 
-const Header: React.FC<HeaderProps> = ({ lang }) => {
+const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -24,22 +25,6 @@ const Header: React.FC<HeaderProps> = ({ lang }) => {
 
   // Hook per le traduzioni del menu con il nuovo sistema
   const { translations: menuTranslations, loading: menuLoading } = useSectionTranslations('menu', lang);
-
-  // Query per le destinazioni con cache ultra-aggressive (1 anno)
-  const { data: destinations } = useQuery({
-    queryKey: ['menu-destinations', 'region', lang],
-    queryFn: () => directusClient.getDestinationsByType('region', lang),
-    staleTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni client-side (fix 32-bit overflow)
-    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni (fix 32-bit overflow)
-  });
-
-  // Query per le categorie con cache ultra-aggressive
-  const { data: categories } = useQuery({
-    queryKey: ['menu-categories', lang],
-    queryFn: () => directusClient.getCategories(lang),
-    staleTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni client-side
-    gcTime: 1000 * 60 * 60 * 24 * 7, // 7 giorni (fix 32-bit overflow)
-  });
 
   // Gestione scroll
   useEffect(() => {

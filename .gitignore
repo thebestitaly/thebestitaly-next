@@ -50,3 +50,6 @@ export-*.js
 upload-*.js
 clear-*.js
 railway-*.sh
+
+# Sentry Config File
+.env.sentry-build-plugin

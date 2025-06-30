@@ -42,7 +42,13 @@ async function main() {
     
     switch (command) {
       case 'generate':
-        const languages = args[1] ? [args[1]] : ['it', 'en', 'fr', 'de', 'es'];
+        const languages = args[1] ? [args[1]] : [
+          'af', 'am', 'ar', 'az', 'bg', 'bn', 'ca', 'cs', 'da', 'de', 
+          'el', 'en', 'es', 'et', 'fa', 'fi', 'fr', 'he', 'hi', 'hr', 
+          'hu', 'hy', 'id', 'is', 'it', 'ja', 'ka', 'ko', 'lt', 'lv', 
+          'mk', 'ms', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 
+          'sv', 'sw', 'th', 'tl', 'tk', 'uk', 'ur', 'vi', 'zh', 'zh-tw'
+        ];
         console.log(`🚀 Generando dati statici per: ${languages.join(', ')}`);
         await generateStaticDestinations(languages);
         break;

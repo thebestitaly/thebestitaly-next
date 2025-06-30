@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import v8 from 'v8';
+import fs from 'fs';
+import path from 'path';
 
 // 🚨 EMERGENCY MEMORY MONITORING
 let memoryStats: any[] = [];
@@ -120,10 +123,41 @@ export async function POST(request: NextRequest) {
         memory: getMemoryUsage()
       });
     }
+
+    if (action === 'snapshot') {
+      const snapshotDir = '/tmp'; // Use /tmp as it's generally writable
+      if (!fs.existsSync(snapshotDir)) {
+        fs.mkdirSync(snapshotDir, { recursive: true });
+      }
+      const filename = `snapshot-${Date.now()}.heapsnapshot`;
+      const filePath = path.join(snapshotDir, filename);
+      
+      const snapshotStream = v8.getHeapSnapshot();
+      const fileStream = fs.createWriteStream(filePath);
+      snapshotStream.pipe(fileStream);
+
+      return new Promise((resolve) => {
+        fileStream.on('finish', () => {
+          resolve(NextResponse.json({
+            success: true,
+            message: 'Heap snapshot successfully created.',
+            path: filePath
+          }));
+        });
+        fileStream.on('error', (err) => {
+          console.error('❌ Failed to write heap snapshot', err);
+          resolve(NextResponse.json({
+            success: false,
+            error: 'Failed to write heap snapshot',
+            details: err.message
+          }, { status: 500 }));
+        });
+      });
+    }
     
     return NextResponse.json({
       success: false,
-      error: 'Invalid action. Use cleanup or reset'
+      error: 'Invalid action. Use cleanup, reset, or snapshot'
     }, { status: 400 });
     
   } catch (error: any) {

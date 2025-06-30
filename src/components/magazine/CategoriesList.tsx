@@ -3,23 +3,18 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
-import { useQuery } from '@tanstack/react-query';
-import directusClient from '../../lib/directus';
 import { useSectionTranslations } from '@/hooks/useTranslations';
+import { Category } from '@/lib/directus';
 
 interface CategoriesListProps {
   lang: string;
+  initialCategories: Category[];
 }
 
-const CategoriesList: React.FC<CategoriesListProps> = ({ lang }) => {
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ['categories', lang],
-    queryFn: () => directusClient.getCategories(lang),
-  });
-
+const CategoriesList: React.FC<CategoriesListProps> = ({ lang, initialCategories: categories }) => {
   const { translations } = useSectionTranslations('categories', lang);
 
-  if (categoriesLoading) {
+  if (!categories) {
     return (
       <div className="py-8">
         <div className="container mx-auto px-4">
@@ -36,8 +31,6 @@ const CategoriesList: React.FC<CategoriesListProps> = ({ lang }) => {
       </div>
     );
   }
-
-  if (!categories) return null;
 
   return (
     <section className="container mx-auto py-12">

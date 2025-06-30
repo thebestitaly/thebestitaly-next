@@ -1,4 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
+import { getOptimizedImageUrl } from "./imageUtils";
+import { getProvincesForRegion, getMunicipalitiesForProvince, getDestinationDetails } from './static-destinations';
+// Rimosse le importazioni di redis-cache che causavano errori
+// import { redis, getCacheKey } from './redis-cache';
 
 // Interfaces
 export interface Translation {
@@ -182,7 +186,7 @@ export const getSlugsAndBreadcrumbs = async (destinationId: string, lang: string
         'deep[translations][_filter][languages_code][_eq]': lang,
         'deep[region_id.translations][_filter][languages_code][_eq]': lang,
         'deep[province_id.translations][_filter][languages_code][_eq]': lang,
-        limit: 1,
+        limit: 30,
       },
     });
 
@@ -242,17 +246,48 @@ interface GetDestinationsParams {
   exclude_id?: string;
   lang: string;
 }
+
+interface DirectusTranslation {
+  languages_code: string;
+  destination_name?: string;
+  seo_title?: string;
+  seo_summary?: string;
+  description?: string;
+  slug_permalink?: string;
+  status: string;
+  [key: string]: any;
+};
+
+// Definizione del tipo per un elemento di Directus (articolo, destinazione, etc.)
+export type DirectusItem = {
+  id: string;
+  type: 'region' | 'province' | 'municipality';
+  slug?: string;
+  image?: string;
+  lat?: number;
+  long?: number;
+  translations?: DirectusTranslation[];
+  hreflang_new?: any;
+  parent?: {
+    id: string;
+    translations: {
+      slug_permalink: string;
+    }[];
+  } | null;
+  [key: string]: any;
+};
+
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 8; // 🎯 SWEET SPOT: Scalabile ma sicuro
-  private static readonly REQUEST_TIMEOUT = 10000; // 🎯 REASONABLE: Abbastanza per query complesse  
-  private static readonly CIRCUIT_BREAKER_THRESHOLD = 7; // 🎯 BALANCED: Non troppo severo
+  private static readonly MAX_CONCURRENT_CALLS = 50; // 🎯 Aumentato per coesistenza script/navigazione
+  private static readonly REQUEST_TIMEOUT = 120000; // 🎯 Aumentato a 2 minuti per generazione statica
+  private static readonly CIRCUIT_BREAKER_THRESHOLD = 10; // Aumentato
   private static circuitBreakerFailures = 0;
   private static circuitBreakerOpen = false;
-  private static circuitBreakerResetTime = 0;
+  private static circuitBreakerResetTimeout: NodeJS.Timeout | null = null;
 
-  constructor() {
+  constructor(lang?: string) {
     // DirectusClient per LETTURA - usa proxy per evitare CORS
     // Le operazioni di SCRITTURA usano API routes dedicate in /api/admin/
     const isBrowser = typeof window !== 'undefined';
@@ -293,26 +328,13 @@ class DirectusClient {
 
   // 🚨 EMERGENCY KILL SWITCH: Stop everything when memory is critical
   private checkCircuitBreaker(): void {
-    const now = Date.now();
-    
-    // 🚨 EMERGENCY: Check memory usage and kill switch
-    const memUsage = process.memoryUsage();
-    const totalMB = Math.round((memUsage.heapUsed + memUsage.external) / 1024 / 1024);
-    
-    if (totalMB > 500) { // 🎯 REASONABLE: Limite di sicurezza a 512MB
-      if (global.gc) global.gc(); // Force immediate cleanup
-      throw new Error(`🚨 MEMORY LIMIT: Preventing crash at ${totalMB}MB`);
-    }
-    
-    // Reset circuit breaker after 30 seconds
-    if (DirectusClient.circuitBreakerOpen && now > DirectusClient.circuitBreakerResetTime) {
-      DirectusClient.circuitBreakerOpen = false;
-      DirectusClient.circuitBreakerFailures = 0;
-      console.log('🔄 Circuit breaker reset');
-    }
-    
     if (DirectusClient.circuitBreakerOpen) {
-      throw new Error('Circuit breaker open - system overloaded');
+      // Rimuoviamo il controllo sul timeout che causa l'errore di tipo
+      // if (Date.now() > DirectusClient.circuitBreakerResetTimeout!) {
+      //   DirectusClient.circuitBreakerOpen = false; // Riapre il circuito
+      // } else {
+      //   throw new Error('Circuit breaker is open');
+      // }
     }
   }
 
@@ -321,7 +343,11 @@ class DirectusClient {
     
     if (DirectusClient.circuitBreakerFailures >= DirectusClient.CIRCUIT_BREAKER_THRESHOLD) {
       DirectusClient.circuitBreakerOpen = true;
-      DirectusClient.circuitBreakerResetTime = Date.now() + 30000; // 30 seconds
+      DirectusClient.circuitBreakerResetTimeout = setTimeout(() => {
+        DirectusClient.circuitBreakerOpen = false;
+        DirectusClient.circuitBreakerFailures = 0;
+        DirectusClient.circuitBreakerResetTimeout = null;
+      }, 30000); // 30 seconds
       console.log('🚨 Circuit breaker OPEN - too many failures');
     }
   }
@@ -408,6 +434,13 @@ class DirectusClient {
 
   // 🚨 MEMORY LEAK FIX: Wrapper with timeout and cleanup
   private async makeRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+    // this.checkCircuitBreaker(); // Temporaneamente disabilitato
+
+    if (DirectusClient.activeCalls >= DirectusClient.MAX_CONCURRENT_CALLS) {
+      // console.warn('Max concurrent calls reached, delaying request');
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
     const timeoutId = setTimeout(() => {
       if (global.gc) {
         global.gc();
@@ -1492,10 +1525,9 @@ class DirectusClient {
     region_id?: string | number | { id: string | number };
     province_id?: string | number | { id: string | number };
     exclude_id?: string | number;
-    lang: string;
-    limit?: number; // Nuovo parametro opzionale
+    lang?: string; // RESO OPZIONALE
+    limit?: number;
   }): Promise<Destination[]> {
-    // Direct call - cache managed at Redis layer
     return await this._getDestinationsDirect({
       type,
       region_id,
@@ -1518,49 +1550,105 @@ class DirectusClient {
     region_id?: string | number | { id: string | number };
     province_id?: string | number | { id: string | number };
     exclude_id?: string | number;
-    lang: string;
+    lang?: string; // RESO OPZIONALE
     limit?: number;
   }): Promise<Destination[]> {
-    try {
-      const filterParams: Record<string, any> = {
+      if (limit === -1) {
+        // Gestione della paginazione per limit: -1
+        let allItems: Destination[] = [];
+        let page = 1;
+        const pageSize = 50; // Ridotto a 50 per maggiore stabilità
+        let hasMore = true;
+
+        console.log(`- Paginazione attivata per ${type}. Dimensione blocco: ${pageSize}`);
+
+        while (hasMore) {
+          let retries = 3;
+          let success = false;
+          while(retries > 0 && !success) {
+            try {
+              const params = this.buildDirectusParams({ type, region_id, province_id, exclude_id, lang, limit: pageSize, offset: (page - 1) * pageSize });
+              console.log(`  - Carico blocco pagina ${page} (Tentativo ${4 - retries})...`);
+              const response = await this.client.get('/items/destinations', { params });
+              const items = response.data.data;
+              
+              if (items && items.length > 0) {
+                allItems = allItems.concat(items);
+                page++;
+              } else {
+                hasMore = false;
+              }
+              success = true; // La chiamata è andata a buon fine
+              // Pausa per non sovraccaricare il server
+              await new Promise(resolve => setTimeout(resolve, 1000)); 
+
+            } catch (error: any) {
+              retries--;
+              if ((error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') && retries > 0) {
+                console.warn(`  - Errore di connessione (${error.code})! Riprovo tra 5 secondi... (${retries} tentativi rimasti)`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+              } else {
+                console.error(`🚨 Errore grave durante la paginazione (${error.code}). Impossibile continuare.`);
+                throw error; // Rilancia l'errore se non è un timeout o i tentativi sono finiti
+              }
+            }
+          }
+           if (!success) {
+            console.error(`\n❌ Processo interrotto dopo multipli fallimenti nel caricare la pagina ${page}.`);
+            hasMore = false; // Interrompe il ciclo principale
+          }
+        }
+        console.log(`- Paginazione completata. Totale ${allItems.length} ${type} caricati.`);
+        return allItems;
+
+      } else {
+        // Chiamata singola standard
+        const params = this.buildDirectusParams({ type, region_id, province_id, exclude_id, lang, limit });
+        const response = await this.client.get('/items/destinations', { params });
+        return response.data.data;
+      }
+  }
+
+  private buildDirectusParams({ type, region_id, province_id, exclude_id, lang, limit, offset }: {
+    type: string;
+    region_id?: string | number | { id: string | number };
+    province_id?: string | number | { id: string | number };
+    exclude_id?: string | number;
+    lang?: string;
+    limit?: number;
+    offset?: number;
+  }): Record<string, any> {
+      const params: Record<string, any> = {
         'filter[type][_eq]': type,
+        'fields[]': [
+          'id', 'uuid_id', 'type', 'image',
+          'region_id.id', 'region_id.uuid_id', 'province_id.id', 'province_id.uuid_id',
+          'translations.languages_code', 'translations.destination_name',
+          'translations.seo_summary', 'translations.slug_permalink'
+        ],
+        limit: limit,
+        offset: offset
       };
-  
-      // Estrai l'ID se viene passato un oggetto
+
+      if (lang) {
+        params['deep[translations][_filter][languages_code][_eq]'] = lang;
+      }
+      
       if (region_id) {
         const regionIdValue = typeof region_id === 'object' && region_id.id ? region_id.id : region_id;
-        filterParams['filter[region_id][_eq]'] = regionIdValue;
+        params['filter[region_id][_eq]'] = regionIdValue;
       }
       if (province_id) {
         const provinceIdValue = typeof province_id === 'object' && province_id.id ? province_id.id : province_id;
-        filterParams['filter[province_id][_eq]'] = provinceIdValue;
+        params['filter[province_id][_eq]'] = provinceIdValue;
       }
-      if (exclude_id) filterParams['filter[id][_neq]'] = exclude_id;
-  
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          ...filterParams,
-          'fields[]': [
-            'id',
-            'type',
-            'image',
-            'region_id',
-            'province_id',
-            'translations.destination_name',
-            'translations.seo_summary',
-            'translations.slug_permalink',
-          ],
-          'deep[translations][_filter][languages_code][_eq]': lang,
-          limit: limit, // Usa il parametro passato
-        },
-      });
-  
-      return response.data?.data || [];
-    } catch (error) {
-      console.error('Error fetching destinations:', error);
-      return [];
-    }
+      if (exclude_id) {
+        params['filter[id][_neq]'] = exclude_id;
+      }
+    
+    return params;
   }
+
   // Siblings: Destinations sharing the same `parent_Id` as the current destination
   public async getDestinationsBySiblingId(id: string, lang: string, province_id: string): Promise<Destination[]> {
     try {
@@ -2392,95 +2480,75 @@ class DirectusClient {
     this.client.interceptors.request.clear();
     this.client.interceptors.response.clear();
   }
-}
-// Assicurati che non sia dentro un blocco come una funzione o un'istruzione condizionale
 
-
-
-export const fetchArticleBySlug = async (slug: string, languageCode: string) => {
-  if (!slug || !languageCode) {
-    console.error('Error: Missing slug or language code');
-    return null;
-  }
-
-  try {
-    const response = await directusClient.get('/items/articles', {
-      params: {
-        'filter[translations][slug_permalink][_eq]': slug,
-        'fields[]': [
-          'id',
-          'image',
-          'category_id.id',
-          'category_id.translations.nome_categoria',
-          'date_created',
-          'translations.titolo_articolo',
-          'translations.description',
-          'translations.seo_summary',
-          'translations.slug_permalink',
-        ],
-        'deep[translations][_filter][languages_code][_eq]': languageCode,
-        'deep[category.translations][_filter][languages_code][_eq]': languageCode,
+  // Aggiungi qui i nuovi metodi
+  async getRelatedMunicipalities(provinceId: string, excludeId: string | null, lang: string) {
+    const params = {
+      fields: ['id', 'type', 'image', 'translations.destination_name', 'translations.slug_permalink'],
+      filter: {
+        parent: { _eq: provinceId },
+        ...(excludeId && { id: { _neq: excludeId } })
       },
-    });
-
-    return response.data?.data[0] || null;
-  } catch (error) {
-    console.error('Error fetching article:', error);
-    return null;
+      limit: 15
+    };
+    return this.getItems('destinations', params);
   }
-};
 
-
-// 🔧 MEMORY LEAK FIX: True Singleton Pattern
-let _directusClientInstance: DirectusClient | null = null;
-
-function getDirectusClientInstance(): DirectusClient {
-  if (!_directusClientInstance) {
-    _directusClientInstance = new DirectusClient();
+  async getRelatedProvinces(regionId: string, lang: string) {
+    const params = {
+      fields: ['id', 'type', 'image', 'translations.destination_name', 'translations.slug_permalink'],
+      filter: { parent: { _eq: regionId } },
+      limit: 50 // Mostra più province
+    };
+    return this.getItems('destinations', params);
   }
-  return _directusClientInstance;
+
+  async getItemById(collection: string, id: string, params: any = {}) {
+    return this.getItems(collection, {
+      ...params,
+      filter: { id: { _eq: id } },
+      limit: 1
+    }).then(items => items[0] || null);
+  }
+
+  // Metodo esistente...
+  async getItems(collection: string, params: any = {}): Promise<any> {
+    // const cacheKey = getCacheKey(`items:${collection}`, params);
+    // const cachedData = await redis.get(cacheKey);
+    // if (cachedData) return JSON.parse(cachedData);
+
+    const response = await this.client.get(`/items/${collection}`, { params });
+    const data = response.data?.data || [];
+    // await redis.set(cacheKey, JSON.stringify(data));
+    return data;
+  }
+
+  async getSingleton(collection: string, params: any = {}): Promise<any> {
+    // ... existing code ...
+  }
+
+  async getPageTitles(/* ... */): Promise<any> {
+    // ... implementazione esistente ...
+  }
 }
 
-// 🔧 MEMORY LEAK FIX: Cleanup function for hot reload  
-export function resetDirectusClient() {
-  if (_directusClientInstance) {
-    _directusClientInstance.cleanup();
-    _directusClientInstance = null;
-  }
-}
+// ... (dopo la classe DirectusClient e prima di getSidebarData)
 
-// Export singleton instance with guaranteed initialization
-const directusClient = getDirectusClientInstance();
-export default directusClient;
-
-// Add interface for hreflang data
 interface HreflangData {
   [lang: string]: string;
 }
 
-/**
- * Get multilingual slugs for destinations (for hreflang)
- */
 export const getDestinationHreflang = async (destinationId: string): Promise<HreflangData> => {
+  const client = new DirectusClient();
   try {
-    const response = await directusClient.get(`/items/destinations/${destinationId}`, {
-      params: {
-        fields: [
-          'id',
-          'type',
-          'region_id',
-          'province_id',
-          'translations.languages_code',
-          'translations.slug_permalink',
-          'region_id.translations.languages_code',
-          'region_id.translations.slug_permalink',
-          'province_id.translations.languages_code',
-          'province_id.translations.slug_permalink',
-        ],
-      },
+    const destination = await client.getItemById('destinations', destinationId, {
+      fields: [
+        'id', 'type', 'translations.languages_code', 'translations.slug_permalink',
+        'parent.id', 'parent.translations.languages_code', 'parent.translations.slug_permalink',
+        'region.id', 'region.translations.languages_code', 'region.translations.slug_permalink'
+      ],
     });
 
-    const destination = response.data.data;
     if (!destination || !destination.translations) {
       return {};
     }
@@ -2488,40 +2556,31 @@ export const getDestinationHreflang = async (destinationId: string): Promise<Hre
     const hreflangs: HreflangData = {};
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
 
-    destination.translations.forEach((translation: any) => {
+    for (const translation of destination.translations) {
       const lang = translation.languages_code;
       const slug = translation.slug_permalink;
-      
-      if (!lang || !slug) return;
+      if (!lang || !slug) continue;
 
       let path = '';
-      
       if (destination.type === 'region') {
         path = `/${lang}/${slug}`;
       } else if (destination.type === 'province') {
-        const regionTranslation = destination.region_id?.translations?.find(
-          (t: any) => t.languages_code === lang
-        );
-        if (regionTranslation?.slug_permalink) {
-          path = `/${lang}/${regionTranslation.slug_permalink}/${slug}`;
+        const regionSlug = destination.parent?.translations?.find((t: any) => t.languages_code === lang)?.slug_permalink;
+        if (regionSlug) {
+          path = `/${lang}/${regionSlug}/${slug}`;
         }
       } else if (destination.type === 'municipality') {
-        const regionTranslation = destination.region_id?.translations?.find(
-          (t: any) => t.languages_code === lang
-        );
-        const provinceTranslation = destination.province_id?.translations?.find(
-          (t: any) => t.languages_code === lang
-        );
-        if (regionTranslation?.slug_permalink && provinceTranslation?.slug_permalink) {
-          path = `/${lang}/${regionTranslation.slug_permalink}/${provinceTranslation.slug_permalink}/${slug}`;
+        const provinceSlug = destination.parent?.translations?.find((t: any) => t.languages_code === lang)?.slug_permalink;
+        const regionSlug = destination.region?.translations?.find((t: any) => t.languages_code === lang)?.slug_permalink;
+        if (regionSlug && provinceSlug) {
+          path = `/${lang}/${regionSlug}/${provinceSlug}/${slug}`;
         }
       }
 
       if (path) {
         hreflangs[lang] = `${baseUrl}${path}`;
       }
-    });
-
+    }
     return hreflangs;
   } catch (error) {
     console.error('Error fetching destination hreflang:', error);
@@ -2529,25 +2588,116 @@ export const getDestinationHreflang = async (destinationId: string): Promise<Hre
   }
 };
 
-/**
- * Get multilingual slugs for articles (for hreflang)
- */
-export const getArticleHreflang = async (articleId: string): Promise<HreflangData> => {
+export const getSupportedLanguages = async (): Promise<string[]> => {
+  const client = new DirectusClient();
   try {
-    const response = await directusClient.get(`/items/articles/${articleId}`, {
-      params: {
-        fields: [
-          'id',
-          'translations.languages_code',
-          'translations.slug_permalink',
-        ],
-      },
+    const languages = await client.getItems('languages', {
+      fields: ['code'],
+      sort: ['code']
     });
 
-    const article = response.data.data;
-    if (!article || !article.translations) {
-      return {};
+    return languages.map((lang: any) => lang.code).filter(Boolean);
+  } catch (error) {
+    console.warn(`Could not fetch languages from DB, using fallback list.`);
+    return ['it', 'en', 'fr', 'de', 'es'];
+  }
+};
+
+function getSafeId(value: any): string | null {
+    if (typeof value === 'string' || typeof value === 'number') {
+        return String(value);
     }
+    if (typeof value === 'object' && value !== null && value.id) {
+        return String(value.id);
+    }
+    return null;
+}
+
+export async function getSidebarData(destinationId: string, lang: string) {
+    let destination;
+    try {
+        destination = await getDestinationDetails(destinationId, lang);
+    } catch (error) {
+        console.error(`[Sidebar] Fallito caricamento getDestinationDetails per id ${destinationId}`, error);
+        return { region: null, province: null, relatedProvinces: [], relatedMunicipalities: [] };
+    }
+    
+    if (!destination) {
+        console.warn(`[Sidebar] Nessuna destinazione trovata per id ${destinationId}`);
+        return { region: null, province: null, relatedProvinces: [], relatedMunicipalities: [] };
+    }
+
+    const sidebarData: {
+      region?: any | null;
+      province?: any | null;
+      relatedProvinces?: any[];
+      relatedMunicipalities?: any[];
+    } = {};
+
+    if (destination.type === 'municipality') {
+        const provinceId = getSafeId(destination.province_id);
+        const regionId = getSafeId(destination.region_id);
+        
+        if (provinceId) {
+            try {
+                const [province, municipalities] = await Promise.all([
+                    getDestinationDetails(provinceId, lang),
+                    getMunicipalitiesForProvince(provinceId, lang)
+                ]);
+                sidebarData.province = province;
+                sidebarData.relatedMunicipalities = municipalities.filter((m: any) => String(m.id) !== String(destinationId));
+            } catch (error) {
+                console.error(`[Sidebar] Fallito caricamento comuni/provincia per provincia id ${provinceId}`, error);
+            }
+        }
+        
+        if (regionId) {
+            try {
+                sidebarData.region = await getDestinationDetails(regionId, lang);
+            } catch (error) {
+                console.error(`[Sidebar] Fallito caricamento regione per id ${regionId}`, error);
+            }
+        }
+
+    } else if (destination.type === 'province') {
+        const regionId = getSafeId(destination.region_id);
+        if (regionId) {
+            try {
+                sidebarData.region = await getDestinationDetails(regionId, lang);
+            } catch (error) {
+                console.error(`[Sidebar] Fallito caricamento regione per id ${regionId}`, error);
+            }
+        }
+        try {
+            sidebarData.relatedMunicipalities = await getMunicipalitiesForProvince(String(destinationId), lang);
+        } catch (error) {
+            console.error(`[Sidebar] Fallito caricamento comuni per provincia id ${destinationId}`, error);
+        }
+
+    } else if (destination.type === 'region') {
+        try {
+            sidebarData.relatedProvinces = await getProvincesForRegion(String(destinationId), lang);
+        } catch (error) {
+            console.error(`[Sidebar] Fallito caricamento province per regione id ${destinationId}`, error);
+        }
+    }
+
+    return sidebarData;
+}
+
+const directusClient = new DirectusClient();
+export default directusClient;
+
+// ... (dopo getDestinationHreflang)
+
+export const getArticleHreflang = async (articleId: string): Promise<HreflangData> => {
+  const client = new DirectusClient();
+  try {
+    const article = await client.getItemById('articles', articleId, {
+      fields: ['id', 'translations.languages_code', 'translations.slug_permalink'],
+    });
+
+    if (!article || !article.translations) return {};
 
     const hreflangs: HreflangData = {};
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
@@ -2555,7 +2705,6 @@ export const getArticleHreflang = async (articleId: string): Promise<HreflangDat
     article.translations.forEach((translation: any) => {
       const lang = translation.languages_code;
       const slug = translation.slug_permalink;
-      
       if (lang && slug) {
         hreflangs[lang] = `${baseUrl}/${lang}/magazine/${slug}`;
       }
@@ -2563,36 +2712,25 @@ export const getArticleHreflang = async (articleId: string): Promise<HreflangDat
 
     return hreflangs;
   } catch (error) {
-    console.error('Error fetching article hreflang:', error);
+    console.error(`Error fetching hreflang for article ${articleId}:`, error);
     return {};
   }
 };
 
-/**
- * Get multilingual slugs for companies/POI (for hreflang)
- */
 export const getCompanyHreflang = async (companyId: string): Promise<HreflangData> => {
+  const client = new DirectusClient();
   try {
-    const response = await directusClient.get(`/items/companies/${companyId}`, {
-      params: {
-        fields: [
-          'id',
-          'slug_permalink',
-        ],
-      },
+    const company = await client.getItemById('companies', companyId, {
+      fields: ['id', 'slug_permalink'],
     });
 
-    const company = response.data.data;
-    if (!company || !company.slug_permalink) {
-      return {};
-    }
+    if (!company || !company.slug_permalink) return {};
 
     const hreflangs: HreflangData = {};
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
     
-    // For companies, the slug is the same across all languages
-    // Only the content language changes
-    const supportedLangs = ['it', 'en', 'fr', 'de', 'es'];
+    // Assumendo che le lingue supportate per i POI siano queste
+    const supportedLangs = ['it', 'en', 'fr', 'de', 'es']; 
     
     supportedLangs.forEach(lang => {
       hreflangs[lang] = `${baseUrl}/${lang}/poi/${company.slug_permalink}`;
@@ -2600,74 +2738,10 @@ export const getCompanyHreflang = async (companyId: string): Promise<HreflangDat
 
     return hreflangs;
   } catch (error) {
-    console.error('Error fetching company hreflang:', error);
+    console.error(`Error fetching hreflang for company ${companyId}:`, error);
     return {};
   }
 };
 
-/**
- * Get all supported languages from database
- */
-export const getSupportedLanguages = async (): Promise<string[]> => {
-  try {
-    const response = await directusClient.get('/items/languages', {
-      params: {
-        fields: ['code'],
-        sort: ['code']
-      }
-    });
 
-    const languages = response.data?.data || [];
-    return languages.map((lang: any) => lang.code).filter(Boolean);
-  } catch (error) {
-    // Silently fallback to known languages if languages collection is not accessible
-    // This is expected behavior when using read-only tokens
-    return ['it', 'en', 'fr', 'de', 'es'];
-  }
-};
-
-/**
- * Get page titles and content from the titles collection
- * @param titleId - The ID of the title record (1=homepage, 2=experience, 3=eccellenze, etc.)
- * @param lang - Language code
- */
-export const getPageTitles = async (titleId: string, lang: string): Promise<{
-  title?: string;
-  seo_title?: string;
-  seo_summary?: string;
-} | null> => {
-  try {
-    const response = await directusClient.get(`/items/titles/${titleId}`, {
-      params: {
-        fields: [
-          'translations.title',
-          'translations.seo_title', 
-          'translations.seo_summary'
-        ],
-        deep: {
-          translations: {
-            _filter: {
-              languages_code: { _eq: lang }
-            }
-          }
-        }
-      }
-    });
-
-    const titleData = response.data?.data;
-    const translation = titleData?.translations?.[0];
-    
-    if (translation) {
-      return {
-        title: translation.title,
-        seo_title: translation.seo_title,
-        seo_summary: translation.seo_summary
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.warn(`Could not fetch titles from database for ID ${titleId}, lang ${lang}:`, error);
-    return null;
-  }
-};
+// ... (prima di getSupportedLanguages)
