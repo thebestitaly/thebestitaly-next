@@ -16,6 +16,43 @@ const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang, type 
   const [currentIndex, setCurrentIndex] = useState(0);
   const itemsToShow = 4;
 
+  // Helper function to build destination URL
+  const buildDestinationUrl = (destination: any) => {
+    const translation = destination.translations?.[0];
+    if (!translation?.slug_permalink) return '#';
+
+    const { type: destinationType } = destination;
+    
+    if (destinationType === 'region') {
+      return `/${lang}/${translation.slug_permalink}`;
+    } else if (destinationType === 'province') {
+      // Province: /{lang}/{region_slug}/{province_slug}
+      const regionSlug = destination.region_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      if (regionSlug) {
+        return `/${lang}/${regionSlug}/${translation.slug_permalink}`;
+      }
+    } else if (destinationType === 'municipality') {
+      // Municipality: /{lang}/{region_slug}/{province_slug}/{municipality_slug}
+      const regionSlug = destination.region_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      const provinceSlug = destination.province_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      if (regionSlug && provinceSlug) {
+        return `/${lang}/${regionSlug}/${provinceSlug}/${translation.slug_permalink}`;
+      }
+    }
+
+    // Fallback: just use the slug as region-level
+    return `/${lang}/${translation.slug_permalink}`;
+  };
+
   const { data: destinations, isLoading } = useQuery({
     queryKey: ['destinations', type, lang],
     queryFn: () => directusClient.getDestinationsByType(type, lang)
@@ -80,7 +117,7 @@ const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang, type 
             return (
               <Link
                 key={destination.id}
-                href={`/${lang}/${translation.slug_permalink}/`}
+                href={buildDestinationUrl(destination)}
                 className="group relative h-full overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
                 {destination.image && (

@@ -21,28 +21,28 @@ interface ProvincePageProps {
 }
 
 // 🚀 STATIC GENERATION: Pre-genera tutte le province italiane
-export async function generateStaticParams() {
-  console.log('🏗️ Generating static params for province pages...');
+// export async function generateStaticParams() {
+//   console.log('🏗️ Generating static params for province pages...');
   
-  try {
-    const params = await generateProvinceStaticParams();
-    console.log(`✅ Generated ${params.length} province static params`);
+//   try {
+//     const params = await generateProvinceStaticParams();
+//     console.log(`✅ Generated ${params.length} province static params`);
     
-    return params.map(param => ({
-      lang: param.lang,
-      region: param.region,
-      province: param.province!,
-    }));
-  } catch (error) {
-    console.error('❌ Error generating province static params:', error);
-    // Fallback: genera almeno le lingue principali per evitare crash
-    return STATIC_GENERATION_CONFIG.SUPPORTED_LANGUAGES.map(lang => ({
-      lang,
-      region: 'lombardia',
-      province: 'milano',
-    }));
-  }
-}
+//     return params.map(param => ({
+//       lang: param.lang,
+//       region: param.region,
+//       province: param.province!,
+//     }));
+//   } catch (error) {
+//     console.error('❌ Error generating province static params:', error);
+//     // Fallback: genera almeno le lingue principali per evitare crash
+//     return STATIC_GENERATION_CONFIG.SUPPORTED_LANGUAGES.map(lang => ({
+//       lang,
+//       region: 'lombardia',
+//       province: 'milano',
+//     }));
+//   }
+// }
 
 export async function generateMetadata({ params }: ProvincePageProps): Promise<Metadata> {
   const { lang, region, province } = params;

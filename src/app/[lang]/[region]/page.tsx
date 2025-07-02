@@ -16,28 +16,6 @@ interface RegionPageProps {
   };
 }
 
-// 🚀 STATIC GENERATION: Pre-genera tutte le regioni italiane
-export async function generateStaticParams() {
-  console.log('🏗️ Generating static params for region pages...');
-  
-  try {
-    const params = await generateRegionStaticParams();
-    console.log(`✅ Generated ${params.length} region static params`);
-    
-    return params.map(param => ({
-      lang: param.lang,
-      region: param.region,
-    }));
-  } catch (error) {
-    console.error('❌ Error generating region static params:', error);
-    // Fallback: genera almeno le lingue principali per evitare crash
-    return STATIC_GENERATION_CONFIG.SUPPORTED_LANGUAGES.map(lang => ({
-      lang,
-      region: 'lombardia',
-    }));
-  }
-}
-
 // Generate metadata for region pages - STATIC VERSION
 export async function generateMetadata({ params }: RegionPageProps): Promise<Metadata> {
   const { lang, region } = params;

@@ -16,6 +16,43 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
   const itemsToShow = 5; // Show 5 regions at a time on desktop
   const mobileItemsToShow = 2; // Show 2 regions at a time on mobile
 
+  // Helper function to build destination URL
+  const buildDestinationUrl = (destination: Destination) => {
+    const translation = destination.translations?.[0];
+    if (!translation?.slug_permalink) return '#';
+
+    const { type } = destination;
+    
+    if (type === 'region') {
+      return `/${lang}/${translation.slug_permalink}`;
+    } else if (type === 'province') {
+      // Province: /{lang}/{region_slug}/{province_slug}
+      const regionSlug = destination.region_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      if (regionSlug) {
+        return `/${lang}/${regionSlug}/${translation.slug_permalink}`;
+      }
+    } else if (type === 'municipality') {
+      // Municipality: /{lang}/{region_slug}/{province_slug}/{municipality_slug}
+      const regionSlug = destination.region_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      const provinceSlug = destination.province_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      if (regionSlug && provinceSlug) {
+        return `/${lang}/${regionSlug}/${provinceSlug}/${translation.slug_permalink}`;
+      }
+    }
+
+    // Fallback: just use the slug as region-level
+    return `/${lang}/${translation.slug_permalink}`;
+  };
+
   if (!regions || !regions.length) {
     return (
       <div className="py-12">
@@ -105,7 +142,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                 return (
                   <Link
                     key={region.id}
-                    href={`/${lang}/${translation.slug_permalink}/`}
+                    href={buildDestinationUrl(region)}
                     className="group relative h-full overflow-hidden rounded-lg transition-all duration-300 active:scale-95"
                     aria-label={`Explore ${translation.destination_name} - ${translation.seo_summary || 'Discover this beautiful region'}`}
                   >
@@ -184,7 +221,7 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                 return (
                   <Link
                     key={region.id}
-                    href={`/${lang}/${translation.slug_permalink}/`}
+                    href={buildDestinationUrl(region)}
                     className="group relative h-full overflow-hidden rounded-lg transition-all duration-500 transform hover:-translate-y-2"
                     aria-label={`Explore ${translation.destination_name} - ${translation.seo_summary || 'Discover this beautiful region'}`}
                   >

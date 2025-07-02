@@ -283,183 +283,79 @@ class DirectusClient {
   private static activeCalls = 0;
   private static readonly MAX_CONCURRENT_CALLS = 50; // 🎯 Aumentato per coesistenza script/navigazione
   private static readonly REQUEST_TIMEOUT = 120000; // 🎯 Aumentato a 2 minuti per generazione statica
-  private static readonly CIRCUIT_BREAKER_THRESHOLD = 10; // Aumentato
-  private static circuitBreakerFailures = 0;
-  private static circuitBreakerOpen = false;
-  private static circuitBreakerResetTimeout: NodeJS.Timeout | null = null;
 
   constructor(lang?: string) {
-    // DirectusClient per LETTURA - usa proxy per evitare CORS
-    // Le operazioni di SCRITTURA usano API routes dedicate in /api/admin/
-    const isBrowser = typeof window !== 'undefined';
-    
-    let baseURL: string;
-    if (isBrowser) {
-      baseURL = '/api/directus';
-    } else {
-      // Server-side: usa sempre il proxy per evitare costi Railway
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-      const isBuild = process.env.NODE_ENV === 'production' && !process.env.RAILWAY_ENVIRONMENT_NAME;
-      
-      if (isBuild) {
-        // Durante il build statico, usa il dominio di produzione
-        baseURL = 'https://thebestitaly.eu/api/directus';
-      } else if (appUrl && !appUrl.includes('localhost')) {
-        // Su Railway o altri hosting, usa il dominio configurato
-        baseURL = appUrl + '/api/directus';
-      } else {
-        // Fallback per sviluppo locale
-        baseURL = 'https://thebestitaly.eu/api/directus';
-      }
+    const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+    if (!baseURL) {
+      throw new Error('NEXT_PUBLIC_DIRECTUS_URL environment variable is not set');
     }
-      
+
     this.client = axios.create({
       baseURL,
       timeout: DirectusClient.REQUEST_TIMEOUT,
-      maxRedirects: 2,
-      // 🚨 EXTERNAL MEMORY LEAK FIX: Force connection cleanup
-      maxContentLength: 5 * 1024 * 1024, // 5MB max (reduced from 10MB)
-      maxBodyLength: 1 * 1024 * 1024, // 1MB max (reduced from 2MB)
-      validateStatus: (status) => status < 500,
-      // Remove forced connection close - was causing memory explosion
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
     });
-  
+
     this.setupInterceptors();
   }
 
-  // 🚨 EMERGENCY KILL SWITCH: Stop everything when memory is critical
-  private checkCircuitBreaker(): void {
-    if (DirectusClient.circuitBreakerOpen) {
-      // Rimuoviamo il controllo sul timeout che causa l'errore di tipo
-      // if (Date.now() > DirectusClient.circuitBreakerResetTimeout!) {
-      //   DirectusClient.circuitBreakerOpen = false; // Riapre il circuito
-      // } else {
-      //   throw new Error('Circuit breaker is open');
-      // }
-    }
-  }
-
-  private handleCircuitBreakerFailure(): void {
-    DirectusClient.circuitBreakerFailures++;
-    
-    if (DirectusClient.circuitBreakerFailures >= DirectusClient.CIRCUIT_BREAKER_THRESHOLD) {
-      DirectusClient.circuitBreakerOpen = true;
-      DirectusClient.circuitBreakerResetTimeout = setTimeout(() => {
-        DirectusClient.circuitBreakerOpen = false;
-        DirectusClient.circuitBreakerFailures = 0;
-        DirectusClient.circuitBreakerResetTimeout = null;
-      }, 30000); // 30 seconds
-      console.log('🚨 Circuit breaker OPEN - too many failures');
-    }
-  }
-
   private setupInterceptors() {
-    // 🚨 ULTRA-AGGRESSIVE: Request interceptor with circuit breaker
     this.client.interceptors.request.use(
-      async (request) => {
-        // Check circuit breaker first
-        this.checkCircuitBreaker();
-        
-        // Production concurrency limit
-        if (DirectusClient.activeCalls >= DirectusClient.MAX_CONCURRENT_CALLS) {
-          throw new Error(`Too many concurrent requests - memory protection (${DirectusClient.MAX_CONCURRENT_CALLS} max)`);
-        }
-
+      (config) => {
         DirectusClient.activeCalls++;
-
-        const token = process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
-        if (token) {
-          request.headers['Authorization'] = `Bearer ${token}`;
-        }
-        request.headers['Content-Type'] = 'application/json';
         
-        return request;
+        // Rate limiting - se troppo traffico aspetta
+        if (DirectusClient.activeCalls > DirectusClient.MAX_CONCURRENT_CALLS) {
+          console.warn(`⚠️  [DirectusClient] Rate limiting: ${DirectusClient.activeCalls} active calls`);
+        }
+
+        // 📊 Logging delle chiamate per debug
+        const url = config.url || '';
+        const params = config.params ? Object.keys(config.params).length : 0;
+        console.log(`📖 Directus API: ${config.method?.toUpperCase()} ${url} (${params} params, ${DirectusClient.activeCalls} active)`);
+
+        return config;
       },
       (error) => {
-        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
-        this.handleCircuitBreakerFailure();
+        DirectusClient.activeCalls--;
         return Promise.reject(error);
       }
     );
 
-    // 🚨 ULTRA-AGGRESSIVE: Response interceptor with forced cleanup
     this.client.interceptors.response.use(
       (response) => {
-        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
+        DirectusClient.activeCalls--;
         
-        // Reset circuit breaker on success
-        if (DirectusClient.circuitBreakerFailures > 0) {
-          DirectusClient.circuitBreakerFailures = Math.max(0, DirectusClient.circuitBreakerFailures - 1);
-        }
-        
-        // 🎯 REASONABLE: Cleanup per response grandi
-        if (response.data && JSON.stringify(response.data).length > 20 * 1024) {
-          if (global.gc) {
-            global.gc();
-          }
-        }
-        
-        // 🎯 BALANCED: GC periodico ogni 15 requests
-        if (DirectusClient.activeCalls % 15 === 0 && global.gc) {
-          global.gc();
-        }
-        
-        // 🚨 EXTERNAL MEMORY LEAK FIX: Force buffer cleanup
-        if (response.config && response.config.data) {
-          response.config.data = null;
-        }
-        if (response.request) {
-          response.request._data = null;
-        }
-        
+        // 🎯 Simple logging for successful responses
+        console.log(`✅ [DirectusClient] Response successful for ${response.config.url}`);
+
         return response;
       },
       (error) => {
-        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
-        this.handleCircuitBreakerFailure();
+        DirectusClient.activeCalls--;
         
-        // Silent errors in production except for circuit breaker
-        if (process.env.NODE_ENV === 'development') {
-          console.error('🚨 Directus Error:', error.response?.status, error.code);
-        }
-        
-        // Force cleanup on ANY error
-        if (global.gc) {
-          global.gc();
-        }
-        
+        // 📊 Log degli errori per debug
+        const status = error.response?.status;
+        const url = error.config?.url || 'unknown';
+        console.error(`❌ [DirectusClient] Error ${status}: ${url}`, {
+          message: error.message,
+          status,
+          data: error.response?.data
+        });
+
         return Promise.reject(error);
       }
     );
   }
 
-  // 🚨 MEMORY LEAK FIX: Wrapper with timeout and cleanup
   private async makeRequest<T>(requestFn: () => Promise<T>): Promise<T> {
-    // this.checkCircuitBreaker(); // Temporaneamente disabilitato
-
-    if (DirectusClient.activeCalls >= DirectusClient.MAX_CONCURRENT_CALLS) {
-      // console.warn('Max concurrent calls reached, delaying request');
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-
-    const timeoutId = setTimeout(() => {
-      if (global.gc) {
-        global.gc();
-      }
-    }, DirectusClient.REQUEST_TIMEOUT + 1000);
-
     try {
-      const result = await requestFn();
-      clearTimeout(timeoutId);
-      return result;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      
-      // Force cleanup on error
-      if (global.gc) {
-        global.gc();
-      }
-      
+      return await requestFn();
+    } catch (error: any) {
+      console.error('❌ [DirectusClient] Request failed:', error.message);
       throw error;
     }
   }
@@ -1127,9 +1023,44 @@ class DirectusClient {
     }
   }
 
-  public async getDestinationsByType(type: string, languageCode: string): Promise<Destination[]> {
-    // Direct call - cache handled at Redis level
-    return await this._getDestinationsByTypeDirect(type, languageCode);
+  public async getDestinationsByType(type: 'region' | 'province' | 'municipality', languageCode: string): Promise<Destination[]> {
+    try {
+      const response = await this.client.get('/items/destinations', {
+        params: {
+          'filter[type][_eq]': type,
+          'fields[]': [
+            'id', 
+            'uuid_id', 
+            'type', 
+            'image',
+            'region_id.id',
+            'region_id.uuid_id', 
+            'region_id.translations.destination_name',
+            'region_id.translations.slug_permalink',
+            'region_id.translations.languages_code',
+            'province_id.id',
+            'province_id.uuid_id',
+            'province_id.translations.destination_name', 
+            'province_id.translations.slug_permalink',
+            'province_id.translations.languages_code',
+            'translations.languages_code', 
+            'translations.destination_name',
+            'translations.seo_summary', 
+            'translations.slug_permalink'
+          ],
+          'deep[translations][_filter][languages_code][_eq]': languageCode,
+          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
+          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
+          'sort[]': 'id',
+          'limit': 100
+        }
+      });
+
+      return response.data.data || [];
+    } catch (error) {
+      console.error(`❌ Error fetching destinations by type ${type}:`, error);
+      return [];
+    }
   }
 
   private async _getDestinationsByTypeDirect(type: string, languageCode: string): Promise<Destination[]> {
@@ -2213,34 +2144,29 @@ class DirectusClient {
     try {
       let response = await this.client.get('/items/destinations', {
         params: {
-          'filter': {
-            'featured_status': {
-              '_eq': 'homepage'
-            }
-          },
-          'fields': [
+          'filter[featured_status][_eq]': 'homepage',
+          'fields[]': [
             'id',
             'type',
             'image',
-            'region_id',
-            'province_id',
+            'region_id.id',
+            'region_id.translations.slug_permalink',
+            'region_id.translations.languages_code',
+            'province_id.id', 
+            'province_id.translations.slug_permalink',
+            'province_id.translations.languages_code',
             'featured_status',
             'translations.destination_name',
             'translations.seo_title',
             'translations.seo_summary',
-            'translations.slug_permalink'
+            'translations.slug_permalink',
+            'translations.languages_code'
           ],
-          'deep': {
-            'translations': {
-              '_filter': {
-                'languages_code': {
-                  '_eq': languageCode
-                }
-              }
-            }
-          },
+          'deep[translations][_filter][languages_code][_eq]': languageCode,
+          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
+          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
           'limit': 10,
-          'sort': ['featured_sort', 'id']
+          'sort[]': ['featured_sort', 'id']
         }
       });
 
@@ -2248,34 +2174,29 @@ class DirectusClient {
       if (!response.data.data?.length) {
         response = await this.client.get('/items/destinations', {
           params: {
-            'filter': {
-              'featured_status': {
-                '_eq': 'homepage'
-              }
-            },
-            'fields': [
+            'filter[featured_status][_eq]': 'homepage',
+            'fields[]': [
               'id',
               'type',
               'image',
-              'region_id',
-              'province_id',
+              'region_id.id',
+              'region_id.translations.slug_permalink',
+              'region_id.translations.languages_code',
+              'province_id.id',
+              'province_id.translations.slug_permalink', 
+              'province_id.translations.languages_code',
               'featured_status',
               'translations.destination_name',
               'translations.seo_title',
               'translations.seo_summary',
-              'translations.slug_permalink'
+              'translations.slug_permalink',
+              'translations.languages_code'
             ],
-            'deep': {
-              'translations': {
-                '_filter': {
-                  'languages_code': {
-                    '_eq': languageCode
-                  }
-                }
-              }
-            },
+            'deep[translations][_filter][languages_code][_eq]': languageCode,
+            'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
+            'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
             'limit': 10,
-            'sort': ['id']
+            'sort[]': 'id'
           }
         });
       }
@@ -2744,6 +2665,3 @@ export const getCompanyHreflang = async (companyId: string): Promise<HreflangDat
     return {};
   }
 };
-
-
-// ... (prima di getSupportedLanguages)

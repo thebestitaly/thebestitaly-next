@@ -121,27 +121,60 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       if (!contentId) return {};
 
       if (contentId.type === "destination") {
-        console.log('Fetching destination translations');
-        // Seleziona l'ID appropriato in base al tipo di route
-        const targetId = contentId.routeType === 'region' ? contentId.region_id :
-                        contentId.routeType === 'province' ? contentId.province_id :
-                        contentId.id;
-
-        console.log('Using target ID for translations:', targetId);
-        const response = await directusClient.get("/items/destinations_translations", {
+        console.log('Fetching destination translations with hierarchy');
+        
+        // 🚀 OTTIMIZZATA: Una sola query che prende tutti i dati necessari per costruire gli URL gerarchici
+        const response = await directusClient.get(`/items/destinations/${contentId.id}`, {
           params: {
-            filter: { destinations_id: { _eq: targetId } },
-            fields: ["languages_code", "slug_permalink"],
+            fields: [
+              'type', 'region_id', 'province_id',
+              'translations.slug_permalink', 'translations.languages_code',
+              'region_id.translations.slug_permalink', 'region_id.translations.languages_code',
+              'province_id.translations.slug_permalink', 'province_id.translations.languages_code'
+            ],
+            'deep[translations][_limit]': 50,
+            'deep[region_id.translations][_limit]': 50,
+            'deep[province_id.translations][_limit]': 50,
           },
         });
-        console.log('Destination translations response:', response.data);
+        console.log('Destination with hierarchy response:', response.data);
 
-        const translations = response.data?.data || [];
-        const slugMap: Record<string, string> = {};
-        translations.forEach((translation: any) => {
-          slugMap[translation.languages_code] = translation.slug_permalink;
+        const destination = response.data?.data;
+        if (!destination?.translations) {
+          console.warn(`No translations found for destination ${contentId.id}`);
+          return {};
+        }
+
+        // Costruisci i link gerarchici corretti per ogni lingua
+        const linkMap: Record<string, string> = {};
+        destination.translations.forEach((translation: any) => {
+          const { type } = destination;
+          let link = '';
+          
+          if (type === 'region') {
+            // Regioni: /{lang}/{region_slug}
+            link = `/${translation.languages_code}/${translation.slug_permalink}`;
+          } else if (type === 'province') {
+            // Province: /{lang}/{region_slug}/{province_slug}  
+            const regionSlug = destination.region_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
+            if (regionSlug) {
+              link = `/${translation.languages_code}/${regionSlug}/${translation.slug_permalink}`;
+            }
+          } else if (type === 'municipality') {
+            // Municipality: /{lang}/{region_slug}/{province_slug}/{municipality_slug}
+            const regionSlug = destination.region_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
+            const provinceSlug = destination.province_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
+            if (regionSlug && provinceSlug) {
+              link = `/${translation.languages_code}/${regionSlug}/${provinceSlug}/${translation.slug_permalink}`;
+            }
+          }
+          
+          if (link) {
+            linkMap[translation.languages_code] = link;
+          }
         });
-        return slugMap;
+        
+        return linkMap;
       }
 
       if (contentId.type === "magazine") {
@@ -193,9 +226,10 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         if (!pageInfo || !pageInfo.pageType) {
           newPath = `/${language.code}`;
         } else if (pageInfo.isDestination) {
-          const slug = translatedSlugs?.[language.code];
-          if (slug) {
-            newPath = `/${language.code}/${pageInfo.routeType}/${slug}`;
+          const destinationLink = translatedSlugs?.[language.code];
+          if (destinationLink) {
+            // Per le destinazioni, translatedSlugs ora contiene già il link completo
+            newPath = destinationLink;
           } else {
             newPath = pathname ? `/${language.code}${pathname.substring(currentLang.length + 1)}` : `/${language.code}`;
           }

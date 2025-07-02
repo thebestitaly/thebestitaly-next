@@ -81,20 +81,42 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
 
   // Helper function to build destination URL
   const buildDestinationUrl = (destinationId: string) => {
-    // Questa parte è complessa e richiede una gestione diversa.
-    // Per ora, la semplifichiamo per evitare errori.
-    // In futuro, dovremo passare anche gli slug via prop.
     const destination = destinations.find(d => d.id === destinationId);
-    const slug = destination?.translations?.[0]?.slug_permalink;
-    if (!slug) return '#';
+    if (!destination) return '#';
 
-    // Questo non è corretto al 100% perché non abbiamo la struttura completa (regione/provincia)
-    // ma eviterà un crash.
-    const type = destination?.type;
-    if (type === 'region') return `/${lang}/${slug}`;
-    // Aggiungere logica per provincia/comune se necessario
+    const translation = destination.translations?.[0];
+    if (!translation?.slug_permalink) return '#';
 
-    return `/${lang}/${slug}`; // Fallback generico
+    const { type } = destination;
+    
+    if (type === 'region') {
+      return `/${lang}/${translation.slug_permalink}`;
+    } else if (type === 'province') {
+      // Province: /{lang}/{region_slug}/{province_slug}
+      const regionSlug = destination.region_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      if (regionSlug) {
+        return `/${lang}/${regionSlug}/${translation.slug_permalink}`;
+      }
+    } else if (type === 'municipality') {
+      // Municipality: /{lang}/{region_slug}/{province_slug}/{municipality_slug}
+      const regionSlug = destination.region_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      const provinceSlug = destination.province_id?.translations?.find(
+        (t: any) => t.languages_code === lang
+      )?.slug_permalink;
+      
+      if (regionSlug && provinceSlug) {
+        return `/${lang}/${regionSlug}/${provinceSlug}/${translation.slug_permalink}`;
+      }
+    }
+
+    // Fallback: just use the slug as region-level
+    return `/${lang}/${translation.slug_permalink}`;
   };
 
   if (!destinations?.length) {
