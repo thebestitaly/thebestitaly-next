@@ -1362,7 +1362,6 @@ class DirectusClient {
           "category_id.translations.slug_permalink",
           "destination_id",
           "date_created",
-          "date_updated",
           "featured_status",
           "translations.languages_code",
           "translations.titolo_articolo",
