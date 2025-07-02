@@ -2,14 +2,25 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm run build"
+    "buildCommand": "npm run build",
+    "watchPatterns": ["src/**"]
   },
   "deploy": {
     "startCommand": "npm start",
     "healthcheckPath": "/",
+    "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10,
-    "memoryLimit": 512,
-    "cpuLimit": 500
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "production",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "DISABLE_ESLINT_PLUGIN": "true",
+        "NODE_OPTIONS": "--max-old-space-size=4096",
+        "RAILWAY_STATIC_URL": "https://thebestitaly.eu"
+      }
+    }
   }
 } 

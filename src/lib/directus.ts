@@ -1033,33 +1033,33 @@ class DirectusClient {
             'uuid_id', 
             'type', 
             'image',
+            // 🚀 ESSENZIALE: Slug delle regioni parent per URL gerarchici
             'region_id.id',
             'region_id.uuid_id', 
             'region_id.translations.destination_name',
             'region_id.translations.slug_permalink',
             'region_id.translations.languages_code',
+            // 🚀 ESSENZIALE: Slug delle province parent per URL gerarchici
             'province_id.id',
             'province_id.uuid_id',
             'province_id.translations.destination_name', 
             'province_id.translations.slug_permalink',
             'province_id.translations.languages_code',
-            'translations.languages_code', 
+            // Campi principali della destinazione
             'translations.destination_name',
-            'translations.seo_summary', 
-            'translations.slug_permalink'
+            'translations.slug_permalink',
+            'translations.languages_code'
           ],
           'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
-          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
           'sort[]': 'id',
-          'limit': 100
+          'limit': type === 'municipality' ? 50 : 100 // Limit per municipi
         }
       });
 
       return response.data.data || [];
-    } catch (error) {
-      console.error(`❌ Error fetching destinations by type ${type}:`, error);
-      return [];
+    } catch (error: any) {
+      console.error(`❌ Error fetching ${type} destinations:`, error.message);
+      return this._getDestinationsByTypeDirect(type, languageCode);
     }
   }
 
@@ -2149,61 +2149,54 @@ class DirectusClient {
             'id',
             'type',
             'image',
+            // 🚀 ESSENZIALE: Slug delle regioni parent per URL gerarchici
             'region_id.id',
             'region_id.translations.slug_permalink',
             'region_id.translations.languages_code',
+            // 🚀 ESSENZIALE: Slug delle province parent per URL gerarchici  
             'province_id.id', 
             'province_id.translations.slug_permalink',
             'province_id.translations.languages_code',
             'featured_status',
+            // Campi principali della destinazione
             'translations.destination_name',
             'translations.seo_title',
-            'translations.seo_summary',
             'translations.slug_permalink',
             'translations.languages_code'
           ],
           'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
-          'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
           'limit': 10,
           'sort[]': ['featured_sort', 'id']
         }
       });
 
-      // If no results with lowercase, try uppercase
       if (!response.data.data?.length) {
         response = await this.client.get('/items/destinations', {
           params: {
-            'filter[featured_status][_eq]': 'homepage',
             'fields[]': [
               'id',
-              'type',
+              'type', 
               'image',
               'region_id.id',
               'region_id.translations.slug_permalink',
               'region_id.translations.languages_code',
-              'province_id.id',
-              'province_id.translations.slug_permalink', 
+              'province_id.id', 
+              'province_id.translations.slug_permalink',
               'province_id.translations.languages_code',
-              'featured_status',
               'translations.destination_name',
-              'translations.seo_title',
-              'translations.seo_summary',
               'translations.slug_permalink',
               'translations.languages_code'
             ],
             'deep[translations][_filter][languages_code][_eq]': languageCode,
-            'deep[region_id.translations][_filter][languages_code][_eq]': languageCode,
-            'deep[province_id.translations][_filter][languages_code][_eq]': languageCode,
-            'limit': 10,
+            'limit': 8,
             'sort[]': 'id'
           }
         });
       }
 
       return response.data.data || [];
-    } catch (error) {
-      console.error('❌ Error fetching homepage destinations:', error);
+    } catch (error: any) {
+      console.error('❌ Error fetching homepage destinations:', error.message);
       return [];
     }
   }

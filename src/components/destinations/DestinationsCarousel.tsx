@@ -9,7 +9,7 @@ import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 interface DestinationsCarouselProps {
   lang: string;
-  type: string;
+  type: 'region' | 'province' | 'municipality';
 }
 
 const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang, type }) => {

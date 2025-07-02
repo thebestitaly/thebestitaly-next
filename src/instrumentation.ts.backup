@@ -1,0 +1,19 @@
+import * as Sentry from '@sentry/nextjs';
+
+// 🚨 TEMPORANEAMENTE DISABILITATO per risolvere errori OpenTelemetry durante il build
+// export async function register() {
+//   if (process.env.NEXT_RUNTIME === 'nodejs') {
+//     await import('./instrumentation-client');
+//   }
+//   
+//   if (process.env.NEXT_RUNTIME === 'edge') {
+//     await import('./sentry.edge.config');
+//   }
+// }
+
+// Placeholder per evitare errori di import
+export async function register() {
+  console.log('Instrumentation temporarily disabled');
+}
+
+export const onRequestError = Sentry.captureRequestError;

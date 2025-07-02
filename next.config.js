@@ -176,13 +176,19 @@ const nextConfig = {
 
   // 🚀 OTTIMIZZAZIONI STABILI per evitare crash
   experimental: {
-    optimizePackageImports: ['lucide-react', '@heroicons/react'],
-    // Rimosso optimizeCss che causava problemi
-    instrumentationHook: true,
+    optimizePackageImports: ['lucide-react', '@heroicons/react', '@directus/sdk'],
     staleTimes: {
       dynamic: 30, // 30 secondi per contenuti dinamici
       static: 180, // 3 minuti per contenuti statici
     },
+    // 🏗️ Ottimizza il bundle per Railway
+    outputFileTracingExcludes: {
+      '**': [
+        'node_modules/sharp/**',
+        'node_modules/@esbuild/**',
+        'node_modules/swc/**'
+      ]
+    }
   },
 
   // Configurazione webpack per performance e Redis exclusion
@@ -229,8 +235,16 @@ const nextConfig = {
   // Ottimizzazioni build
   poweredByHeader: false,
   
-  // Forza generazione statica per SEO
-  output: 'standalone',
+  // 🎯 RAILWAY DEPLOY OPTIMIZATION
+  output: process.env.RAILWAY_ENVIRONMENT_NAME ? 'standalone' : undefined,
+  
+  // ⚡ Build performance
+  swcMinify: true,
+  
+  // 🚀 Reduce bundle size
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   
   // Configurazione per il rewrite dei path
   async rewrites() {
