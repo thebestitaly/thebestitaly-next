@@ -9,8 +9,34 @@ export const getDirectusImageUrl = (
 ) => {
   if (!assetId) return '';
   
-  // 🚨 EMERGENCY FIX: Use API proxy instead of direct Railway URL to save costs
-  const baseUrl = `/api/directus/assets/${assetId}`;
+  // 🔧 HANDLE BOTH ASSET IDs AND FULL URLs
+  let actualAssetId = assetId;
+  
+  // If it's already a full URL (starts with http or contains cdn.thebestitaly.eu)
+  if (assetId.startsWith('http') || assetId.includes('cdn.thebestitaly.eu')) {
+    // Extract asset ID from various URL formats
+    const urlPatterns = [
+      /\/assets\/([a-f0-9-]+)/i,  // Standard Directus assets URL
+      /assets\/([a-f0-9-]+)/i,    // Without leading slash
+    ];
+    
+    for (const pattern of urlPatterns) {
+      const match = assetId.match(pattern);
+      if (match && match[1]) {
+        actualAssetId = match[1];
+        break;
+      }
+    }
+    
+    // If we couldn't extract an ID, return the original URL
+    if (actualAssetId === assetId) {
+      console.warn('Could not extract asset ID from URL:', assetId);
+      return assetId; // Return the original URL as-is
+    }
+  }
+  
+  // ✅ USE CDN DIRECTLY: Point directly to cdn.thebestitaly.eu
+  const baseUrl = `https://cdn.thebestitaly.eu/assets/${actualAssetId}`;
   
   if (!options) return baseUrl;
   

@@ -13,6 +13,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'thebestitaly.eu',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.thebestitaly.eu',
       }
     ],
   },
@@ -234,9 +238,6 @@ const nextConfig = {
 
   // Ottimizzazioni build
   poweredByHeader: false,
-  
-  // 🎯 RAILWAY DEPLOY OPTIMIZATION
-  output: process.env.RAILWAY_ENVIRONMENT_NAME ? 'standalone' : undefined,
   
   // ⚡ Build performance
   swcMinify: true,
