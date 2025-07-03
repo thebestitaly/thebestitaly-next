@@ -281,8 +281,8 @@ export type DirectusItem = {
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 3; // 🚨 ULTRA ridotto per boot
-  private static readonly REQUEST_TIMEOUT = 10000; // 🚨 Ultra ridotto a 10 secondi
+  private static readonly MAX_CONCURRENT_CALLS = 10; // 🎯 Bilanciato per performance
+  private static readonly REQUEST_TIMEOUT = 30000; // 🎯 30 secondi per stability
   private static isCircuitBreakerOpen = false;
   private static circuitBreakerResetTime = 0;
   private static readonly CIRCUIT_BREAKER_THRESHOLD = 3; // 🚨 Soglia più bassa
@@ -302,35 +302,13 @@ class DirectusClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      // 🚨 MEMORY OPTIMIZATION: Limita dimensione response molto aggressivamente
-      maxContentLength: 2 * 1024 * 1024, // 2MB max
-      maxBodyLength: 512 * 1024,         // 512KB max
+      // 🎯 MEMORY OPTIMIZATION: Limiti ragionevoli per performance
+      maxContentLength: 10 * 1024 * 1024, // 10MB max
+      maxBodyLength: 5 * 1024 * 1024,     // 5MB max
     });
 
     this.setupInterceptors();
-    this.startMemoryMonitoring();
-  }
-
-  private startMemoryMonitoring() {
-    // 🚨 AGGRESSIVE MEMORY MONITORING - Solo in produzione
-    if (typeof process !== 'undefined' && process.memoryUsage && process.env.NODE_ENV === 'production') {
-      setInterval(() => {
-        const usage = process.memoryUsage();
-        const usedMB = Math.round(usage.heapUsed / 1024 / 1024);
-        
-        // Se supera 600MB (su limite di 768MB), forza circuit breaker
-        if (usedMB > 600) {
-          console.error(`🚨 MEMORY CRITICAL: ${usedMB}MB - Forcing circuit breaker`);
-          DirectusClient.isCircuitBreakerOpen = true;
-          DirectusClient.circuitBreakerResetTime = Date.now() + (2 * 60 * 1000); // 2 minuti
-        }
-        
-        // Warning a 450MB per monitoraggio
-        if (usedMB > 450) {
-          console.warn(`⚠️ MEMORY WARNING: ${usedMB}MB usage approaching limit`);
-        }
-             }, 60000); // Check ogni 60 secondi per ridurre overhead
-    }
+    // 🚨 REMOVED: setInterval in constructor causes memory leaks
   }
 
   private setupInterceptors() {

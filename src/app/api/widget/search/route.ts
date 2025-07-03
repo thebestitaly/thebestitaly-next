@@ -1,41 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import directusClient from '@/lib/directus';
-import axios from 'axios';
 
-// Client dedicato per widget che va direttamente a Directus
-const widgetDirectusClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_DIRECTUS_URL || 'https://directus-production-93f0.up.railway.app',
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-  }
-});
-
-// Interceptor per aggiungere il token
-widgetDirectusClient.interceptors.request.use(request => {
-  const token = process.env.DIRECTUS_TOKEN || process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
-  if (token) {
-    request.headers['Authorization'] = `Bearer ${token}`;
-  }
-  console.log(`🌐 Widget making request to: ${request.baseURL}${request.url}`);
-  return request;
-});
-
-widgetDirectusClient.interceptors.response.use(
-  response => {
-    console.log(`✅ Widget response: ${response.status} - ${response.data?.data?.length || 0} items`);
-    return response;
-  },
-  error => {
-    console.error('🚨 Widget Directus Error:', error.response?.status, error.response?.statusText || error.message);
-    console.error('🔍 Request details:', {
-      url: error.config?.url,
-      baseURL: error.config?.baseURL,
-      method: error.config?.method
-    });
-    return Promise.reject(error);
-  }
-);
+// 🚨 REMOVED: Duplicate axios client causes memory leaks - using main directusClient
 
 // Log configuration per debug (solo in development)
 if (process.env.NODE_ENV === 'development') {

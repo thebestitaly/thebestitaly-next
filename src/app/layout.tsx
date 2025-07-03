@@ -65,16 +65,7 @@ export const metadata: Metadata = {
   },
 }
 
-// 🚨 MEMORY CLEANUP: Auto cleanup su ogni pagina in produzione
-if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-  // Setup periodico per cleanup DirectusClient
-  setInterval(() => {
-    // Cleanup DirectusClient connections e interceptors
-    if (directusClient && typeof directusClient.cleanup === 'function') {
-      directusClient.cleanup();
-    }
-  }, 120000); // Ogni 2 minuti
-}
+// 🚨 REMOVED: setInterval causes memory leaks - moved to process-level cleanup
 
 export default function RootLayout({
   children,
