@@ -281,8 +281,12 @@ export type DirectusItem = {
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 50; // 🎯 Aumentato per coesistenza script/navigazione
-  private static readonly REQUEST_TIMEOUT = 120000; // 🎯 Aumentato a 2 minuti per generazione statica
+  private static readonly MAX_CONCURRENT_CALLS = 20; // 🎯 Ridotto per memoria
+  private static readonly REQUEST_TIMEOUT = 30000; // 🎯 Ridotto a 30 secondi
+  private static isCircuitBreakerOpen = false;
+  private static circuitBreakerResetTime = 0;
+  private static readonly CIRCUIT_BREAKER_THRESHOLD = 5;
+  private static readonly CIRCUIT_BREAKER_RESET_TIMEOUT = 30000;
 
   constructor(lang?: string) {
     const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
@@ -307,15 +311,19 @@ class DirectusClient {
       (config) => {
         DirectusClient.activeCalls++;
         
-        // Rate limiting - se troppo traffico aspetta
-        if (DirectusClient.activeCalls > DirectusClient.MAX_CONCURRENT_CALLS) {
-          console.warn(`⚠️  [DirectusClient] Rate limiting: ${DirectusClient.activeCalls} active calls`);
+        // Circuit breaker check
+        if (DirectusClient.isCircuitBreakerOpen) {
+          if (Date.now() > DirectusClient.circuitBreakerResetTime) {
+            DirectusClient.isCircuitBreakerOpen = false;
+          } else {
+            return Promise.reject(new Error('Circuit breaker is open'));
+          }
         }
 
-        // 📊 Logging delle chiamate per debug
-        const url = config.url || '';
-        const params = config.params ? Object.keys(config.params).length : 0;
-        console.log(`📖 Directus API: ${config.method?.toUpperCase()} ${url} (${params} params, ${DirectusClient.activeCalls} active)`);
+        // Rate limiting
+        if (DirectusClient.activeCalls > DirectusClient.MAX_CONCURRENT_CALLS) {
+          return Promise.reject(new Error('Too many concurrent requests'));
+        }
 
         return config;
       },
@@ -328,23 +336,16 @@ class DirectusClient {
     this.client.interceptors.response.use(
       (response) => {
         DirectusClient.activeCalls--;
-        
-        // 🎯 Simple logging for successful responses
-        console.log(`✅ [DirectusClient] Response successful for ${response.config.url}`);
-
         return response;
       },
       (error) => {
         DirectusClient.activeCalls--;
         
-        // 📊 Log degli errori per debug
-        const status = error.response?.status;
-        const url = error.config?.url || 'unknown';
-        console.error(`❌ [DirectusClient] Error ${status}: ${url}`, {
-          message: error.message,
-          status,
-          data: error.response?.data
-        });
+        // Circuit breaker logic
+        if (error.response?.status >= 500 || error.code === 'ECONNRESET' || error.code === 'TIMEOUT') {
+          DirectusClient.isCircuitBreakerOpen = true;
+          DirectusClient.circuitBreakerResetTime = Date.now() + DirectusClient.CIRCUIT_BREAKER_RESET_TIMEOUT;
+        }
 
         return Promise.reject(error);
       }
@@ -352,10 +353,18 @@ class DirectusClient {
   }
 
   private async makeRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+    // Circuit breaker check
+    if (DirectusClient.isCircuitBreakerOpen && Date.now() < DirectusClient.circuitBreakerResetTime) {
+      throw new Error('Circuit breaker is open - service temporarily unavailable');
+    }
+
     try {
       return await requestFn();
     } catch (error: any) {
-      console.error('❌ [DirectusClient] Request failed:', error.message);
+      // Ridotto logging per memoria
+      if (error.response?.status >= 500) {
+        console.error('🚨 [DirectusClient] Server error:', error.response?.status);
+      }
       throw error;
     }
   }
@@ -562,12 +571,10 @@ class DirectusClient {
 
   async getHomepageArticles(lang: string) {
     try {
-      // 🚨 TEMPORANEAMENTE BYPASSATO per test timeout
-      // const isAuth = await this.testAuth();
-      // if (!isAuth) {
-      //   console.error("[getHomepageArticles] Authentication failed");
-      //   return [];
-      // }
+      // Controllo auth non bloccante per performance
+      this.testAuth().catch(() => {
+        // Silent fail per non bloccare contenuto pubblico
+      });
 
       const response = await this.client.get('/items/articles', {
         params: {
@@ -603,7 +610,6 @@ class DirectusClient {
       });
 
       const articles = response.data?.data || [];
-      console.log(`[getHomepageArticles] Found ${articles.length} articles for language: ${lang}`);
 
       // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere le traduzioni corrette
       return articles.map((article: any) => {
@@ -631,12 +637,10 @@ class DirectusClient {
 
   async getLatestArticlesForHomepage(lang: string) {
     try {
-      // 🚨 TEMPORANEAMENTE BYPASSATO per test timeout
-      // const isAuth = await this.testAuth();
-      // if (!isAuth) {
-      //   console.error("[getLatestArticlesForHomepage] Authentication failed");
-      //   return [];
-      // }
+      // Controllo auth non bloccante per performance
+      this.testAuth().catch(() => {
+        // Silent fail per non bloccare contenuto pubblico
+      });
 
       const response = await this.client.get('/items/articles', {
         params: {
@@ -673,7 +677,6 @@ class DirectusClient {
       });
 
       const articles = response.data?.data || [];
-      console.log(`[getLatestArticlesForHomepage] Found ${articles.length} articles for language: ${lang}`);
 
       // OTTIMIZZAZIONE: Con deep filtering, ogni articolo dovrebbe già avere le traduzioni corrette  
       const validArticles = articles
@@ -760,12 +763,10 @@ class DirectusClient {
   }
   public async getArticleBySlug(slug: string, languageCode: string): Promise<Article | null> {
     try {
-      // 🚨 TEMPORANEAMENTE BYPASSATO per test timeout
-      // const isAuth = await this.testAuth();
-      // if (!isAuth) {
-      //   console.error("[getArticleBySlug] Authentication failed");
-      //   return null;
-      // }
+      // Controllo auth non bloccante per performance
+      this.testAuth().catch(() => {
+        // Silent fail per non bloccare contenuto pubblico
+      });
 
       const filterParam = JSON.stringify({
         'translations': {
@@ -861,12 +862,10 @@ class DirectusClient {
   // NUOVA FUNZIONE: Ottieni articolo tramite UUID (uso pubblico)
   public async getArticleByUUID(uuid: string, languageCode: string): Promise<Article | null> {
     try {
-      // 🚨 TEMPORANEAMENTE BYPASSATO per test timeout
-      // const isAuth = await this.testAuth();
-      // if (!isAuth) {
-      //   console.error("[getArticleByUUID] Authentication failed");
-      //   return null;
-      // }
+      // Controllo auth non bloccante per performance
+      this.testAuth().catch(() => {
+        // Silent fail per non bloccare contenuto pubblico
+      });
 
       const response = await this.client.get('/items/articles', {
         params: {
@@ -1755,12 +1754,10 @@ class DirectusClient {
     limit: number = 10 // Limite di default
   ): Promise<Article[]> {
     try {
-      // 🚨 TEMPORANEAMENTE BYPASSATO per test timeout
-      // const isAuth = await this.testAuth();
-      // if (!isAuth) {
-      //   console.error("[getArticlesByCategory] Authentication failed");
-      //   return [];
-      // }
+      // Controllo auth non bloccante per performance
+      this.testAuth().catch(() => {
+        // Silent fail per non bloccare contenuto pubblico
+      });
 
       // Prima ottieni l'ID della categoria dal slug usando il nome corretto della collection
       const categoryResponse = await this.client.get('/items/categorias', {
@@ -2390,10 +2387,19 @@ class DirectusClient {
     }
   }
 
-  // 🔧 MEMORY LEAK FIX: Public cleanup method
+  // 🔧 MEMORY LEAK FIX: Enhanced cleanup method
   public cleanup() {
     this.client.interceptors.request.clear();
     this.client.interceptors.response.clear();
+    DirectusClient.activeCalls = 0;
+    DirectusClient.isCircuitBreakerOpen = false;
+  }
+
+  // 🔧 MEMORY OPTIMIZATION: Static cleanup per performance
+  public static globalCleanup() {
+    DirectusClient.activeCalls = 0;
+    DirectusClient.isCircuitBreakerOpen = false;
+    DirectusClient.circuitBreakerResetTime = 0;
   }
 
   // Aggiungi qui i nuovi metodi
