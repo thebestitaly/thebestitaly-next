@@ -119,6 +119,59 @@ export interface CompanyImage {
   directus_files_id: string;
 }
 
+// 🎯 UNIFIED DESTINATION INTERFACE
+interface DestinationQueryOptions {
+  // Filtering
+  type?: 'region' | 'province' | 'municipality';
+  regionId?: string;
+  provinceId?: string;
+  parentId?: string;
+  excludeId?: string;
+  featured?: boolean | 'homepage' | 'top';
+  
+  // Identification (for single item queries)
+  id?: string;
+  uuid?: string;
+  slug?: string;
+  
+  // Language & Response
+  lang: string;
+  limit?: number;
+  offset?: number;
+  
+  // Field Selection Presets
+  fields?: 'minimal' | 'full' | 'sitemap' | 'homepage' | 'navigation';
+}
+
+// 🎯 FIELD PRESETS - Optimized for different use cases
+const FIELD_PRESETS = {
+  minimal: [
+    'id', 'uuid_id', 'type', 
+    'translations.destination_name', 
+    'translations.slug_permalink'
+  ],
+  
+  full: [
+    'id', 'uuid_id', 'type', 'image', 'lat', 'long',
+    'region_id.id', 'region_id.uuid_id', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
+    'province_id.id', 'province_id.uuid_id', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
+    'translations.destination_name', 'translations.seo_title', 'translations.seo_summary', 
+    'translations.description', 'translations.slug_permalink'
+  ],
+  
+  sitemap: ['type', 'translations.slug_permalink'],
+  
+  homepage: [
+    'id', 'uuid_id', 'type', 'image', 'featured_status',
+    'translations.destination_name', 'translations.seo_title', 'translations.slug_permalink'
+  ],
+  
+  navigation: [
+    'id', 'uuid_id', 'type',
+    'translations.destination_name', 'translations.slug_permalink'
+  ]
+};
+
 /**
  * 🎯 WEB-OPTIMIZED DirectusClient 
  * Only public read-only operations for maximum performance
@@ -253,55 +306,23 @@ class DirectusWebClient {
   }
 
   async getFeaturedDestinations(lang: string): Promise<Destination[]> {
-    try {
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          filter: { type: { _eq: 'region' } },
-          fields: [
-            'id', 'uuid_id', 'type', 'image', 'region_id', 'province_id',
-            'translations.destination_name', 'translations.seo_title', 
-            'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          },
-          limit: 5,
-          sort: ['id']
-        }
-      });
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Error fetching featured destinations:', error);
-      return [];
-    }
+    // 🚀 REFACTORED: Use unified getDestinations method
+    return this.getDestinations({
+      featured: true,
+      lang,
+      fields: 'homepage',
+      limit: 5
+    });
   }
 
   async getHomepageDestinations(lang: string): Promise<Destination[]> {
-    try {
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          filter: { type: { _eq: 'region' } },
-          fields: [
-            'id', 'uuid_id', 'type', 'image', 'region_id', 'province_id',
-            'translations.destination_name', 'translations.seo_title', 
-            'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          },
-          limit: 8,
-          sort: ['id']
-        }
-      });
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Error fetching homepage destinations:', error);
-      return [];
-    }
+    // 🚀 REFACTORED: Use unified getDestinations method
+    return this.getDestinations({
+      featured: 'homepage',
+      lang,
+      fields: 'homepage',
+      limit: 8
+    });
   }
 
   // 🎯 PUBLIC CONTENT METHODS
@@ -405,74 +426,36 @@ class DirectusWebClient {
   }
 
   async getDestinationBySlug(slug: string, languageCode: string): Promise<Destination | null> {
-    try {
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          'filter[translations][slug_permalink][_eq]': slug,
-          'fields[]': [
-            'id', 'uuid_id', 'type', 'region_id', 'province_id', 'image', 'lat', 'long',
-            'translations.destination_name', 'translations.seo_title',
-            'translations.seo_summary', 'translations.description', 'translations.slug_permalink'
-          ],
-          'deep[translations][_filter][languages_code][_eq]': languageCode,
-          'limit': 1
-        }
-      });
-      return response.data?.data[0] || null;
-    } catch (error) {
-      console.error('Error fetching destination:', error);
-      return null;
-    }
+    // 🚀 REFACTORED: Use unified getDestinations method
+    const destinations = await this.getDestinations({
+      slug,
+      lang: languageCode,
+      fields: 'full',
+      limit: 1
+    });
+    
+    return destinations[0] || null;
   }
 
   async getDestinationByUUID(uuid: string, languageCode: string): Promise<Destination | null> {
-    try {
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          filter: { uuid_id: { _eq: uuid } },
-          fields: [
-            'id', 'uuid_id', 'type', 'region_id', 'province_id', 'image', 'lat', 'long',
-            'translations.destination_name', 'translations.seo_title',
-            'translations.seo_summary', 'translations.description', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          },
-          limit: 1
-        }
-      });
-      return response.data?.data[0] || null;
-    } catch (error) {
-      console.error('Error fetching destination by UUID:', error);
-      return null;
-    }
+    // 🚀 REFACTORED: Use unified getDestinations method
+    const destinations = await this.getDestinations({
+      uuid,
+      lang: languageCode,
+      fields: 'full',
+      limit: 1
+    });
+    
+    return destinations[0] || null;
   }
 
   async getDestinationsByType(type: 'region' | 'province' | 'municipality', languageCode: string): Promise<Destination[]> {
-    try {
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          filter: { type: { _eq: type } },
-          fields: [
-            'id', 'uuid_id', 'type', 'image', 'region_id', 'province_id',
-            'translations.destination_name', 'translations.seo_title',
-            'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          }
-        }
-      });
-
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Error fetching destinations by type:', error);
-      return [];
-    }
+    // 🚀 REFACTORED: Use unified getDestinations method
+    return this.getDestinations({
+      type,
+      lang: languageCode,
+      fields: 'full'
+    });
   }
 
   async getCompanyBySlug(slug: string, lang: string) {
@@ -780,36 +763,25 @@ class DirectusWebClient {
 
   // 🎯 SITEMAP METHODS
   async getDestinationsForSitemap(lang: string): Promise<Array<{slug_permalink: string, type: string}>> {
-    try {
-      const response = await this.client.get('/items/destinations', {
-        params: {
-          fields: ['type', 'translations.slug_permalink'],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          },
-          limit: 1000
-        }
-      });
+    // 🚀 REFACTORED: Use unified getDestinations method
+    const destinations = await this.getDestinations({
+      lang,
+      fields: 'sitemap',
+      limit: 1000
+    });
 
-      const destinations = response.data?.data || [];
-      return destinations
-        .map((dest: any) => {
-          const translation = dest.translations?.[0];
-          if (translation?.slug_permalink) {
-            return {
-              slug_permalink: translation.slug_permalink,
-              type: dest.type
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-    } catch (error) {
-      console.error('Error fetching destinations for sitemap:', error);
-      return [];
-    }
+    return destinations
+      .map((dest: any) => {
+        const translation = dest.translations?.[0];
+        if (translation?.slug_permalink) {
+          return {
+            slug_permalink: translation.slug_permalink,
+            type: dest.type
+          };
+        }
+        return null;
+      })
+      .filter(Boolean) as Array<{slug_permalink: string, type: string}>;
   }
 
   async getCompaniesForSitemap(): Promise<Array<{slug_permalink: string}>> {
@@ -915,6 +887,137 @@ class DirectusWebClient {
 
   public static globalCleanup() {
     DirectusWebClient.activeCalls = 0;
+  }
+
+  /**
+   * 🚀 UNIFIED DESTINATION METHOD
+   * Replaces: getDestinationsByType, getFeaturedDestinations, getHomepageDestinations, getDestinationsForSitemap
+   * Handles all destination queries with optimized performance
+   */
+  async getDestinations(options: DestinationQueryOptions): Promise<Destination[]> {
+    try {
+      // 🎯 Build optimized query parameters
+      const params = this.buildOptimizedParams(options);
+      
+      // 🚀 Single API call instead of multiple queries
+      const response = await this.client.get('/items/destinations', { params });
+      
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching destinations:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🛠️ SMART QUERY BUILDER
+   * Builds optimized query parameters based on options
+   */
+  private buildOptimizedParams(options: DestinationQueryOptions) {
+    const params: any = {
+      // 🎯 Smart field selection
+      fields: FIELD_PRESETS[options.fields || 'full'],
+      
+      // 🌍 Language filtering  
+      deep: {
+        translations: {
+          _filter: { languages_code: { _eq: options.lang } }
+        }
+      }
+    };
+
+    // 🔍 Build filter conditions
+    const filters: any = {};
+    
+    // Type filtering
+    if (options.type) {
+      filters.type = { _eq: options.type };
+    }
+    
+    // Hierarchical filtering
+    if (options.regionId) {
+      filters.region_id = { _eq: options.regionId };
+    }
+    
+    if (options.provinceId) {
+      filters.province_id = { _eq: options.provinceId };
+    }
+    
+    if (options.parentId) {
+      // Smart parent detection based on context
+      if (options.type === 'municipality') {
+        filters.province_id = { _eq: options.parentId };
+      } else if (options.type === 'province') {
+        filters.region_id = { _eq: options.parentId };
+      }
+    }
+    
+    // Featured filtering
+    if (options.featured === true) {
+      filters.featured_status = { _neq: 'none' };
+    } else if (typeof options.featured === 'string') {
+      filters.featured_status = { _eq: options.featured };
+    }
+    
+    // Exclusion
+    if (options.excludeId) {
+      filters.id = { _neq: options.excludeId };
+    }
+    
+    // Single item queries
+    if (options.id) {
+      filters.id = { _eq: options.id };
+      params.limit = 1;
+    } else if (options.uuid) {
+      filters.uuid_id = { _eq: options.uuid };
+      params.limit = 1;
+    } else if (options.slug) {
+      // Slug search uses translation filter
+      params.filter = { 'translations.slug_permalink': { _eq: options.slug } };
+      params.limit = 1;
+    }
+    
+    // Apply filters if not using slug search
+    if (!options.slug && Object.keys(filters).length > 0) {
+      params.filter = filters;
+    }
+    
+    // 📊 Pagination & Limits
+    if (options.limit) {
+      params.limit = options.limit;
+    } else {
+      // Smart defaults based on query type
+      params.limit = this.getSmartLimit(options);
+    }
+    
+    if (options.offset) {
+      params.offset = options.offset;
+    }
+    
+    // 🔄 Sorting
+    params.sort = this.getSmartSort(options);
+    
+    return params;
+  }
+  
+  /**
+   * 🧠 SMART LIMIT DETECTION
+   */
+  private getSmartLimit(options: DestinationQueryOptions): number {
+    if (options.fields === 'sitemap') return 1000;
+    if (options.fields === 'navigation') return 100;
+    if (options.type === 'municipality') return 30; // Municipalities are numerous
+    if (options.featured) return 10;
+    return 50; // Default reasonable limit
+  }
+  
+  /**
+   * 🔄 SMART SORTING
+   */
+  private getSmartSort(options: DestinationQueryOptions): string[] {
+    if (options.featured) return ['featured_sort', 'id'];
+    if (options.fields === 'sitemap') return ['type', 'id'];
+    return ['id']; // Default stable sort
   }
 }
 
