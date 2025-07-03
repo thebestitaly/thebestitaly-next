@@ -323,23 +323,11 @@ class DirectusClient {
           console.error(`🚨 MEMORY CRITICAL: ${usedMB}MB - Forcing circuit breaker`);
           DirectusClient.isCircuitBreakerOpen = true;
           DirectusClient.circuitBreakerResetTime = Date.now() + (3 * 60 * 1000); // 3 minuti
-          
-          // Force garbage collection se disponibile
-          if (global.gc) {
-            try {
-              global.gc();
-              console.log('🧹 Garbage collection forced');
-            } catch (e) {
-              console.warn('GC failed:', e);
-            }
-          }
         }
         
-        // Cleanup ogni 50 chiamate
-        if (DirectusClient.activeCalls > 0 && DirectusClient.activeCalls % 50 === 0) {
-          if (global.gc) {
-            global.gc();
-          }
+        // Warning a 300MB per monitoraggio
+        if (usedMB > 300) {
+          console.warn(`⚠️ MEMORY WARNING: ${usedMB}MB usage approaching limit`);
         }
       }, 30000); // Check ogni 30 secondi invece di 10
     }

@@ -67,12 +67,9 @@ export const metadata: Metadata = {
 
 // 🚨 MEMORY CLEANUP: Auto cleanup su ogni pagina in produzione
 if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-  // Setup periodico per cleanup memoria
+  // Setup periodico per cleanup DirectusClient
   setInterval(() => {
-    if (global.gc) {
-      global.gc();
-    }
-    // Cleanup DirectusClient
+    // Cleanup DirectusClient connections e interceptors
     if (directusClient && typeof directusClient.cleanup === 'function') {
       directusClient.cleanup();
     }
