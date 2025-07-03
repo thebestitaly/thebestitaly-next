@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
+import directusClient from '@/lib/directus'
 
 // Configurazione font ottimizzata per performance
 const poppins = Poppins({
@@ -62,6 +63,20 @@ export const metadata: Metadata = {
     'theme-color': '#1e40af',
     'color-scheme': 'light',
   },
+}
+
+// 🚨 MEMORY CLEANUP: Auto cleanup su ogni pagina in produzione
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+  // Setup periodico per cleanup memoria
+  setInterval(() => {
+    if (global.gc) {
+      global.gc();
+    }
+    // Cleanup DirectusClient
+    if (directusClient && typeof directusClient.cleanup === 'function') {
+      directusClient.cleanup();
+    }
+  }, 120000); // Ogni 2 minuti
 }
 
 export default function RootLayout({

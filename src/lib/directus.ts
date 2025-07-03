@@ -281,12 +281,13 @@ export type DirectusItem = {
 class DirectusClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
-  private static readonly MAX_CONCURRENT_CALLS = 20; // 🎯 Ridotto per memoria
-  private static readonly REQUEST_TIMEOUT = 30000; // 🎯 Ridotto a 30 secondi
+  private static readonly MAX_CONCURRENT_CALLS = 5; // 🚨 DRASTICAMENTE ridotto
+  private static readonly REQUEST_TIMEOUT = 15000; // 🚨 Ridotto a 15 secondi
   private static isCircuitBreakerOpen = false;
   private static circuitBreakerResetTime = 0;
-  private static readonly CIRCUIT_BREAKER_THRESHOLD = 5;
-  private static readonly CIRCUIT_BREAKER_RESET_TIMEOUT = 30000;
+  private static readonly CIRCUIT_BREAKER_THRESHOLD = 3; // 🚨 Soglia più bassa
+  private static readonly CIRCUIT_BREAKER_RESET_TIMEOUT = 60000; // 🚨 Reset più lungo
+  private static readonly MEMORY_CHECK_INTERVAL = 10000; // Check memoria ogni 10s
 
   constructor(lang?: string) {
     const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
@@ -301,50 +302,99 @@ class DirectusClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
+      // 🚨 MEMORY OPTIMIZATION: Limita dimensione response
+      maxContentLength: 5 * 1024 * 1024, // 5MB max
+      maxBodyLength: 1 * 1024 * 1024,    // 1MB max
     });
 
     this.setupInterceptors();
+    this.startMemoryMonitoring();
+  }
+
+  private startMemoryMonitoring() {
+    // 🚨 AGGRESSIVE MEMORY MONITORING - Solo in produzione
+    if (typeof process !== 'undefined' && process.memoryUsage && process.env.NODE_ENV === 'production') {
+      setInterval(() => {
+        const usage = process.memoryUsage();
+        const usedMB = Math.round(usage.heapUsed / 1024 / 1024);
+        
+        // Se supera 400MB (su limite di 512MB), forza circuit breaker
+        if (usedMB > 400) {
+          console.error(`🚨 MEMORY CRITICAL: ${usedMB}MB - Forcing circuit breaker`);
+          DirectusClient.isCircuitBreakerOpen = true;
+          DirectusClient.circuitBreakerResetTime = Date.now() + (3 * 60 * 1000); // 3 minuti
+          
+          // Force garbage collection se disponibile
+          if (global.gc) {
+            try {
+              global.gc();
+              console.log('🧹 Garbage collection forced');
+            } catch (e) {
+              console.warn('GC failed:', e);
+            }
+          }
+        }
+        
+        // Cleanup ogni 50 chiamate
+        if (DirectusClient.activeCalls > 0 && DirectusClient.activeCalls % 50 === 0) {
+          if (global.gc) {
+            global.gc();
+          }
+        }
+      }, 30000); // Check ogni 30 secondi invece di 10
+    }
   }
 
   private setupInterceptors() {
     this.client.interceptors.request.use(
       (config) => {
-        DirectusClient.activeCalls++;
-        
+        // 🚨 STRICT CONCURRENCY CONTROL
+        if (DirectusClient.activeCalls >= DirectusClient.MAX_CONCURRENT_CALLS) {
+          throw new Error(`Max concurrent calls exceeded: ${DirectusClient.activeCalls}`);
+        }
+
         // Circuit breaker check
         if (DirectusClient.isCircuitBreakerOpen) {
           if (Date.now() > DirectusClient.circuitBreakerResetTime) {
             DirectusClient.isCircuitBreakerOpen = false;
+            console.log('🔄 Circuit breaker reset');
           } else {
-            return Promise.reject(new Error('Circuit breaker is open'));
+            throw new Error('Circuit breaker is open - service unavailable');
           }
         }
 
-        // Rate limiting
-        if (DirectusClient.activeCalls > DirectusClient.MAX_CONCURRENT_CALLS) {
-          return Promise.reject(new Error('Too many concurrent requests'));
-        }
-
+        DirectusClient.activeCalls++;
         return config;
       },
       (error) => {
-        DirectusClient.activeCalls--;
+        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
         return Promise.reject(error);
       }
     );
 
     this.client.interceptors.response.use(
       (response) => {
-        DirectusClient.activeCalls--;
+        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
+        
+        // 🚨 RESPONSE SIZE CHECK
+        const responseSize = JSON.stringify(response.data).length;
+        if (responseSize > 1024 * 1024) { // 1MB
+          console.warn(`⚠️ Large response: ${Math.round(responseSize / 1024)}KB`);
+        }
+        
         return response;
       },
       (error) => {
-        DirectusClient.activeCalls--;
+        DirectusClient.activeCalls = Math.max(0, DirectusClient.activeCalls - 1);
         
-        // Circuit breaker logic
-        if (error.response?.status >= 500 || error.code === 'ECONNRESET' || error.code === 'TIMEOUT') {
+        // 🚨 AGGRESSIVE CIRCUIT BREAKER
+        if (error.response?.status >= 500 || 
+            error.code === 'ECONNRESET' || 
+            error.code === 'TIMEOUT' ||
+            error.code === 'ENOTFOUND') {
           DirectusClient.isCircuitBreakerOpen = true;
           DirectusClient.circuitBreakerResetTime = Date.now() + DirectusClient.CIRCUIT_BREAKER_RESET_TIMEOUT;
+          console.error('🚨 Circuit breaker activated due to error');
         }
 
         return Promise.reject(error);
