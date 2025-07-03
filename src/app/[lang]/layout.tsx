@@ -5,7 +5,7 @@ import Footer from '@/components/layout/Footer';
 import ClientProviders from '@/components/ClientProviders';
 import HtmlLangUpdater from '@/components/HtmlLangUpdater';
 import PerformanceMonitor from '@/components/PerformanceMonitor';
-import directusClient from '@/lib/directus';
+import directusAdminClient from '@/lib/directus-admin';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,8 +21,8 @@ export default async function Layout({ children, params }: LayoutProps) {
   
   try {
     [destinations, categories] = await Promise.all([
-      directusClient.getDestinationsByType('region', lang),
-      directusClient.getCategories(lang)
+      directusAdminClient.getDestinationsByType('region', lang),
+      directusAdminClient.getCategories(lang)
     ]);
   } catch (error) {
     console.error('❌ [LAYOUT] Directus error, using fallback data:', error);

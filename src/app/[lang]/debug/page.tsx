@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import directusClient from '../../../lib/directus';
+import directusAdminClient from '../../../lib/directus-admin';
 
 export default function DebugPage() {
   const [status, setStatus] = useState('Testing...');
@@ -21,7 +21,7 @@ export default function DebugPage() {
 
       // Test 1: Authentication
       try {
-        const isAuth = await directusClient.testAuth();
+        const isAuth = await directusAdminClient.testAuth();
         results.push({
           test: 'Authentication',
           status: isAuth ? '✅ Success' : '❌ Failed',
@@ -37,7 +37,7 @@ export default function DebugPage() {
 
       // Test 2: Get translations
       try {
-        const translations = await directusClient.get('/items/translations', {
+        const translations = await directusAdminClient.get('/items/translations', {
           params: { limit: 1 }
         });
         results.push({
@@ -55,7 +55,7 @@ export default function DebugPage() {
 
       // Test 3: Get destinations
       try {
-        const destinations = await directusClient.getDestinationsByType('region', 'it');
+        const destinations = await directusAdminClient.getDestinationsByType('region', 'it');
         results.push({
           test: 'Destinations API',
           status: '✅ Success',

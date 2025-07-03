@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import directusClient from "../../../../lib/directus";
+import directusAdminClient from "../../../../lib/directus-admin";
 
 export default function CreateCompanyPage() {
   const router = useRouter();
@@ -39,14 +39,14 @@ export default function CreateCompanyPage() {
     const loadData = async () => {
       try {
         // Carica categorie companies
-        const categoriesResponse = await directusClient.getCompanyCategories('it');
+        const categoriesResponse = await directusAdminClient.getCompanyCategories('it');
         setCategories(categoriesResponse);
 
         // Carica TUTTE le destinazioni (non solo municipalities)
         const [regionsResponse, provincesResponse, municipalitiesResponse] = await Promise.all([
-          directusClient.getDestinations({ type: 'region', lang: 'it' }),
-          directusClient.getDestinations({ type: 'province', lang: 'it' }),
-          directusClient.getDestinations({ type: 'municipality', lang: 'it' })
+                  directusAdminClient.getDestinations({ type: 'region', lang: 'it' }),
+        directusAdminClient.getDestinations({ type: 'province', lang: 'it' }),
+        directusAdminClient.getDestinations({ type: 'municipality', lang: 'it' })
         ]);
         
         // Combina tutte le destinazioni con etichette per tipo

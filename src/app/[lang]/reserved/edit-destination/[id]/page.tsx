@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import directusClient from "../../../../../lib/directus";
+import directusAdminClient from "../../../../../lib/directus-admin";
 import StagingTranslationManager from "@/components/translations/StagingTranslationManager";
 
 // Tutte le lingue supportate (50+ lingue) - inglese come principale
@@ -123,7 +123,7 @@ export default function EditDestinationPage({ params }: { params: Promise<{ id: 
   const loadDestination = async () => {
     try {
       setIsLoading(true);
-      const destinationData = await directusClient.getDestinationById(destinationId, 'it');
+      const destinationData = await directusAdminClient.getDestinationById(destinationId, 'it');
       setDestination(destinationData);
       
       // Carica le traduzioni esistenti

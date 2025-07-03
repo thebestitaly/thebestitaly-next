@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import directusClient from "../../../../lib/directus";
+import directusAdminClient from "../../../../lib/directus-admin";
 
 interface Category {
   id: string;
@@ -35,7 +35,7 @@ export default function CreateArticlePage() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const categoriesData = await directusClient.getCategories('it');
+        const categoriesData = await directusAdminClient.getCategories('it');
         setCategories(categoriesData);
       } catch (error) {
         console.error('Errore caricamento categorie:', error);

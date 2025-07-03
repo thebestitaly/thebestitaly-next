@@ -1,8 +1,8 @@
-import directusClient from '@/lib/directus';
+import directusAdminClient from '@/lib/directus-admin';
 
 export default async function CoordinatesTestPage() {
   try {
-    const destinations = await directusClient.getDestinationsByType('region', 'it');
+    const destinations = await directusAdminClient.getDestinationsByType('region', 'it');
     
     return (
       <div className="container mx-auto p-8">

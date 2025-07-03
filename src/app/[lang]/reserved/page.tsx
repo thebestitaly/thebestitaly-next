@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import directusClient from "../../../lib/directus";
+import directusAdminClient from "../../../lib/directus-admin";
 
 // Interfaccia per la risposta degli articoli da Directus
 interface ArticleDirectusResponse {
@@ -105,7 +105,7 @@ function ArticlesList() {
       console.log("Iniziando fetch articoli...");
 
       // Per la sezione riservata, recuperiamo tutti gli articoli (draft + published)
-      const { articles } = await directusClient.getArticlesForReserved(LANG_IT, 0, 50);
+      const { articles } = await directusAdminClient.getArticlesForReserved(LANG_IT, 0, 50);
 
       // Mappa gli articoli recuperati al formato ArticleSummary
       const mappedArticles: ArticleSummary[] = articles.map((article: any) => {
@@ -139,7 +139,7 @@ function ArticlesList() {
       setError(null);
 
       
-      const destinationsResponse = await directusClient.getDestinationsByType("region", LANG_IT);
+      const destinationsResponse = await directusAdminClient.getDestinationsByType("region", LANG_IT);
 
      
       const mappedDestinations: DestinationSummary[] = destinationsResponse.map((destination: any) => {
@@ -172,7 +172,7 @@ function ArticlesList() {
       console.log("Iniziando fetch companies...");
 
       // Usiamo getCompaniesForListing per l'area admin (senza filtri)
-      const companiesResponse = await directusClient.getCompaniesForListing(LANG_IT, {});
+      const companiesResponse = await directusAdminClient.getCompaniesForListing(LANG_IT, {});
 
       
       const mappedCompanies: CompanySummary[] = companiesResponse.map((company: any) => {
