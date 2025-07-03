@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 
 // 🏠 Homepage: ISR con cache breve per contenuto sempre fresco
 export const revalidate = 900; // 15 minuti
-import directusClient, { getSupportedLanguages } from '@/lib/directus';
+import directusWebClient, { getSupportedLanguages } from '@/lib/directus-web';
 import { getTranslationsForSection } from '@/lib/translations-server';
 import FeaturedDestinationsSlider from '../../components/home/FeaturedDestinationsSlider';
 import FeaturedCompaniesSlider from '../../components/home/FeaturedCompaniesSlider';
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     // Fetch homepage specific data from titles collection with ID = 1 (homepage)
-    const record = await directusClient.get('/items/titles/1', {
+    const record = await directusWebClient.get('/items/titles/1', {
       params: {
         fields: ['translations.title', 'translations.seo_title', 'translations.seo_summary'],
         deep: {
@@ -176,13 +176,13 @@ export default async function Home({ params }: PageProps) {
   const homeTranslations = await getTranslationsForSection('homepage', lang);
   
   // Fetch regions on the server
-  const regions = await directusClient.getDestinationsByType('region', lang);
+  const regions = await directusWebClient.getDestinationsByType('region', lang);
   // Fetch featured destinations on the server
-  const featuredDestinations = await directusClient.getHomepageDestinations(lang);
+  const featuredDestinations = await directusWebClient.getHomepageDestinations(lang);
   // Fetch magazine categories on the server
-  const magazineCategories = await directusClient.getCategories(lang);
+  const magazineCategories = await directusWebClient.getCategories(lang);
   // Fetch featured companies on the server
-  const featuredCompanies = await directusClient.getHomepageCompanies(lang);
+  const featuredCompanies = await directusWebClient.getHomepageCompanies(lang);
 
   // Generate schema for homepage
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';

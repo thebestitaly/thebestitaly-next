@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
-import directusClient from '@/lib/directus'
+import directusWebClient from '@/lib/directus-web'
 
 // Configurazione font ottimizzata per performance
 const poppins = Poppins({
