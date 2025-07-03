@@ -257,13 +257,18 @@ const nextConfig = {
     ];
   },
 
-  // Redirect configuration
+  // 🚀 WEB APP: Redirect admin requests to admin subdomain
   async redirects() {
     return [
       {
-        source: '/admin',
-        destination: '/reserved',
-        permanent: false,
+        source: '/:lang/reserved/:path*',
+        destination: 'https://admin.thebestitaly.eu/:lang/reserved/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:lang/debug/:path*', 
+        destination: 'https://admin.thebestitaly.eu/:lang/debug/:path*',
+        permanent: true,
       },
     ];
   },
