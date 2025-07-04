@@ -7,6 +7,9 @@ import { getTranslations } from '@/lib/directus';
 
 const ExcellenceeroImage = '/images/excellence.webp';
 
+// 🚀 ISR: Rigenera la pagina ogni 2 ore (7200 secondi)
+export const revalidate = 7200;
+
 interface PageProps {
   params: Promise<{ lang: string }>;
 }
@@ -56,11 +59,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function EccellenzePage({ params: { lang } }: { params: { lang: string } }) {
   
-  const [companies, categories, pageTranslations] = await Promise.all([
+  // 🚀 Load companies and translations in parallel
+  const [companies, pageTranslations, pageTitles] = await Promise.all([
     directusClient.getCompaniesForListing(lang, { active: { _eq: true } }, 50),
-    directusClient.getCompanyCategories(lang),
-    getTranslations(lang, 'eccellenze')
+    getTranslations(lang, 'eccellenze'),
+    // Get titles from the titles collection (ID 3 for eccellenze)
+    directusClient.get('/items/titles/3', {
+      params: {
+        fields: ['translations.title', 'translations.subtitle', 'translations.seo_title'],
+        deep: {
+          translations: {
+            _filter: { languages_code: { _eq: lang } }
+          }
+        }
+      }
+    }).then(response => response?.data?.data?.translations?.[0]).catch(() => ({}))
   ]);
+
+
   
   return (
     <div className="min-h-screen">
@@ -69,9 +85,8 @@ export default async function EccellenzePage({ params: { lang } }: { params: { l
           <EccellenzeList 
              lang={lang}
              initialCompanies={companies}
-             initialCategories={categories}
              initialPageTranslations={pageTranslations}
-             initialPageTitles={{}}
+             initialPageTitles={pageTitles}
            />
         </div>
       </div>

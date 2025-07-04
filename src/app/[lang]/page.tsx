@@ -27,6 +27,9 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang } = await params;
   
+  // 🛡️ LANG VALIDATION: Ensure we have a valid language
+  const validLang = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tr', 'nl', 'ro', 'sv', 'pl', 'vi', 'id', 'el', 'uk', 'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja', 'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg', 'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca', 'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is', 'sw', 'zh-tw', 'no'].includes(lang) ? lang : 'it';
+  
   let pageTitle = 'TheBestItaly - Discover the Best of Italy';
   let pageDescription = 'Discover the best destinations and excellences of Italy. The complete guide for quality tourism in over 50 languages.';
 
@@ -41,7 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 
   // Usa la descrizione specifica per la lingua o fallback in inglese
-  pageDescription = descriptions[lang as keyof typeof descriptions] || descriptions.en;
+  pageDescription = descriptions[validLang as keyof typeof descriptions] || descriptions.en;
 
   try {
     // Fetch homepage specific data from titles collection with ID = 1 (homepage)
@@ -51,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         deep: {
           translations: {
             _filter: {
-              languages_code: { _eq: lang }
+              languages_code: { _eq: validLang }
             }
           }
         }
@@ -68,7 +71,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     console.warn('Could not fetch homepage titles from database, using defaults:', error);
     // Fallback to translations
     try {
-      const homeTranslations = await getTranslationsForSection('homepage', lang);
+      const homeTranslations = await getTranslationsForSection('homepage', validLang);
       if (homeTranslations) {
         pageTitle = homeTranslations.seo_title || homeTranslations.title || pageTitle;
         pageDescription = homeTranslations.seo_summary ? homeTranslations.seo_summary : pageDescription;
@@ -79,7 +82,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   
   // Generate proper canonical URL for homepage
-  const canonicalUrl = generateCanonicalUrl(lang);
+  const canonicalUrl = generateCanonicalUrl(validLang);
   
   // Generate hreflang for homepage (all supported languages)
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
@@ -136,7 +139,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     openGraph: {
       type: 'website',
-      locale: lang === 'it' ? 'it_IT' : `${lang}_${lang.toUpperCase()}`,
+      locale: validLang === 'it' ? 'it_IT' : `${validLang}_${validLang.toUpperCase()}`,
       url: canonicalUrl,
       siteName: 'TheBestItaly',
       title: pageTitle,
@@ -173,16 +176,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function Home({ params }: PageProps) {
   const { lang } = await params;
-  const homeTranslations = await getTranslationsForSection('homepage', lang);
+  
+  // 🛡️ LANG VALIDATION: Ensure we have a valid language
+  const validLang = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tr', 'nl', 'ro', 'sv', 'pl', 'vi', 'id', 'el', 'uk', 'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja', 'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg', 'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca', 'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is', 'sw', 'zh-tw', 'no'].includes(lang) ? lang : 'it';
+  
+  const homeTranslations = await getTranslationsForSection('homepage', validLang);
   
   // Fetch regions on the server
-  const regions = await directusWebClient.getDestinationsByType('region', lang);
+  const regions = await directusWebClient.getDestinationsByType('region', validLang);
   // Fetch featured destinations on the server
-  const featuredDestinations = await directusWebClient.getHomepageDestinations(lang);
+  const featuredDestinations = await directusWebClient.getHomepageDestinations(validLang);
   // Fetch magazine categories on the server
-  const magazineCategories = await directusWebClient.getCategories(lang);
+  const magazineCategories = await directusWebClient.getCategories(validLang);
   // Fetch featured companies on the server
-  const featuredCompanies = await directusWebClient.getHomepageCompanies(lang);
+  const featuredCompanies = await directusWebClient.getHomepageCompanies(validLang);
 
   // Generate schema for homepage
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
@@ -227,14 +234,14 @@ export default async function Home({ params }: PageProps) {
           <ProjectIntro />
         </div>
 
-        <HomepageDestinationsCarousel lang={lang} initialRegions={regions} />
+        <HomepageDestinationsCarousel lang={validLang} initialRegions={regions} />
         {/* Sezione Eccellenze/Companies */}
         <div className="py-12">
           <FeaturedCompaniesSlider initialCompanies={featuredCompanies} />
         </div>
         
         <div className="container mx-auto px-4 py-12">
-          <GetYourGuideWidget lang={lang} destinationName="Italy" />
+          <GetYourGuideWidget lang={validLang} destinationName="Italy" />
         </div>
                 {/* Featured Articles Section */}
         <div className="py-16">
@@ -244,20 +251,20 @@ export default async function Home({ params }: PageProps) {
                 {homeTranslations?.featured_articles_title || 'Featured Articles'}
               </h2>
             </div>
-            <FeaturedHomepageArticles lang={lang} />
+            <FeaturedHomepageArticles lang={validLang} />
           </div>
         </div>
 
         {/* Latest Articles Section */}
         <div className="container mx-auto px-4 py-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Latest Articles</h2>
-          <LatestArticles lang={lang} />
+          <LatestArticles lang={validLang} />
         </div>
         
         <BookExperience />
         <div className="bg-gray-50 py-12">
           <div className="container mx-auto px-4">
-            <CategoriesList lang={lang} initialCategories={magazineCategories} />
+            <CategoriesList lang={validLang} initialCategories={magazineCategories} />
           </div>
         </div>
       </Suspense>

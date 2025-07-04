@@ -3,40 +3,54 @@
 import React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import directusClient from "@/lib/directus";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Image from "next/image";
+import { Category } from "@/lib/directus";
 
 interface MagazinePageClientProps {
   lang: string;
 }
 
 const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
-  // Query per ottenere le traduzioni del magazine (categoria 10)
+  // Query per ottenere le traduzioni del magazine (categoria 10) - USA PROXY DIRECTUS
   const { data: magazineData } = useQuery({
     queryKey: ["category", 10, lang],
     queryFn: async () => {
-      const response = await directusClient.get("/items/categorias", {
-        params: {
-          filter: { id: { _eq: 10 } },
-          fields: ["*", "translations.*"],
-          deep: {
-            translations: {
-              _filter: {
-                languages_code: { _eq: lang },
-              },
-            },
-          },
-        },
-      });
-      return response.data?.data[0];
+      const params = new URLSearchParams();
+      params.append('filter[id][_eq]', '10');
+      params.append('fields[]', '*');
+      params.append('fields[]', 'translations.*');
+      params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
+      
+      const response = await fetch(`/api/directus/items/categorias?${params}`);
+      const result = await response.json();
+      return result.data?.[0];
     },
   });
 
-  const { data: categories } = useQuery({
+  // Query per ottenere le categorie - USA PROXY DIRECTUS
+  const { data: categories } = useQuery<Category[]>({
     queryKey: ["categories", lang],
-    queryFn: () => directusClient.getCategories(lang),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      // Filtro per categorie visibili E escludo la categoria 10 (Magazine)
+      params.append('filter[visible][_eq]', 'true');
+      params.append('filter[id][_nin]', '10'); // Escludo la categoria Magazine
+      params.append('fields[]', 'id');
+      params.append('fields[]', 'nome_categoria');
+      params.append('fields[]', 'image');
+      params.append('fields[]', 'visible');
+      params.append('fields[]', 'translations.nome_categoria');
+      params.append('fields[]', 'translations.seo_title');
+      params.append('fields[]', 'translations.seo_summary');
+      params.append('fields[]', 'translations.slug_permalink');
+      params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
+      
+      const response = await fetch(`/api/directus/items/categorias?${params}`);
+      const result = await response.json();
+      return result.data || [];
+    },
   });
 
   const { data: articlesByCategory } = useQuery({
@@ -45,12 +59,31 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       const allArticles: Record<string, any> = {};
       if (categories) {
         for (const category of categories) {
-          const articles = await directusClient.getArticlesByCategory(
-            category.translations[0]?.slug_permalink || "",
-            lang,
-            9
-          );
-          allArticles[category.id] = articles;
+          // Usa il proxy Directus per gli articoli per categoria ID
+          const categoryId = category.id;
+          if (categoryId) {
+            const params = new URLSearchParams();
+            params.append('filter[status][_eq]', 'published');
+            params.append('filter[category_id][_eq]', categoryId.toString());
+            params.append('fields[]', 'id');
+            params.append('fields[]', 'image');
+            params.append('fields[]', 'date_created');
+            params.append('fields[]', 'translations.titolo_articolo');
+            params.append('fields[]', 'translations.slug_permalink');
+            params.append('fields[]', 'translations.seo_summary');
+            params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
+            params.append('sort[]', '-date_created');
+            params.append('limit', '9');
+            
+            try {
+              const response = await fetch(`/api/directus/items/articles?${params}`);
+              const result = await response.json();
+              allArticles[category.id] = result.data || [];
+            } catch (error) {
+              console.error(`Error fetching articles for category ${categoryId}:`, error);
+              allArticles[category.id] = [];
+            }
+          }
         }
       }
       return allArticles;
@@ -82,6 +115,7 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
               fill
               className="object-cover"
               priority
+              sizes="100vw"
             />
           </div>
           
@@ -113,6 +147,7 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
             fill
             className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
             priority
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
           

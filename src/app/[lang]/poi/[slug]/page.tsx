@@ -17,6 +17,9 @@ import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 import { getTranslation } from '@/lib/translations-server';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
+// 🚀 ISR: Rigenera la pagina ogni 4 ore (14400 secondi) - le singole companies cambiano ancora meno
+export const revalidate = 14400;
+
 interface PageProps {
   params: Promise<{ lang: string; slug: string }>;
 }

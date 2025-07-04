@@ -93,22 +93,20 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
       return `/${lang}/${translation.slug_permalink}`;
     } else if (type === 'province') {
       // Province: /{lang}/{region_slug}/{province_slug}
-      const regionSlug = destination.region_id?.translations?.find(
-        (t: any) => t.languages_code === lang
-      )?.slug_permalink;
+      // Access region data from the nested structure loaded by field presets
+      const regionTranslation = destination.region_id?.translations?.[0];
+      const regionSlug = regionTranslation?.slug_permalink;
       
       if (regionSlug) {
         return `/${lang}/${regionSlug}/${translation.slug_permalink}`;
       }
     } else if (type === 'municipality') {
       // Municipality: /{lang}/{region_slug}/{province_slug}/{municipality_slug}
-      const regionSlug = destination.region_id?.translations?.find(
-        (t: any) => t.languages_code === lang
-      )?.slug_permalink;
-      
-      const provinceSlug = destination.province_id?.translations?.find(
-        (t: any) => t.languages_code === lang
-      )?.slug_permalink;
+      // Access parent data from the nested structure loaded by field presets
+      const regionTranslation = destination.region_id?.translations?.[0];
+      const provinceTranslation = destination.province_id?.translations?.[0];
+      const regionSlug = regionTranslation?.slug_permalink;
+      const provinceSlug = provinceTranslation?.slug_permalink;
       
       if (regionSlug && provinceSlug) {
         return `/${lang}/${regionSlug}/${provinceSlug}/${translation.slug_permalink}`;

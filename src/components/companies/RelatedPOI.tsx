@@ -42,6 +42,7 @@ const RelatedPOI: React.FC<RelatedPOIProps> = ({ companies, lang, currentCompany
                     alt={company.company_name}
                     fill
                     className="object-cover"
+                    unoptimized={true}
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 flex items-center justify-center">

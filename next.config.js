@@ -120,12 +120,12 @@ const nextConfig = {
         ],
       },
       {
-        // 🌍 ECCELLENZE: Cache breve per multilingua
+        // 🌍 ECCELLENZE: Cache più lungo per POI (cambiano raramente)
         source: '/:lang(it|en|fr|de|es)/poi/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, s-maxage=1800, stale-while-revalidate=3600', // 30 min + 1 ora stale
+            value: 'public, s-maxage=7200, stale-while-revalidate=14400', // 2 ore + 4 ore stale
           },
           {
             key: 'Vary',

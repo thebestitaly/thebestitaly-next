@@ -81,7 +81,7 @@ export default function RootLayout({
         
         {/* 🚫 BLOCCA Cloudflare RUM per evitare errori 404 */}
         <meta name="cf-rum" content="disabled" />
-        <meta httpEquiv="Content-Security-Policy" content="connect-src 'self' https://www.googletagmanager.com https://fonts.googleapis.com https://widget.getyourguide.com https://region1.google-analytics.com https://www.google-analytics.com https://analytics.google.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://widget.getyourguide.com https://static.cloudflareinsights.com https://cs.iubenda.com https://www.clarity.ms; object-src 'none';" />
+        <meta httpEquiv="Content-Security-Policy" content="connect-src 'self' https://directus-production-93f0.up.railway.app https://cdn.thebestitaly.eu https://www.googletagmanager.com https://fonts.googleapis.com https://widget.getyourguide.com https://region1.google-analytics.com https://www.google-analytics.com https://analytics.google.com https://e.clarity.ms; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://widget.getyourguide.com https://static.cloudflareinsights.com https://cs.iubenda.com https://cdn.iubenda.com https://www.clarity.ms; worker-src 'self' blob:; object-src 'none';" />
         
         {/* Removed preconnect to Railway to force using our proxy */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />

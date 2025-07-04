@@ -25,6 +25,7 @@ const CompanyCard: React.FC<CompanyCardProps> = ({ company, lang, className }) =
             alt={company.company_name}
             fill
             className="object-cover"
+            unoptimized={true}
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">

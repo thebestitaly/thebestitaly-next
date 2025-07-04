@@ -136,6 +136,7 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
                     loading="lazy"
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    unoptimized={true}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">

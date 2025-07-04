@@ -15,14 +15,17 @@ interface LayoutProps {
 export default async function Layout({ children, params }: LayoutProps) {
   const { lang } = await params;
 
+  // 🛡️ LANG VALIDATION: Ensure we have a valid language
+  const validLang = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tr', 'nl', 'ro', 'sv', 'pl', 'vi', 'id', 'el', 'uk', 'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja', 'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg', 'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca', 'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is', 'sw', 'zh-tw', 'no'].includes(lang) ? lang : 'it';
+
   // Fetch data for the header on the server with fallback
   let destinations = [];
   let categories = [];
   
   try {
     [destinations, categories] = await Promise.all([
-      directusWebClient.getDestinationsByType('region', lang),
-      directusWebClient.getCategories(lang)
+      directusWebClient.getDestinationsByType('region', validLang),
+      directusWebClient.getCategories(validLang)
     ]);
   } catch (error) {
     console.error('❌ [LAYOUT] Directus error, using fallback data:', error);
@@ -103,7 +106,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   }
 
   return (
-    <ClientProviders lang={lang}>
+    <ClientProviders lang={validLang}>
       <HtmlLangUpdater />
       <PerformanceMonitor />
       <Suspense fallback={
@@ -111,7 +114,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       }>
-        <Header lang={lang} destinations={destinations} categories={categories} />
+        <Header lang={validLang} destinations={destinations} categories={categories} />
         <main className="min-h-screen" style={{ minHeight: 'calc(100vh - 160px)' }}>
           {children}
         </main>

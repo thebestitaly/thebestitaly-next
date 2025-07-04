@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import directusClient from "../../lib/directus";
+
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from "@/lib/languages";
 
 interface Language {
@@ -66,42 +66,44 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       if (pageInfo.isDestination) {
         console.log('Fetching destination ID for slug:', pageInfo.slug);
         // Prima troviamo l'ID della destinazione dallo slug
-        const response = await directusClient.get("/items/destinations_translations", {
-          params: {
-            filter: { slug_permalink: { _eq: pageInfo.slug } },
-            fields: ["destinations_id"],
-          },
-        });
-        console.log('Destination translation response:', response.data);
+        const destParams = new URLSearchParams();
+        destParams.append('filter[slug_permalink][_eq]', pageInfo.slug || '');
+        destParams.append('fields[]', 'destinations_id');
 
-        const destinationId = response.data?.data?.[0]?.destinations_id;
+        const response = await fetch(`/api/directus/items/destinations_translations?${destParams}`);
+        const result = await response.json();
+        console.log('Destination translation response:', result);
+
+        const destinationId = result.data?.[0]?.destinations_id;
         if (!destinationId) return null;
 
         // Poi prendiamo i dettagli della destinazione
-        const destinationDetails = await directusClient.get(`/items/destinations/${destinationId}`, {
-          params: {
-            fields: ["id", "region_id", "province_id"],
-          },
-        });
-        console.log('Destination details:', destinationDetails.data);
+        const destinationParams = new URLSearchParams();
+        destinationParams.append('fields[]', 'id');
+        destinationParams.append('fields[]', 'region_id');
+        destinationParams.append('fields[]', 'province_id');
+
+        const destinationResponse = await fetch(`/api/directus/items/destinations/${destinationId}?${destinationParams}`);
+        const destinationDetails = await destinationResponse.json();
+        console.log('Destination details:', destinationDetails);
 
         return {
           type: "destination",
           id: destinationId,
           routeType: pageInfo.routeType,
-          region_id: destinationDetails.data.data.region_id,
-          province_id: destinationDetails.data.data.province_id
+          region_id: destinationDetails.data.region_id,
+          province_id: destinationDetails.data.province_id
         };
       }
 
       if (pageInfo.pageType === "magazine") {
-        const response = await directusClient.get("/items/articles_translations", {
-          params: {
-            filter: { slug_permalink: { _eq: pageInfo.slug } },
-            fields: ["articles_id"],
-          },
-        });
-        return { type: "magazine", id: response.data?.data?.[0]?.articles_id };
+        const params = new URLSearchParams();
+        params.append('filter[slug_permalink][_eq]', pageInfo.slug || '');
+        params.append('fields[]', 'articles_id');
+
+        const response = await fetch(`/api/directus/items/articles_translations?${params}`);
+        const result = await response.json();
+        return { type: "magazine", id: result.data?.[0]?.articles_id };
       }
 
       if (pageInfo.pageType === "poi") {
@@ -124,22 +126,25 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         console.log('Fetching destination translations with hierarchy');
         
         // 🚀 OTTIMIZZATA: Una sola query che prende tutti i dati necessari per costruire gli URL gerarchici
-        const response = await directusClient.get(`/items/destinations/${contentId.id}`, {
-          params: {
-            fields: [
-              'type', 'region_id', 'province_id',
-              'translations.slug_permalink', 'translations.languages_code',
-              'region_id.translations.slug_permalink', 'region_id.translations.languages_code',
-              'province_id.translations.slug_permalink', 'province_id.translations.languages_code'
-            ],
-            'deep[translations][_limit]': 50,
-            'deep[region_id.translations][_limit]': 50,
-            'deep[province_id.translations][_limit]': 50,
-          },
-        });
-        console.log('Destination with hierarchy response:', response.data);
+        const params = new URLSearchParams();
+        params.append('fields[]', 'type');
+        params.append('fields[]', 'region_id');
+        params.append('fields[]', 'province_id');
+        params.append('fields[]', 'translations.slug_permalink');
+        params.append('fields[]', 'translations.languages_code');
+        params.append('fields[]', 'region_id.translations.slug_permalink');
+        params.append('fields[]', 'region_id.translations.languages_code');
+        params.append('fields[]', 'province_id.translations.slug_permalink');
+        params.append('fields[]', 'province_id.translations.languages_code');
+        params.append('deep[translations][_limit]', '50');
+        params.append('deep[region_id.translations][_limit]', '50');
+        params.append('deep[province_id.translations][_limit]', '50');
 
-        const destination = response.data?.data;
+        const response = await fetch(`/api/directus/items/destinations/${contentId.id}?${params}`);
+        const result = await response.json();
+        console.log('Destination with hierarchy response:', result);
+
+        const destination = result.data;
         if (!destination?.translations) {
           console.warn(`No translations found for destination ${contentId.id}`);
           return {};
@@ -178,14 +183,15 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       }
 
       if (contentId.type === "magazine") {
-        const response = await directusClient.get("/items/articles_translations", {
-          params: {
-            filter: { articles_id: { _eq: contentId.id } },
-            fields: ["languages_code", "slug_permalink"],
-          },
-        });
+        const params = new URLSearchParams();
+        params.append('filter[articles_id][_eq]', contentId.id?.toString() || '');
+        params.append('fields[]', 'languages_code');
+        params.append('fields[]', 'slug_permalink');
 
-        const translations = response.data?.data || [];
+        const response = await fetch(`/api/directus/items/articles_translations?${params}`);
+        const result = await response.json();
+
+        const translations = result.data || [];
         const slugMap: Record<string, string> = {};
         translations.forEach((translation: any) => {
           slugMap[translation.languages_code] = translation.slug_permalink;

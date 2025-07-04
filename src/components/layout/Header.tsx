@@ -177,7 +177,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
                                 <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 flex-shrink-0">
                                   <img
                                     src={destination.image ? getOptimizedImageUrl(destination.image, 'MICRO') : '/images/map.svg'}
-                                    alt={translation.description || translation.destination_name || 'Region'}
+                                    alt={translation.destination_description || translation.destination_name || 'Region'}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                     loading="lazy"
                                     width="24"
@@ -188,7 +188,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
                                   <h3 className={`text-sm font-medium transition-colors duration-200 ${
                                     isHovered ? 'text-blue-700' : 'text-gray-900 group-hover:text-blue-600'
                                   }`}>
-                                    {translation.description || translation.destination_name}
+                                    {translation.destination_name}
                                   </h3>
                                 </div>
                               </div>
@@ -352,7 +352,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
                               className="block px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
-                              {translation.description || translation.destination_name}
+                              {translation.destination_description || translation.destination_name}
                             </Link>
                           );
                         })}

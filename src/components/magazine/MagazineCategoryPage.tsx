@@ -4,7 +4,6 @@ import React from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import directusClient from "@/lib/directus";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
@@ -20,20 +19,69 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
   const lang = propLang || params?.lang;
   const category = propCategory || params?.category;
 
-
   const { data: articles } = useQuery({
     queryKey: ["articles", category, lang],
-    queryFn: () => directusClient.getArticlesByCategory(category || "", lang || 'it', 24), // Limite ridotto a 24 per performance
+    queryFn: async () => {
+      // Usa il proxy Directus invece della chiamata diretta
+      const categoryParams = new URLSearchParams();
+      categoryParams.append('filter[translations][slug_permalink][_eq]', category || '');
+      categoryParams.append('fields[]', 'id');
+      categoryParams.append('limit', '1');
+
+      const categoryResponse = await fetch(`/api/directus/items/categorias?${categoryParams}`);
+      const categoryResult = await categoryResponse.json();
+      
+      if (!categoryResult.data || categoryResult.data.length === 0) {
+        return [];
+      }
+
+      const categoryId = categoryResult.data[0].id;
+      
+      // Ora cerca gli articoli per questa categoria
+      const articlesParams = new URLSearchParams();
+      articlesParams.append('filter[status][_eq]', 'published');
+      articlesParams.append('filter[category_id][_eq]', categoryId.toString());
+      articlesParams.append('fields[]', 'id');
+      articlesParams.append('fields[]', 'image');
+      articlesParams.append('fields[]', 'date_created');
+      articlesParams.append('fields[]', 'translations.titolo_articolo');
+      articlesParams.append('fields[]', 'translations.slug_permalink');
+      articlesParams.append('fields[]', 'translations.seo_summary');
+      articlesParams.append('deep[translations][_filter][languages_code][_eq]', lang || 'it');
+      articlesParams.append('sort[]', '-date_created');
+      articlesParams.append('limit', '24');
+
+      const articlesResponse = await fetch(`/api/directus/items/articles?${articlesParams}`);
+      const articlesResult = await articlesResponse.json();
+      
+      return articlesResult.data || [];
+    },
     enabled: !!category,
   });
+
   const { data: categoryInfo } = useQuery({
     queryKey: ["category", category, lang],
     queryFn: async () => {
-      // TODO: Implement proper category fetching from Directus
-      // For now, we get the category from the articles data
-      const categories = await directusClient.getCategories(lang || 'it');
-      const foundCategory = categories.find(cat => 
-        cat.translations.some(t => t.slug_permalink === category)
+      // Usa il proxy Directus per ottenere le categorie
+      const params = new URLSearchParams();
+      params.append('filter[visible][_eq]', 'true');
+      params.append('filter[id][_nin]', '10'); // Escludo la categoria Magazine
+      params.append('fields[]', 'id');
+      params.append('fields[]', 'nome_categoria');
+      params.append('fields[]', 'image');
+      params.append('fields[]', 'visible');
+      params.append('fields[]', 'translations.nome_categoria');
+      params.append('fields[]', 'translations.seo_title');
+      params.append('fields[]', 'translations.seo_summary');
+      params.append('fields[]', 'translations.slug_permalink');
+      params.append('deep[translations][_filter][languages_code][_eq]', lang || 'it');
+
+      const response = await fetch(`/api/directus/items/categorias?${params}`);
+      const result = await response.json();
+      
+      const categories = result.data || [];
+      const foundCategory = categories.find((cat: any) => 
+        cat.translations.some((t: any) => t.slug_permalink === category)
       );
       
       // Always return a valid object, even if category is not found
@@ -68,8 +116,6 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
     (category ? category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Category');
   const displayDescription = categoryTranslation?.seo_summary || 
     `Discover articles about ${displayTitle.toLowerCase()}`;
-
-
 
   return (
     <div className="min-h-screen">

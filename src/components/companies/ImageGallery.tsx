@@ -23,6 +23,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt, className, com
             alt={alt || companyName || `Image ${index + 1}`}
             fill
             className="object-cover"
+            unoptimized={true}
           />
         </div>
       ))}

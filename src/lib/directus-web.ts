@@ -15,22 +15,41 @@ export interface Translation {
 export interface Destination {
   id: string;
   uuid_id: string;
+  type: 'region' | 'province' | 'municipality';
+  slug_permalink?: string;
+  destination_description?: string;
+  image?: string;
+  featured_image?: string;
+  featured_sort?: number;
+  featured_status?: string;
+  // 🚀 UPDATED: Parent destinations with full data for URL building
   region_id?: {
     id: string;
     uuid_id?: string;
-    translations: Translation[];
-  } | null;
+    translations: {
+      languages_code: string;
+      destination_name: string;
+      slug_permalink: string;
+    }[];
+  };
   province_id?: {
     id: string;
     uuid_id?: string;
-    translations: Translation[];
-  } | null;
-  type: 'region' | 'province' | 'municipality';
-  image?: string;
-  video_url?: string;
-  lat?: number;
-  long?: number;
-  translations: Translation[];
+    translations: {
+      languages_code: string;
+      destination_name: string;
+      slug_permalink: string;
+    }[];
+  };
+  municipality_id?: string;
+  translations: {
+    languages_code: string;
+    destination_name: string;
+    slug_permalink: string;
+    destination_description?: string;
+    seo_title?: string;
+    seo_summary?: string;
+  }[];
 }
 
 export interface CategoryTranslation {
@@ -101,7 +120,7 @@ export interface Company {
   destination_uuid?: string;
   active: boolean;
   images: CompanyImage[];
-  featured: boolean;
+  featured_status?: string;
   featured_image?: string;
   socials: any;
   translations: CompanyTranslation[];
@@ -119,28 +138,43 @@ export interface CompanyImage {
   directus_files_id: string;
 }
 
-// 🎯 UNIFIED DESTINATION INTERFACE
-interface DestinationQueryOptions {
-  // Filtering
-  type?: 'region' | 'province' | 'municipality';
-  regionId?: string;
-  provinceId?: string;
-  parentId?: string;
-  excludeId?: string;
-  featured?: boolean | 'homepage' | 'top';
-  
-  // Identification (for single item queries)
-  id?: string;
-  uuid?: string;
-  slug?: string;
-  
-  // Language & Response
+// 🚀 UNIFIED QUERY INTERFACES
+export interface DestinationQueryOptions {
   lang: string;
+  type?: 'region' | 'province' | 'municipality';
+  featured?: 'homepage';
+  fields?: 'minimal' | 'full' | 'sitemap' | 'homepage' | 'navigation';
+  limit?: number;
+  slug?: string;
+  uuid?: string;
+  parent_id?: string;
+  offset?: number;
+}
+
+export interface ArticleQueryOptions {
+  lang: string;
+  fields?: 'minimal' | 'full' | 'sitemap' | 'homepage' | 'sidebar';
   limit?: number;
   offset?: number;
-  
-  // Field Selection Presets
-  fields?: 'minimal' | 'full' | 'sitemap' | 'homepage' | 'navigation';
+  slug?: string;
+  uuid?: string;
+  category_slug?: string;
+  featured_status?: 'homepage' | 'top' | 'editor' | 'trending';
+  destination_id?: string;
+  filters?: Record<string, any>;
+}
+
+export interface CompanyQueryOptions {
+  lang: string;
+  fields?: 'minimal' | 'full' | 'sitemap' | 'homepage';
+  limit?: number;
+  offset?: number;
+  slug?: string;
+  uuid?: string;
+  featured_status?: string;
+  destination_id?: string;
+  category_id?: string;
+  filters?: Record<string, any>;
 }
 
 // 🎯 FIELD PRESETS - Optimized for different use cases
@@ -152,7 +186,7 @@ const FIELD_PRESETS = {
   ],
   
   full: [
-    'id', 'uuid_id', 'type', 'image', 'lat', 'long',
+    'id', 'uuid_id', 'type', 'image', 'lat', 'long', 'featured_status',
     'region_id.id', 'region_id.uuid_id', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
     'province_id.id', 'province_id.uuid_id', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
     'translations.destination_name', 'translations.seo_title', 'translations.seo_summary', 
@@ -163,12 +197,72 @@ const FIELD_PRESETS = {
   
   homepage: [
     'id', 'uuid_id', 'type', 'image', 'featured_status',
-    'translations.destination_name', 'translations.seo_title', 'translations.slug_permalink'
+    // 🚀 ADDED: Parent destination data for URL building
+    'region_id.id', 'region_id.uuid_id', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
+    'province_id.id', 'province_id.uuid_id', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
+    'translations.destination_name', 'translations.seo_title', 'translations.seo_summary', 'translations.slug_permalink'
   ],
   
   navigation: [
     'id', 'uuid_id', 'type',
+    // 🚀 ADDED: Parent destination data for URL building
+    'region_id.id', 'region_id.uuid_id', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
+    'province_id.id', 'province_id.uuid_id', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
     'translations.destination_name', 'translations.slug_permalink'
+  ]
+};
+
+// 🚀 ARTICLE FIELD PRESETS - Optimized for different use cases
+const ARTICLE_FIELD_PRESETS = {
+  minimal: [
+    'id', 'uuid_id', 'date_created', 'featured_status',
+    'translations.titolo_articolo', 'translations.slug_permalink'
+  ],
+  
+  full: [
+    'id', 'uuid_id', 'image', 'date_created', 'featured_status', 'destination_id',
+    'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
+    'category_id.translations.slug_permalink', 'translations.*'
+  ],
+  
+  sitemap: [
+    'id', 'date_created', 'translations.slug_permalink'
+  ],
+  
+  homepage: [
+    'id', 'uuid_id', 'image', 'date_created', 'featured_status',
+    'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
+    'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
+  ],
+  
+  sidebar: [
+    'id', 'uuid_id', 'image', 'date_created', 'featured_status',
+    'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
+    'category_id.translations.slug_permalink', 'destination_id',
+    'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
+  ]
+};
+
+// 🏢 COMPANY FIELD PRESETS - Optimized for different use cases
+const COMPANY_FIELD_PRESETS = {
+  minimal: [
+    'id', 'uuid_id', 'company_name', 'slug_permalink',
+    'translations.seo_title'
+  ],
+  
+  full: [
+    'id', 'uuid_id', 'website', 'company_name', 'slug_permalink', 'featured_image',
+    'images', 'phone', 'lat', 'long', 'category_id', 'destination_id', 'featured_status',
+    'active', 'socials', 'translations.*'
+  ],
+  
+  sitemap: [
+    'id', 'slug_permalink'
+  ],
+  
+  homepage: [
+    'id', 'uuid_id', 'website', 'company_name', 'slug_permalink', 'featured_image',
+    'phone', 'category_id', 'destination_id', 'featured_status', 'translations.seo_title', 'translations.seo_summary'
   ]
 };
 
@@ -188,13 +282,25 @@ class DirectusWebClient {
       throw new Error('NEXT_PUBLIC_DIRECTUS_URL environment variable is not set');
     }
 
+    // 🔐 Use appropriate token for authentication
+    // For server-side calls, use DIRECTUS_TOKEN; for client-side, use NEXT_PUBLIC_DIRECTUS_TOKEN
+    const serverToken = process.env.DIRECTUS_TOKEN;
+    const publicToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+    const token = serverToken || publicToken;
+    
+    const headers: any = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     this.client = axios.create({
       baseURL,
       timeout: DirectusWebClient.REQUEST_TIMEOUT,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      headers,
       maxContentLength: 10 * 1024 * 1024, // 10MB max
       maxBodyLength: 5 * 1024 * 1024,     // 5MB max
     });
@@ -233,7 +339,6 @@ class DirectusWebClient {
     try {
       return await requestFn();
     } catch (error) {
-      console.error('DirectusWebClient request error:', error);
       throw error;
     }
   }
@@ -246,69 +351,36 @@ class DirectusWebClient {
   }
 
   // 🎯 PUBLIC HOMEPAGE METHODS
-  async getHomepageCompanies(lang: string) {
-    try {
-      const response = await this.client.get('/items/companies', {
-        params: {
-          filter: {
-            featured: { _eq: true },
-            active: { _eq: true }
-          },
-          fields: [
-            'id', 'uuid_id', 'website', 'company_name', 'slug_permalink',
-            'featured_image', 'phone', 'category_id', 'destination_id',
-            'translations.seo_title', 'translations.seo_summary'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          },
-          limit: 12
-        }
-      });
-      return response.data?.data || [];
-    } catch (error) {
-      console.error('Error fetching homepage companies:', error);
-      return [];
-    }
+  async getHomepageCompanies(lang: string): Promise<Company[]> {
+    // 🚀 REFACTORED: Use unified getCompanies method
+    const result = await this.getCompanies({
+      lang,
+      featured_status: 'homepage',
+      fields: 'homepage',
+      limit: 12
+    });
+    
+    // Ensure we always return an array
+    return Array.isArray(result) ? result : [];
   }
 
-  async getHomepageArticles(lang: string) {
-    try {
-      const response = await this.client.get('/items/articles', {
-        params: {
-          filter: {
-            featured_status: { _in: ['homepage', 'top'] }
-          },
-          fields: [
-            'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-            'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
-            'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            },
-            'category_id.translations': {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          },
-          limit: 8,
-          sort: ['-date_created']
-        }
-      });
-      return response.data?.data || [];
-    } catch (error) {
-      console.error('Error fetching homepage articles:', error);
-      return [];
-    }
+  async getHomepageArticles(lang: string): Promise<Article[]> {
+    // 🚀 REFACTORED: Use unified getArticles method
+    const result = await this.getArticles({
+      lang,
+      featured_status: 'homepage',
+      fields: 'homepage',
+      limit: 8
+    });
+    
+    // Ensure we always return an array
+    return Array.isArray(result) ? result : [];
   }
 
   async getFeaturedDestinations(lang: string): Promise<Destination[]> {
     // 🚀 REFACTORED: Use unified getDestinations method
     return this.getDestinations({
-      featured: true,
+      featured: 'homepage',
       lang,
       fields: 'homepage',
       limit: 5
@@ -327,102 +399,21 @@ class DirectusWebClient {
 
   // 🎯 PUBLIC CONTENT METHODS
   async getArticleBySlug(slug: string, languageCode: string): Promise<Article | null> {
-    try {
-      const filterParam = JSON.stringify({
-        'translations': { 'slug_permalink': { '_eq': slug } }
-      });
-      
-      const deepParam = JSON.stringify({
-        'translations': {
-          '_filter': { 'languages_code': { '_eq': languageCode } }
-        },
-        'category_id.translations': {
-          '_filter': { 'languages_code': { '_eq': languageCode } }
-        }
-      });
-      
-      const fieldsParam = 'id,uuid_id,image,category_id.id,category_id.uuid_id,category_id.translations.nome_categoria,category_id.translations.slug_permalink,destination_id,date_created,translations.languages_code,translations.titolo_articolo,translations.description,translations.seo_summary,translations.slug_permalink';
-
-      const response = await this.client.get(`/items/articles?filter=${encodeURIComponent(filterParam)}&deep=${encodeURIComponent(deepParam)}&fields=${fieldsParam}`);
-
-      const article = response.data?.data?.[0];
-      if (!article) return null;
-
-      let translation = article.translations?.[0];
-      let categoryTranslation = article.category_id?.translations?.[0];
-
-      return {
-        id: article.id,
-        uuid_id: article.uuid_id,
-        image: article.image,
-        date_created: article.date_created,
-        featured_status: article.featured_status || 'none',
-        category_id: article.category_id ? {
-          id: article.category_id.id,
-          uuid_id: article.category_id.uuid_id,
-          translations: [{
-            nome_categoria: categoryTranslation?.nome_categoria || 'Uncategorized',
-            slug_permalink: categoryTranslation?.slug_permalink || 'uncategorized'
-          }]
-        } : undefined,
-        destination_id: article.destination_id,
-        destination_uuid: article.destination_uuid,
-        translations: [{
-          languages_code: translation?.languages_code || languageCode,
-          titolo_articolo: translation?.titolo_articolo || 'Untitled',
-          description: translation?.description || '',
-          seo_title: translation?.seo_title || translation?.titolo_articolo || 'Untitled',
-          seo_summary: translation?.seo_summary || '',
-          slug_permalink: translation?.slug_permalink || slug
-        }]
-      };
-    } catch (error) {
-      console.error('Error fetching article:', error);
-      return null;
-    }
+    // 🚀 REFACTORED: Use unified getArticles method
+    return this.getArticles({
+      lang: languageCode,
+      slug,
+      fields: 'full'
+    }) as Promise<Article | null>;
   }
 
   async getArticleByUUID(uuid: string, languageCode: string): Promise<Article | null> {
-    try {
-      const response = await this.client.get('/items/articles', {
-        params: {
-          filter: { uuid_id: { _eq: uuid } },
-          fields: [
-            'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-            'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink', 'destination_id',
-            'translations.*'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            },
-            'category_id.translations': {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          },
-          limit: 1
-        }
-      });
-
-      const article = response.data?.data?.[0];
-      if (!article) return null;
-
-      return {
-        id: article.id,
-        uuid_id: article.uuid_id,
-        image: article.image,
-        date_created: article.date_created,
-        featured_status: article.featured_status || 'none',
-        category_id: article.category_id,
-        destination_id: article.destination_id,
-        destination_uuid: article.destination_uuid,
-        translations: article.translations || []
-      };
-    } catch (error) {
-      console.error('Error fetching article by UUID:', error);
-      return null;
-    }
+    // 🚀 REFACTORED: Use unified getArticles method
+    return this.getArticles({
+      lang: languageCode,
+      uuid,
+      fields: 'full'
+    }) as Promise<Article | null>;
   }
 
   async getDestinationBySlug(slug: string, languageCode: string): Promise<Destination | null> {
@@ -459,51 +450,21 @@ class DirectusWebClient {
   }
 
   async getCompanyBySlug(slug: string, lang: string) {
-    try {
-      const filterParam = JSON.stringify({
-        slug_permalink: { _eq: slug }
-      });
-      
-      const deepParam = JSON.stringify({
-        translations: {
-          _filter: { languages_code: { _eq: lang } }
-        }
-      });
-
-      const response = await this.client.get(`/items/companies?filter=${encodeURIComponent(filterParam)}&deep=${encodeURIComponent(deepParam)}&fields=id,uuid_id,featured_image,website,company_name,phone,lat,long,category_id,destination_id,images.id,images.directus_files_id,featured,socials,translations.*`);
-      
-      return response.data?.data[0] || null;
-    } catch (error) {
-      console.error('Error fetching company:', error);
-      return null;
-    }
+    // 🚀 REFACTORED: Use unified getCompanies method
+    return this.getCompanies({
+      lang,
+      slug,
+      fields: 'full'
+    }) as Promise<Company | null>;
   }
 
   async getCompanyByUUID(uuid: string, lang: string) {
-    try {
-      const response = await this.client.get('/items/companies', {
-        params: {
-          filter: { uuid_id: { _eq: uuid } },
-          fields: [
-            'id', 'uuid_id', 'website', 'company_name', 'slug_permalink',
-            'featured_image', 'images', 'phone', 'lat', 'long',
-            'category_id', 'destination_id', 'featured', 'active',
-            'socials', 'translations.*'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          },
-          limit: 1
-        }
-      });
-
-      return response.data?.data?.[0] || null;
-    } catch (error) {
-      console.error('Error fetching company by UUID:', error);
-      return null;
-    }
+    // 🚀 REFACTORED: Use unified getCompanies method
+    return this.getCompanies({
+      lang,
+      uuid,
+      fields: 'full'
+    }) as Promise<Company | null>;
   }
 
   async getCompanyCategories(lang: string) {
@@ -553,213 +514,6 @@ class DirectusWebClient {
   }
 
   // 🎯 LISTINGS & SEARCH
-  async getArticles(
-    languageCode: string,
-    offset: number = 0,
-    limit: number = 10,
-    filters: Record<string, any> = {},
-    featuredStatus?: string
-  ): Promise<{ articles: Article[]; total: number }> {
-    try {
-      const filterConditions: any = {};
-      
-      if (featuredStatus) {
-        filterConditions.featured_status = { _eq: featuredStatus };
-      }
-      
-      Object.assign(filterConditions, filters);
-
-      const response = await this.client.get('/items/articles', {
-        params: {
-          filter: filterConditions,
-          fields: [
-            'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-            'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink', 'destination_id',
-            'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            },
-            'category_id.translations': {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          },
-          limit,
-          offset,
-          sort: ['-date_created'],
-          meta: 'filter_count'
-        }
-      });
-
-      return {
-        articles: response.data.data || [],
-        total: response.data.meta?.filter_count || 0
-      };
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-      return { articles: [], total: 0 };
-    }
-  }
-
-  async getArticlesByCategory(
-    categorySlug: string, 
-    languageCode: string, 
-    limit: number = 10
-  ): Promise<Article[]> {
-    try {
-      const response = await this.client.get('/items/articles', {
-        params: {
-          filter: {
-            'category_id.translations.slug_permalink': { _eq: categorySlug }
-          },
-          fields: [
-            'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-            'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink', 'destination_id',
-            'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            },
-            'category_id.translations': {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          },
-          limit,
-          sort: ['-date_created']
-        }
-      });
-
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Error fetching articles by category:', error);
-      return [];
-    }
-  }
-
-  async getArticlesForSidebar(
-    languageCode: string,
-    filters: Record<string, any> = {},
-    limit: number = 10
-  ): Promise<Article[]> {
-    try {
-      const response = await this.client.get('/items/articles', {
-        params: {
-          filter: filters,
-          fields: [
-            'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-            'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink', 'destination_id',
-            'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            },
-            'category_id.translations': {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          },
-          limit,
-          sort: ['-date_created']
-        }
-      });
-
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Error fetching articles for sidebar:', error);
-      return [];
-    }
-  }
-
-  async getLatestArticlesForSidebar(
-    languageCode: string, 
-    limit: number = 15
-  ): Promise<Article[]> {
-    try {
-      const response = await this.client.get('/items/articles', {
-        params: {
-          fields: [
-            'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-            'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
-            'category_id.translations.slug_permalink', 'destination_id',
-            'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            },
-            'category_id.translations': {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          },
-          limit,
-          sort: ['-date_created']
-        }
-      });
-
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Error fetching latest articles for sidebar:', error);
-      return [];
-    }
-  }
-
-  async getCompanies(lang: string, filters: Record<string, any> = {}) {
-    try {
-      const response = await this.client.get('/items/companies', {
-        params: {
-          filter: { active: { _eq: true }, ...filters },
-          fields: [
-            'id', 'uuid_id', 'website', 'company_name', 'slug_permalink',
-            'featured_image', 'images', 'phone', 'category_id', 'destination_id',
-            'featured', 'active', 'featured_status',
-            'translations.seo_title', 'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          }
-        }
-      });
-      return response.data?.data || [];
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-      return [];
-    }
-  }
-
-  async getCompaniesByDestination(destinationId: string, lang: string, destinationType: 'region' | 'province' | 'municipality') {
-    try {
-      const response = await this.client.get('/items/companies', {
-        params: {
-          filter: {
-            destination_id: { _eq: destinationId },
-            active: { _eq: true }
-          },
-          fields: [
-            'id', 'uuid_id', 'website', 'company_name', 'slug_permalink',
-            'featured_image', 'images', 'phone', 'category_id', 'destination_id',
-            'featured', 'active', 'featured_status',
-            'translations.seo_title', 'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          }
-        }
-      });
-      return response.data?.data || [];
-    } catch (error) {
-      console.error('Error fetching companies by destination:', error);
-      return [];
-    }
-  }
 
   // 🎯 SITEMAP METHODS
   async getDestinationsForSitemap(lang: string): Promise<Array<{slug_permalink: string, type: string}>> {
@@ -785,64 +539,47 @@ class DirectusWebClient {
   }
 
   async getCompaniesForSitemap(): Promise<Array<{slug_permalink: string}>> {
-    try {
-      const response = await this.client.get('/items/companies', {
-        params: {
-          filter: { active: { _eq: true } },
-          fields: ['slug_permalink'],
-          limit: 1000
-        }
-      });
+    // 🚀 REFACTORED: Use unified getCompanies method
+    const companies = await this.getCompanies({
+      lang: 'it', // Language not important for sitemap
+      fields: 'sitemap',
+      limit: 1000
+    }) as Company[];
 
-      const companies = response.data?.data || [];
-      return companies
-        .map((company: any) => {
-          if (company.slug_permalink) {
-            return {
-              slug_permalink: company.slug_permalink
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-    } catch (error) {
-      console.error('Error fetching companies for sitemap:', error);
-      return [];
+    const result: Array<{slug_permalink: string}> = [];
+    
+    for (const company of companies) {
+      if (company.slug_permalink) {
+        result.push({
+          slug_permalink: company.slug_permalink
+        });
+      }
     }
+    
+    return result;
   }
 
   async getArticlesForSitemap(lang: string): Promise<Array<{slug_permalink: string, date_created?: string}>> {
-    try {
-      const response = await this.client.get('/items/articles', {
-        params: {
-          fields: ['date_created', 'translations.slug_permalink'],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: lang } }
-            }
-          },
-          limit: 500,
-          sort: ['-date_created']
-        }
-      });
+    // 🚀 REFACTORED: Use unified getArticles method
+    const articles = await this.getArticles({
+      lang,
+      fields: 'sitemap',
+      limit: 500
+    }) as Article[];
 
-      const articles = response.data?.data || [];
-      return articles
-        .map((article: any) => {
-          const translation = article.translations?.[0];
-          if (translation?.slug_permalink) {
-            return {
-              slug_permalink: translation.slug_permalink,
-              date_created: article.date_created
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-    } catch (error) {
-      console.error('Error fetching articles for sitemap:', error);
-      return [];
+    const result: Array<{slug_permalink: string, date_created?: string}> = [];
+    
+    for (const article of articles) {
+      const translation = article.translations?.[0];
+      if (translation?.slug_permalink) {
+        result.push({
+          slug_permalink: translation.slug_permalink,
+          date_created: article.date_created
+        });
+      }
     }
+    
+    return result;
   }
 
   async getCategoriesForSitemap(lang: string): Promise<Array<{slug_permalink: string}>> {
@@ -899,14 +636,223 @@ class DirectusWebClient {
       // 🎯 Build optimized query parameters
       const params = this.buildOptimizedParams(options);
       
+    
+      
       // 🚀 Single API call instead of multiple queries
       const response = await this.client.get('/items/destinations', { params });
       
-      return response.data?.data || [];
+      const data = response.data?.data || [];
+      
+      
+      return data;
     } catch (error) {
-      console.error('Error fetching destinations:', error);
+      // 🐛 DEBUG: Log error for regions
+      if (options.type === 'region') {
+        console.error('❌ [DEBUG] Region fetch error:', (error as any)?.response?.status, (error as any)?.response?.data);
+      }
       return [];
     }
+  }
+
+  /**
+   * 🚀 UNIFIED ARTICLE METHOD
+   * Replaces: getHomepageArticles, getArticleBySlug, getArticleByUUID, getArticles, 
+   * getArticlesByCategory, getArticlesForSidebar, getLatestArticlesForSidebar, getArticlesForSitemap
+   * Handles all article queries with optimized performance
+   */
+  async getArticles(options: ArticleQueryOptions): Promise<Article[] | { articles: Article[], total: number } | Article | null> {
+    try {
+      // 🎯 Build optimized query parameters
+      const params = this.buildArticleParams(options);
+      
+      // 🚀 Single API call instead of multiple queries
+      const response = await this.client.get('/items/articles', { params });
+      
+      // Return single article or array based on query type
+      if (options.slug || options.uuid) {
+        return response.data?.data?.[0] || null;
+      }
+      
+      // Return with total count if offset is specified (for pagination)
+      if (options.offset !== undefined) {
+        return {
+          articles: response.data?.data || [],
+          total: response.data?.meta?.filter_count || 0
+        };
+      }
+      
+      return response.data?.data || [];
+    } catch (error) {
+      // Silent fail for articles
+      return options.slug || options.uuid ? null : [];
+    }
+  }
+
+  /**
+   * 🚀 UNIFIED COMPANY METHOD
+   * Replaces: getHomepageCompanies, getCompanyBySlug, getCompanyByUUID, getCompanies, 
+   * getCompaniesByDestination, getCompaniesForSitemap
+   * Handles all company queries with optimized performance
+   */
+  async getCompanies(options: CompanyQueryOptions): Promise<Company[] | Company | null> {
+    try {
+      // 🎯 Build optimized query parameters
+      const params = this.buildCompanyParams(options);
+      
+      // 🚀 Single API call instead of multiple queries
+      const response = await this.client.get('/items/companies', { params });
+      
+      // Return single company or array based on query type
+      if (options.slug || options.uuid) {
+        return response.data?.data?.[0] || null;
+      }
+      
+      return response.data?.data || [];
+    } catch (error) {
+      // Silent fail for companies
+      return options.slug || options.uuid ? null : [];
+    }
+  }
+
+  /**
+   * 🛠️ SMART ARTICLE QUERY BUILDER
+   * Builds optimized query parameters for articles
+   */
+  private buildArticleParams(options: ArticleQueryOptions) {
+    const params: any = {
+      fields: ARTICLE_FIELD_PRESETS[options.fields || 'full'],
+      deep: {
+        translations: {
+          _filter: { languages_code: { _eq: options.lang } }
+        },
+        'category_id.translations': {
+          _filter: { languages_code: { _eq: options.lang } }
+        }
+      }
+    };
+
+    // 🔍 Build filter conditions
+    const filters: any = {};
+    
+    // Featured status filtering
+    if (options.featured_status) {
+      if (options.featured_status === 'homepage') {
+        filters.featured_status = { _in: ['homepage', 'top'] };
+      } else {
+        filters.featured_status = { _eq: options.featured_status };
+      }
+    }
+    
+    // Category filtering
+    if (options.category_slug) {
+      filters['category_id.translations.slug_permalink'] = { _eq: options.category_slug };
+    }
+    
+    // Destination filtering
+    if (options.destination_id) {
+      filters.destination_id = { _eq: options.destination_id };
+    }
+    
+    // Single item queries
+    if (options.uuid) {
+      filters.uuid_id = { _eq: options.uuid };
+      params.limit = 1;
+    } else if (options.slug) {
+      filters['translations.slug_permalink'] = { _eq: options.slug };
+      params.limit = 1;
+    }
+    
+    // Apply custom filters
+    if (options.filters) {
+      Object.assign(filters, options.filters);
+    }
+    
+    // Apply filters
+    if (Object.keys(filters).length > 0) {
+      params.filter = filters;
+    }
+    
+    // 📊 Pagination & Limits
+    if (options.limit) {
+      params.limit = options.limit;
+    } else if (!options.uuid && !options.slug) {
+      params.limit = this.getSmartArticleLimit(options);
+    }
+    
+    if (options.offset !== undefined) {
+      params.offset = options.offset;
+      params.meta = 'filter_count';
+    }
+    
+    // 🔄 Sorting
+    params.sort = ['-date_created'];
+    
+    return params;
+  }
+
+  /**
+   * 🛠️ SMART COMPANY QUERY BUILDER
+   * Builds optimized query parameters for companies
+   */
+  private buildCompanyParams(options: CompanyQueryOptions) {
+    const params: any = {
+      fields: COMPANY_FIELD_PRESETS[options.fields || 'full'],
+      deep: {
+        translations: {
+          _filter: { languages_code: { _eq: options.lang } }
+        }
+      }
+    };
+
+    // 🔍 Build filter conditions
+    const filters: any = { active: { _eq: true } };
+    
+    // Featured status filtering
+    if (options.featured_status) {
+      filters.featured_status = { _eq: options.featured_status };
+    }
+    
+    // Destination filtering
+    if (options.destination_id) {
+      filters.destination_id = { _eq: options.destination_id };
+    }
+    
+    // Category filtering
+    if (options.category_id) {
+      filters.category_id = { _eq: options.category_id };
+    }
+    
+    // Single item queries
+    if (options.uuid) {
+      filters.uuid_id = { _eq: options.uuid };
+      params.limit = 1;
+    } else if (options.slug) {
+      filters.slug_permalink = { _eq: options.slug };
+      params.limit = 1;
+    }
+    
+    // Apply custom filters
+    if (options.filters) {
+      Object.assign(filters, options.filters);
+    }
+    
+    // Apply filters
+    if (Object.keys(filters).length > 0) {
+      params.filter = filters;
+    }
+    
+    // 📊 Pagination & Limits
+    if (options.limit) {
+      params.limit = options.limit;
+    } else if (!options.uuid && !options.slug) {
+      params.limit = this.getSmartCompanyLimit(options);
+    }
+    
+    if (options.offset !== undefined) {
+      params.offset = options.offset;
+    }
+    
+    return params;
   }
 
   /**
@@ -918,9 +864,15 @@ class DirectusWebClient {
       // 🎯 Smart field selection
       fields: FIELD_PRESETS[options.fields || 'full'],
       
-      // 🌍 Language filtering  
+      // 🌍 Language filtering for current destination and parent destinations
       deep: {
         translations: {
+          _filter: { languages_code: { _eq: options.lang } }
+        },
+        'region_id.translations': {
+          _filter: { languages_code: { _eq: options.lang } }
+        },
+        'province_id.translations': {
           _filter: { languages_code: { _eq: options.lang } }
         }
       }
@@ -935,40 +887,22 @@ class DirectusWebClient {
     }
     
     // Hierarchical filtering
-    if (options.regionId) {
-      filters.region_id = { _eq: options.regionId };
-    }
-    
-    if (options.provinceId) {
-      filters.province_id = { _eq: options.provinceId };
-    }
-    
-    if (options.parentId) {
+    if (options.parent_id) {
       // Smart parent detection based on context
       if (options.type === 'municipality') {
-        filters.province_id = { _eq: options.parentId };
+        filters.province_id = { _eq: options.parent_id };
       } else if (options.type === 'province') {
-        filters.region_id = { _eq: options.parentId };
+        filters.region_id = { _eq: options.parent_id };
       }
     }
     
     // Featured filtering
-    if (options.featured === true) {
-      filters.featured_status = { _neq: 'none' };
-    } else if (typeof options.featured === 'string') {
-      filters.featured_status = { _eq: options.featured };
-    }
-    
-    // Exclusion
-    if (options.excludeId) {
-      filters.id = { _neq: options.excludeId };
+    if (options.featured === 'homepage') {
+      filters.featured_status = { _eq: 'homepage' };
     }
     
     // Single item queries
-    if (options.id) {
-      filters.id = { _eq: options.id };
-      params.limit = 1;
-    } else if (options.uuid) {
+    if (options.uuid) {
       filters.uuid_id = { _eq: options.uuid };
       params.limit = 1;
     } else if (options.slug) {
@@ -1019,12 +953,48 @@ class DirectusWebClient {
     if (options.fields === 'sitemap') return ['type', 'id'];
     return ['id']; // Default stable sort
   }
+
+  /**
+   * 🧠 SMART ARTICLE LIMIT DETECTION
+   */
+  private getSmartArticleLimit(options: ArticleQueryOptions): number {
+    if (options.fields === 'sitemap') return 500;
+    if (options.fields === 'sidebar') return 15;
+    if (options.fields === 'homepage') return 8;
+    if (options.category_slug) return 20;
+    return 10; // Default reasonable limit
+  }
+
+  /**
+   * 🧠 SMART COMPANY LIMIT DETECTION
+   */
+  private getSmartCompanyLimit(options: CompanyQueryOptions): number {
+    if (options.fields === 'sitemap') return 1000;
+    if (options.fields === 'homepage') return 12;
+    if (options.featured_status) return 10;
+    if (options.destination_id) return 25;
+    return 50; // Default reasonable limit
+  }
 }
 
 // 🎯 TRANSLATION HELPERS
 export const getTranslations = async (lang: string, section: string) => {
   try {
-    const response = await directusWebClient.get('/items/translations', {
+    // 🔐 Use public token for public translation data
+    const publicToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+    const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+    
+    const headers: any = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    if (publicToken) {
+      headers['Authorization'] = `Bearer ${publicToken}`;
+    }
+
+    const response = await axios.get(`${baseURL}/items/translations`, {
+      headers,
       params: {
         filter: {
           language: { _eq: lang },
@@ -1032,29 +1002,120 @@ export const getTranslations = async (lang: string, section: string) => {
         },
         fields: ['content'],
       },
+      timeout: 10000, // 10 second timeout
     });
 
     if (!response?.data?.data?.[0]?.content) {
-      console.warn('No content found in translation response');
-      return null;
+      console.warn(`⚠️ No translation content found for section "${section}" and language "${lang}"`);
+      return getTranslationFallback(section, lang);
     }
 
     try {
-      return JSON.parse(response.data.data[0].content);
+      const translations = JSON.parse(response.data.data[0].content);
+      console.log(`✅ Loaded translations for section "${section}" (${lang})`);
+      return translations;
     } catch (parseError) {
-      console.error('Error parsing content:', parseError);
-      return null;
+      console.error('❌ Error parsing translation content:', parseError);
+      return getTranslationFallback(section, lang);
     }
   } catch (error) {
-    console.error('Translation fetch error:', error);
-    return null;
+    console.error(`❌ Translation fetch error for section "${section}" (${lang}):`, (error as any).message);
+    return getTranslationFallback(section, lang);
   }
+};
+
+// 🔄 Translation fallback system
+const getTranslationFallback = (section: string, lang: string) => {
+  const fallbacks: Record<string, Record<string, any>> = {
+    'eccellenze': {
+      'it': {
+        title: 'Eccellenze Italiane',
+        subtitle: 'Scopri le migliori eccellenze italiane selezionate da TheBestItaly',
+        companies_section: 'Le Migliori Eccellenze Italiane'
+      },
+      'en': {
+        title: 'Italian Excellence',
+        subtitle: 'Discover the best Italian excellence selected by TheBestItaly',
+        companies_section: 'The Best Italian Excellence'
+      }
+    },
+    'general': {
+      'it': {
+        featured_articles: 'Articoli in Evidenza',
+        read_more: 'Leggi di più',
+        load_more: 'Carica altri',
+        no_results: 'Nessun risultato trovato'
+      },
+      'en': {
+        featured_articles: 'Featured Articles',
+        read_more: 'Read more',
+        load_more: 'Load more',
+        no_results: 'No results found'
+      }
+    },
+    'header': {
+      'it': {
+        destinations: 'Destinazioni',
+        magazine: 'Magazine',
+        experiences: 'Esperienze',
+        excellence: 'Eccellenze',
+        useful_info: 'Informazioni Utili'
+      },
+      'en': {
+        destinations: 'Destinations',
+        magazine: 'Magazine',
+        experiences: 'Experiences',
+        excellence: 'Excellence',
+        useful_info: 'Useful Information'
+      }
+    },
+    'footer': {
+      'it': {
+        about: 'Chi Siamo',
+        contact: 'Contatti',
+        privacy: 'Privacy',
+        terms: 'Termini di Servizio'
+      },
+      'en': {
+        about: 'About Us',
+        contact: 'Contact',
+        privacy: 'Privacy',
+        terms: 'Terms of Service'
+      }
+    }
+  };
+
+  const sectionFallback = fallbacks[section];
+  if (sectionFallback) {
+    const langFallback = sectionFallback[lang] || sectionFallback['it'] || sectionFallback['en'];
+    if (langFallback) {
+      console.log(`🔄 Using fallback translations for section "${section}" (${lang})`);
+      return langFallback;
+    }
+  }
+
+  console.warn(`⚠️ No fallback available for section "${section}" (${lang})`);
+  return {};
 };
 
 // 🎯 HELPER FUNCTIONS
 export const getSupportedLanguages = async (): Promise<string[]> => {
   try {
-    const response = await directusWebClient.get('/items/languages', {
+    // 🔐 Use public token for public data
+    const publicToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
+    const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+    
+    const headers: any = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    if (publicToken) {
+      headers['Authorization'] = `Bearer ${publicToken}`;
+    }
+    
+    const response = await axios.get(`${baseURL}/items/languages`, {
+      headers,
       params: {
         filter: { status: { _eq: 'published' } },
         fields: ['code', 'active'],
