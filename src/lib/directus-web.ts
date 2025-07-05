@@ -1123,9 +1123,6 @@ class DirectusWebClient {
    */
   async getArticles(options: ArticleQueryOptions): Promise<Article[] | { articles: Article[], total: number } | Article | null> {
     try {
-      // 🚨 DEBUG: Log the incoming options
-      console.log('🔍 [DEBUG] getArticles called with options:', JSON.stringify(options, null, 2));
-      
       // Generate cache key
       const cacheKey = this.generateCacheKey('articles', options);
       
@@ -1145,8 +1142,6 @@ class DirectusWebClient {
         options.skipCache
       );
       
-      console.log('🔍 [DEBUG] skipCache:', skipCache, 'cacheKey:', cacheKey);
-      
       return await this.cachedRequest(
         cacheKey,
         ttl,
@@ -1157,9 +1152,6 @@ class DirectusWebClient {
               // Try single query first
               const params = this.buildArticleParams(options);
               
-              // 🚨 DEBUG: Log the built parameters
-              console.log('🔍 [DEBUG] Built params for single article query:', JSON.stringify(params, null, 2));
-              
               const response = await this.client.get('/items/articles', { 
                 params,
                 cancelToken: this.cancelTokenSource.token
@@ -1167,27 +1159,12 @@ class DirectusWebClient {
               
               const articles = response.data?.data || [];
               
-              // 🚨 DEBUG: Log what we got back
-              console.log('🔍 [DEBUG] Response articles count:', articles.length);
-              if (articles.length > 0) {
-                console.log('🔍 [DEBUG] First article found:', {
-                  id: articles[0].id,
-                  uuid_id: articles[0].uuid_id,
-                  translations: articles[0].translations?.map((t: any) => ({
-                    lang: t.languages_code,
-                    title: t.titolo_articolo,
-                    slug: t.slug_permalink
-                  }))
-                });
-              }
-              
               // 🚀 MEMORY FIX: Immediate cleanup
               response.data = null;
               
               return articles.length > 0 ? articles[0] : null;
             } catch (error) {
               // Fallback to separate queries only if single query fails
-              console.log('🚨 [DEBUG] Single query failed, trying separate queries:', error);
               return await this.getArticleWithSeparateQueries(options);
             }
           }
