@@ -76,8 +76,8 @@ export default async function ProvincePage({ params: { lang, region, province } 
     notFound();
   }
   
-  // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies, articles, and municipalities
-  const [companies, articles, lightMunicipalities] = await Promise.all([
+  // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies and articles
+  const [companies, articles] = await Promise.all([
     // Get companies for this province
     directusWebClient.getCompanies({
       lang,
@@ -91,16 +91,7 @@ export default async function ProvincePage({ params: { lang, region, province } 
       destination_id: provinceDetails.id,
       fields: 'sidebar',
       limit: 15
-    }),
-    // Get municipalities for this province
-    (async () => {
-      const municipalities = await getMunicipalitiesForProvince(provinceDetails.id, lang) || [];
-      return municipalities.map(m => ({
-        id: m.id,
-        name: m.translations[0]?.destination_name || '',
-        slug: m.translations[0]?.slug_permalink || '',
-      }));
-    })()
+    })
   ]);
 
   const breadcrumbs = [
@@ -114,7 +105,6 @@ export default async function ProvincePage({ params: { lang, region, province } 
     <DestinationLayout
       lang={lang}
       destination={provinceDetails}
-      destinations={lightMunicipalities}
       title={`Scopri la provincia di ${provinceName}`}
       description={`Esplora i comuni e le meraviglie della provincia di ${provinceName}.`}
       breadcrumbs={breadcrumbs}

@@ -9,7 +9,7 @@ import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
 import DestinationCompanies from "@/components/destinations/DestinationCompanies";
 import DestinationArticlesSidebar from "@/components/destinations/DestinationArticlesSidebar";
-import DestinationSidebar from "@/components/destinations/DestinationSidebar";
+
 import GetYourGuideWidget from "@/components/widgets/GetYourGuideWidget";
 
 // Custom components for ReactMarkdown
@@ -75,7 +75,6 @@ const markdownComponents = {
 interface DestinationLayoutProps {
   lang: string;
   destination: Destination;
-  destinations: {id: string; name: string; slug: string;}[];
   title: string;
   description: string;
   breadcrumbs: { name: string; href: string }[];
@@ -86,7 +85,6 @@ interface DestinationLayoutProps {
 export default function DestinationLayout({ 
   lang,
   destination, 
-  destinations,
   title,
   description: layoutDescription,
   breadcrumbs,
@@ -109,15 +107,7 @@ export default function DestinationLayout({
     return <div>Translation not available for this destination.</div>;
   }
   
-  const regionSlug = breadcrumbs[0]?.href.split('/')[2] || "";
-  const provinceSlug = breadcrumbs.length > 1 ? breadcrumbs[1]?.href.split('/')[3] || "" : "";
   const destinationName = translation?.destination_name || "this beautiful destination";
-  
-  // Determina il titolo per la sidebar
-  let sidebarTitle = `Esplora ${destinationName}`;
-  if(destinationType === 'region') sidebarTitle = `Province in ${destinationName}`;
-  if(destinationType === 'province') sidebarTitle = `Comuni in ${destinationName}`;
-  if(destinationType === 'municipality') sidebarTitle = `Nei dintorni`;
   
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://thebestitaly.eu';
   const canonicalPath = [breadcrumbs[0]?.href.split('/')[2], breadcrumbs[1]?.href.split('/')[3], breadcrumbs[2]?.href.split('/')[4]].filter(Boolean).join('/');
@@ -134,36 +124,11 @@ export default function DestinationLayout({
     "name": translation?.destination_name,
     "description": seoDescription,
     "url": canonicalUrl,
-    "containedInPlace": destination.type === "municipality" ? [
-      {
-        "@type": "AdministrativeArea",
-        "name": provinceSlug,
-        "containedInPlace": {
-          "@type": "AdministrativeArea",
-          "name": regionSlug,
-          "containedInPlace": {
-            "@type": "Country",
-            "name": "Italy",
-            "url": "https://thebestitaly.eu"
-          }
-        }
-      }
-    ] : destination.type === "province" ? [
-      {
-        "@type": "AdministrativeArea",
-        "name": regionSlug,
-        "containedInPlace": {
-          "@type": "Country",
-          "name": "Italy",
-          "url": "https://thebestitaly.eu"
-        }
-      }
-    ] : {
+    "containedInPlace": {
       "@type": "Country",
       "name": "Italy",
       "url": "https://thebestitaly.eu"
     },
-    // "geo": coordinates not available in current Destination type,
     "image": seoImage ? {
       "@type": "ImageObject",
       "url": seoImage,
@@ -264,15 +229,7 @@ export default function DestinationLayout({
           </div>
           <aside className="lg:col-span-1 space-y-8">
             <TableOfContents content={tocContent} />
-            <DestinationSidebar 
-              destinations={destinations} 
-              title={sidebarTitle}
-              currentDestinationId={destination.id}
-              lang={lang}
-              regionSlug={regionSlug}
-              provinceSlug={provinceSlug}
-              destinationType={destinationType}
-            />
+
             <DestinationArticlesSidebar 
               destinationId={destination.id} 
               lang={lang}

@@ -44,8 +44,8 @@ export default async function RegionPage({ params: { lang, region } }: { params:
     notFound();
   }
 
-  // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies, articles, and provinces
-  const [companies, articles, lightProvinces] = await Promise.all([
+  // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies and articles
+  const [companies, articles] = await Promise.all([
     // Get companies for this region
     directusWebClient.getCompanies({
       lang,
@@ -59,16 +59,7 @@ export default async function RegionPage({ params: { lang, region } }: { params:
       destination_id: regionDetails.id,
       fields: 'sidebar',
       limit: 20
-    }),
-    // Get provinces for this region
-    (async () => {
-      const provinces = await getProvincesForRegion(regionDetails.id, lang) || [];
-      return provinces.map(p => ({
-        id: p.id,
-        name: p.translations[0]?.destination_name || '',
-        slug: p.translations[0]?.slug_permalink || '',
-      }));
-    })()
+    })
   ]);
 
   const breadcrumbs = [
@@ -81,7 +72,6 @@ export default async function RegionPage({ params: { lang, region } }: { params:
     <DestinationLayout
       lang={lang}
       destination={regionDetails}
-      destinations={lightProvinces}
       title={`Scopri la regione ${regionName}`}
       description={`Esplora le province e le meraviglie della regione ${regionName}.`}
       breadcrumbs={breadcrumbs}

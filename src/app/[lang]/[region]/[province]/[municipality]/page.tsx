@@ -50,7 +50,7 @@ export default async function MunicipalityPage({ params: { lang, region, provinc
   }
   
   // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies and articles for this destination
-  const [companies, articles, relatedMunicipalities] = await Promise.all([
+  const [companies, articles] = await Promise.all([
     // Get companies for this municipality
     directusWebClient.getCompanies({
       lang,
@@ -64,21 +64,7 @@ export default async function MunicipalityPage({ params: { lang, region, provinc
       destination_id: municipalityDetails.id,
       fields: 'sidebar',
       limit: 10
-    }),
-    // Get related municipalities
-    (async () => {
-      const provinceId = municipalityDetails.province_id?.id;
-      if (!provinceId) return [];
-      
-      const allMunicipalities = await getMunicipalitiesForProvince(provinceId, lang) || [];
-      return allMunicipalities
-        .filter(m => m.id !== municipalityDetails.id)
-        .map((m: Destination) => ({
-          id: m.id,
-          name: m.translations[0]?.destination_name || '',
-          slug: m.translations[0]?.slug_permalink || '',
-        }));
-    })()
+    })
   ]);
 
   const breadcrumbs = [
@@ -93,7 +79,6 @@ export default async function MunicipalityPage({ params: { lang, region, provinc
     <DestinationLayout
       lang={lang}
       destination={municipalityDetails}
-      destinations={relatedMunicipalities}
       title={`Scopri ${municipalityName}`}
       description={`Esplora le meraviglie e le attrazioni di ${municipalityName}.`}
       breadcrumbs={breadcrumbs}
