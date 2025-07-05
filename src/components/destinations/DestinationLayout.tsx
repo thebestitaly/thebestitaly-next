@@ -126,7 +126,7 @@ export default function DestinationLayout({
   const seoImage = destination.image
     ? `${process.env.NEXT_PUBLIC_APP_URL}${getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}`
     : undefined;
-  const seoDescription = translation?.seo_summary || translation?.destination_description || "Discover beautiful destinations in Italy.";
+  const seoDescription = translation?.seo_summary || translation?.description || "Discover beautiful destinations in Italy.";
   
   const schema = {
     "@context": "https://schema.org",
@@ -174,10 +174,10 @@ export default function DestinationLayout({
     "keywords": `${translation?.destination_name}, Italy, travel, tourism, destinations, attractions`
   };
 
-  const tocContent = translation?.destination_description || "";
+  const tocContent = translation?.description || "";
 
   // Logic to split markdown and inject the widget
-  const description = translation?.destination_description || "";
+  const description = translation?.description || "";
   const headings = description.match(/^## .*/gm) || [];
   let contentBeforeWidget: string = description;
   let contentAfterWidget: string | null = null;

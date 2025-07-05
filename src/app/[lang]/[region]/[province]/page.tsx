@@ -64,6 +64,10 @@ export async function generateMetadata({ params }: ProvincePageProps): Promise<M
 }
 
 export default async function ProvincePage({ params: { lang, region, province } }: { params: { lang: string, region: string, province: string } }) {
+  // 🐛 DEBUG: Log page access
+  console.log(`🎯 [PROVINCE PAGE] Accessed: /${lang}/${region}/${province}`);
+  console.log(`🎯 [PROVINCE PAGE] Calling getDestinationDetails('${province}', '${lang}', 'province')`);
+  
   const provinceDetails = await getDestinationDetails(province, lang, 'province') as Destination | null;
 
   if (!provinceDetails) {

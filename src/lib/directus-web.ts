@@ -17,7 +17,6 @@ export interface Destination {
   uuid_id: string;
   type: 'region' | 'province' | 'municipality';
   slug_permalink?: string;
-  destination_description?: string;
   image?: string;
   featured_image?: string;
   featured_sort?: number;
@@ -46,7 +45,7 @@ export interface Destination {
     languages_code: string;
     destination_name: string;
     slug_permalink: string;
-    destination_description?: string;
+    description?: string;
     seo_title?: string;
     seo_summary?: string;
   }[];
@@ -73,6 +72,7 @@ export interface Category {
 export interface ArticleTranslation {
   languages_code: string;
   titolo_articolo: string;
+  description?: string;
   seo_summary?: string;
   slug_permalink: string;
 }
@@ -311,9 +311,10 @@ class DirectusWebClient {
   private setupInterceptors() {
     this.client.interceptors.request.use(
       (config) => {
-        if (DirectusWebClient.activeCalls >= DirectusWebClient.MAX_CONCURRENT_CALLS) {
-          throw new Error(`Max concurrent calls exceeded: ${DirectusWebClient.activeCalls}`);
-        }
+        // 🚀 TEMPORARILY REMOVED: Concurrent calls limit causing 404s
+        // if (DirectusWebClient.activeCalls >= DirectusWebClient.MAX_CONCURRENT_CALLS) {
+        //   throw new Error(`Max concurrent calls exceeded: ${DirectusWebClient.activeCalls}`);
+        // }
         DirectusWebClient.activeCalls++;
         return config;
       },
@@ -633,23 +634,72 @@ class DirectusWebClient {
    */
   async getDestinations(options: DestinationQueryOptions): Promise<Destination[]> {
     try {
-      // 🎯 Build optimized query parameters
+      // 🚀 TWO-STEP QUERY: Avoid 403 errors by using destinations_translations table first
+      if (options.slug) {
+        // Step 1: Get translation data
+        
+        // Step 1: Get FULL translation data (not just ID)
+        const translationUrl = '/items/destinations_translations';
+        const translationParams = {
+          filter: { 
+            slug_permalink: { _eq: options.slug },
+            languages_code: { _eq: options.lang }
+          },
+                      fields: [
+              'destinations_id', 'languages_code', 'destination_name', 
+              'slug_permalink', 'seo_title', 'seo_summary', 
+              'description'
+            ]
+        };
+        const translationResponse = await this.client.get(translationUrl, { 
+          params: translationParams
+        });
+        
+        const translationData = translationResponse.data?.data || [];
+        if (translationData.length === 0) {
+          return [];
+        }
+        
+        const translation = translationData[0];
+        const destinationId = translation.destinations_id;
+        
+        // Step 2: Get ONLY base destination data (NO deep relations, NO 403!)
+        const destinationResponse = await this.client.get(`/items/destinations/${destinationId}`, { 
+          params: {
+            fields: ['id', 'uuid_id', 'type', 'image', 'featured_status', 'region_id', 'province_id']
+          }
+        });
+        
+        const baseDestination = destinationResponse.data?.data;
+        if (!baseDestination) {
+          return [];
+        }
+        
+        // Filter by type if specified
+        if (options.type && baseDestination.type !== options.type) {
+          return [];
+        }
+        
+        // Step 3: Combine the two separate results into the expected format
+        const combinedDestination = {
+          ...baseDestination,
+          translations: [translation] // Add the translation data from Step 1
+        };
+        
+        const result = [combinedDestination];
+        
+        return result;
+      }
+      
+      // 🎯 For non-slug queries, use optimized params
       const params = this.buildOptimizedParams(options);
-      
-    
-      
-      // 🚀 Single API call instead of multiple queries
       const response = await this.client.get('/items/destinations', { params });
-      
       const data = response.data?.data || [];
-      
       
       return data;
     } catch (error) {
-      // 🐛 DEBUG: Log error for regions
-      if (options.type === 'region') {
-        console.error('❌ [DEBUG] Region fetch error:', (error as any)?.response?.status, (error as any)?.response?.data);
-      }
+      // Silent error handling for destinations
+      
       return [];
     }
   }
@@ -662,16 +712,16 @@ class DirectusWebClient {
    */
   async getArticles(options: ArticleQueryOptions): Promise<Article[] | { articles: Article[], total: number } | Article | null> {
     try {
-      // 🎯 Build optimized query parameters
+      // 🚀 SEPARATE QUERY APPROACH for single articles to avoid 403 errors
+      if (options.slug || options.uuid) {
+        return await this.getArticleWithSeparateQueries(options);
+      }
+      
+      // 🎯 Build optimized query parameters for list queries
       const params = this.buildArticleParams(options);
       
-      // 🚀 Single API call instead of multiple queries
+      // 🚀 Single API call for list queries
       const response = await this.client.get('/items/articles', { params });
-      
-      // Return single article or array based on query type
-      if (options.slug || options.uuid) {
-        return response.data?.data?.[0] || null;
-      }
       
       // Return with total count if offset is specified (for pagination)
       if (options.offset !== undefined) {
@@ -685,6 +735,138 @@ class DirectusWebClient {
     } catch (error) {
       // Silent fail for articles
       return options.slug || options.uuid ? null : [];
+    }
+  }
+
+  /**
+   * 🚀 SEPARATE QUERY APPROACH for single articles
+   * Avoids 403 errors by using simple queries without deep parameters
+   */
+  private async getArticleWithSeparateQueries(options: ArticleQueryOptions): Promise<Article | null> {
+    try {
+      console.log(`🔍 [ARTICLE SEPARATE] Step 1: Getting translation data for slug: ${options.slug || options.uuid}`);
+      
+      // Step 1: Get translation data from articles_translations
+      const translationUrl = '/items/articles_translations';
+      const translationParams: any = {
+        fields: [
+          'articles_id', 'languages_code', 'titolo_articolo', 
+          'slug_permalink', 'seo_title', 'seo_summary', 'description'
+        ]
+      };
+      
+      if (options.slug) {
+        translationParams.filter = {
+          slug_permalink: { _eq: options.slug },
+          languages_code: { _eq: options.lang }
+        };
+      } else if (options.uuid) {
+        // For UUID, we need to get the article ID first
+        const articleResponse = await this.client.get('/items/articles', {
+          params: {
+            filter: { uuid_id: { _eq: options.uuid } },
+            fields: ['id'],
+            limit: 1
+          }
+        });
+        
+        if (!articleResponse.data?.data?.[0]) {
+          return null;
+        }
+        
+        translationParams.filter = {
+          articles_id: { _eq: articleResponse.data.data[0].id },
+          languages_code: { _eq: options.lang }
+        };
+      }
+      
+      console.log(`🚀 [DEBUG] Article translation URL: ${this.client.defaults.baseURL}${translationUrl}`);
+      
+      const translationResponse = await this.client.get(translationUrl, { params: translationParams });
+      
+      if (!translationResponse.data?.data?.[0]) {
+        console.log(`🔍 [ARTICLE SEPARATE] No translation found for article: ${options.slug || options.uuid}`);
+        return null;
+      }
+      
+      const translation = translationResponse.data.data[0];
+      
+      console.log(`🔍 [ARTICLE SEPARATE] Step 2: Getting base article data for ID: ${translation.articles_id}`);
+      
+      // Step 2: Get base article data without deep parameters
+      const articleResponse = await this.client.get('/items/articles', {
+        params: {
+          filter: { id: { _eq: translation.articles_id } },
+          fields: [
+            'id', 'uuid_id', 'image', 'date_created', 'featured_status',
+            'destination_id', 'category_id'
+          ],
+          limit: 1
+        }
+      });
+      
+      if (!articleResponse.data?.data?.[0]) {
+        console.log(`🔍 [ARTICLE SEPARATE] No base article found for ID: ${translation.articles_id}`);
+        return null;
+      }
+      
+      const baseArticle = articleResponse.data.data[0];
+      
+      // Step 3: Get category data if needed
+      let categoryData = null;
+      if (baseArticle.category_id) {
+        try {
+          const categoryResponse = await this.client.get('/items/categories', {
+            params: {
+              filter: { id: { _eq: baseArticle.category_id } },
+              fields: ['id', 'uuid_id'],
+              limit: 1
+            }
+          });
+          
+          if (categoryResponse.data?.data?.[0]) {
+            // Get category translation
+            const categoryTranslationResponse = await this.client.get('/items/categories_translations', {
+              params: {
+                filter: {
+                  categories_id: { _eq: baseArticle.category_id },
+                  languages_code: { _eq: options.lang }
+                },
+                fields: ['nome_categoria', 'slug_permalink']
+              }
+            });
+            
+            if (categoryTranslationResponse.data?.data?.[0]) {
+              categoryData = {
+                ...categoryResponse.data.data[0],
+                translations: [categoryTranslationResponse.data.data[0]]
+              };
+            }
+          }
+        } catch (categoryError) {
+          console.log(`🔍 [ARTICLE SEPARATE] Error getting category data:`, categoryError);
+        }
+      }
+      
+      // Step 4: Combine results
+      const result = {
+        ...baseArticle,
+        translations: [translation],
+        category_id: categoryData
+      };
+      
+      console.log(`🎉 [ARTICLE SEPARATE] Successfully combined article: ${translation.titolo_articolo}`);
+      
+      return result;
+      
+    } catch (error) {
+      console.error(`❌ [ARTICLE SEPARATE] Error for ${options.slug || options.uuid}:`, {
+        error: (error as any)?.message,
+        status: (error as any)?.response?.status,
+        data: (error as any)?.response?.data
+      });
+      
+      return null;
     }
   }
 
@@ -903,13 +1085,13 @@ class DirectusWebClient {
       filters.uuid_id = { _eq: options.uuid };
       params.limit = 1;
     } else if (options.slug) {
-      // Slug search uses translation filter
-      params.filter = { 'translations.slug_permalink': { _eq: options.slug } };
+      // 🚀 FIXED: Combine slug search with type filter
+      filters['translations.slug_permalink'] = { _eq: options.slug };
       params.limit = 1;
     }
     
-    // Apply filters if not using slug search
-    if (!options.slug && Object.keys(filters).length > 0) {
+    // Apply filters (now including slug queries)
+    if (Object.keys(filters).length > 0) {
       params.filter = filters;
     }
     
