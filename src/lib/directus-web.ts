@@ -584,12 +584,101 @@ class DirectusWebClient {
 
   async getHomepageDestinations(lang: string): Promise<Destination[]> {
     // 🚀 REFACTORED: Use unified getDestinations method
-    return this.getDestinations({
+    console.log('🏠 [getHomepageDestinations] Searching for featured destinations...');
+    
+    // 🔍 DEBUG: First let's see what featured_status values exist in the database
+    try {
+      const allDestinations = await this.getDestinations({
+        lang,
+        fields: 'homepage',
+        limit: 20
+      });
+      
+      const featuredStatusValues = allDestinations
+        .map(d => d.featured_status)
+        .filter((status): status is string => Boolean(status))
+        .reduce((acc, status) => {
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+      
+      console.log('🔍 [getHomepageDestinations] Featured status values in database:', featuredStatusValues);
+      console.log('🔍 [getHomepageDestinations] Sample destinations with featured_status:', 
+        allDestinations
+          .filter(d => d.featured_status)
+          .slice(0, 3)
+          .map(d => ({
+            id: d.id,
+            type: d.type,
+            featured_status: d.featured_status,
+            name: d.translations?.[0]?.destination_name
+          }))
+      );
+    } catch (error) {
+      console.error('🔍 [getHomepageDestinations] Debug query failed:', error);
+    }
+    
+    const destinations = await this.getDestinations({
       featured: 'homepage',
       lang,
       fields: 'homepage',
       limit: 8
     });
+    
+    console.log(`🏠 [getHomepageDestinations] Found ${destinations.length} featured destinations for ${lang}`);
+    
+    if (destinations.length === 0) {
+      console.log('❌ [getHomepageDestinations] No featured destinations found! Trying alternative featured values...');
+      
+      // 🔍 Try alternative featured values
+      const alternatives = ['Homepage', 'HOMEPAGE', 'featured', 'home'];
+      for (const altValue of alternatives) {
+        console.log(`🔍 [getHomepageDestinations] Trying featured_status = '${altValue}'...`);
+        
+        try {
+          const params = {
+            fields: this.getOptimizedFields('homepage'),
+            filter: { 
+              featured_status: { _eq: altValue },
+            },
+            deep: {
+              translations: {
+                _filter: { languages_code: { _eq: lang } }
+              }
+            },
+            limit: 8
+          };
+          
+          const response = await this.client.get('/items/destinations', { 
+            params,
+            cancelToken: this.cancelTokenSource.token
+          });
+          
+          const altDestinations = response.data?.data || [];
+          console.log(`🔍 [getHomepageDestinations] Found ${altDestinations.length} destinations with featured_status = '${altValue}'`);
+          
+          if (altDestinations.length > 0) {
+            console.log(`✅ [getHomepageDestinations] Using featured_status = '${altValue}' instead`);
+            return altDestinations;
+          }
+                 } catch (error) {
+           console.log(`❌ [getHomepageDestinations] Error trying '${altValue}':`, (error as Error).message);
+         }
+      }
+      
+      console.log('❌ [getHomepageDestinations] No featured destinations found with any value! Using fallback...');
+      // 🚀 FALLBACK: If no featured destinations, get first 3 regions as fallback
+      const fallbackDestinations = await this.getDestinations({
+        type: 'region',
+        lang,
+        fields: 'homepage',
+        limit: 3
+      });
+      console.log(`🔄 [getHomepageDestinations] Using ${fallbackDestinations.length} regions as fallback`);
+      return fallbackDestinations;
+    }
+    
+    return destinations;
   }
 
   // 🎯 PUBLIC CONTENT METHODS
