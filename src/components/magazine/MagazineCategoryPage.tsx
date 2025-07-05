@@ -58,7 +58,6 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
     },
     enabled: !!category,
     staleTime: 0,
-    cacheTime: 1000 * 60 * 2,
   });
 
   const { data: categoryInfo } = useQuery({

@@ -52,7 +52,6 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       return result.data || [];
     },
     staleTime: 0,
-    cacheTime: 1000 * 60 * 2,
   });
 
   const { data: articlesByCategory } = useQuery({

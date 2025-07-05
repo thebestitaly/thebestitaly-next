@@ -57,7 +57,6 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
     },
     enabled: isClient,
     staleTime: 0, // 🚨 FORCE FRESH DATA - No cache
-    cacheTime: 1000 * 60 * 2, // Only 2 minutes cache
   });
 
   if (!isClient || isLoading) {
