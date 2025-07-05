@@ -20,7 +20,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
   const category = propCategory || params?.category;
 
   const { data: articles } = useQuery({
-    queryKey: ["articles", category, lang],
+    queryKey: ["articles", category, lang, Date.now()],
     queryFn: async () => {
       // Usa il proxy Directus invece della chiamata diretta
       const categoryParams = new URLSearchParams();
@@ -57,10 +57,12 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
       return articlesResult.data || [];
     },
     enabled: !!category,
+    staleTime: 0,
+    cacheTime: 1000 * 60 * 2,
   });
 
   const { data: categoryInfo } = useQuery({
-    queryKey: ["category", category, lang],
+    queryKey: ["category", category, lang, Date.now()],
     queryFn: async () => {
       // Usa il proxy Directus per ottenere le categorie
       const params = new URLSearchParams();

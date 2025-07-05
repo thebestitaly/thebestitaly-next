@@ -31,7 +31,7 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
 
   // Query per ottenere le categorie - USA PROXY DIRECTUS
   const { data: categories } = useQuery<Category[]>({
-    queryKey: ["categories", lang],
+    queryKey: ["categories", lang, Date.now()],
     queryFn: async () => {
       const params = new URLSearchParams();
       // Filtro per categorie visibili E escludo la categoria 10 (Magazine)
@@ -51,10 +51,12 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       const result = await response.json();
       return result.data || [];
     },
+    staleTime: 0,
+    cacheTime: 1000 * 60 * 2,
   });
 
   const { data: articlesByCategory } = useQuery({
-    queryKey: ["articlesByCategory", lang],
+    queryKey: ["articlesByCategory", lang, Date.now()],
     queryFn: async () => {
       const allArticles: Record<string, any> = {};
       if (categories) {

@@ -13,17 +13,23 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const lang = searchParams.get('lang') || 'it';
     
-    console.log(`🔍 API: Fetching article by UUID: ${uuid} (lang: ${lang})`);
+    console.log('🔥 [ARTICLE BY UUID API] Fetching for UUID:', uuid, 'Lang:', lang);
     
-    // Usa la nuova funzione UUID
-    const article = await directusWebClient.getArticleByUUID(uuid, lang);
-    
+    const articleResult = await directusWebClient.getArticles({
+      uuid,
+      lang,
+      fields: 'full',
+      skipCache: true // 🚨 FORCE FRESH DATA
+    });
+
+    // Cast to single article since we're querying by UUID
+    const article = articleResult as any;
+
     if (!article) {
-      return NextResponse.json(
-        { error: 'Article not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
+
+    console.log('✅ [ARTICLE BY UUID API] Article found:', article.id);
     
     // Crea response pubblica SENZA ID numerici
     const publicArticle = {

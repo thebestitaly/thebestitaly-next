@@ -18,7 +18,7 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
 
   // Query con React Query caching per articoli sidebar
   const { data, isLoading, error } = useQuery({
-    queryKey: ['articles', lang, 'sidebar', categoryId, currentArticleId],
+    queryKey: ['articles', lang, 'sidebar', categoryId, currentArticleId, Date.now()], // Force refresh with timestamp
     queryFn: async () => {
       // Usa il proxy Directus invece della chiamata diretta
       const params = new URLSearchParams();
@@ -56,7 +56,8 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
       };
     },
     enabled: isClient,
-    staleTime: 1000 * 60 * 30, // 30 minuti
+    staleTime: 0, // 🚨 FORCE FRESH DATA - No cache
+    cacheTime: 1000 * 60 * 2, // Only 2 minutes cache
   });
 
   if (!isClient || isLoading) {

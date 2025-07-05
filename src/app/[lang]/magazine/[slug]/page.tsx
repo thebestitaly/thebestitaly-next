@@ -16,8 +16,8 @@ import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils'
 import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
-// 🔄 ISR: Rigenera gli articoli ogni ora
-export const revalidate = 3600; // 1 ora
+// 🚨 TEMPORARILY DISABLED ISR: Force fresh data on every request to fix cache issues
+export const revalidate = 0; // 🚨 FORCE FRESH DATA - No ISR caching
 
 interface PageProps {
   params: Promise<{
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang, slug } = resolvedParams;
   
   try {
-    const articleResult = await directusWebClient.getArticles({slug, lang});
+    const articleResult = await directusWebClient.getArticles({slug, lang, skipCache: true});
     const article = articleResult as any; // Single article expected when slug is provided
     
     if (!article) {
@@ -135,7 +135,7 @@ export default async function MagazineArticlePage({ params }: PageProps) {
 
   let article;
   try {
-    const articleResult = await directusWebClient.getArticles({slug, lang});
+    const articleResult = await directusWebClient.getArticles({slug, lang, skipCache: true});
     article = articleResult as any; // Single article expected when slug is provided
   } catch (error) {
     console.error('Error fetching article:', error);
