@@ -274,7 +274,18 @@ class DirectusWebClient {
   private client: AxiosInstance;
   private static activeCalls = 0;
   private static readonly MAX_CONCURRENT_CALLS = 10;
-  private static readonly REQUEST_TIMEOUT = 30000;
+  private static readonly REQUEST_TIMEOUT = 10000; // Reduced from 30s to 10s
+  
+  // 🚀 MEMORY OPTIMIZATION: Client pool to reuse instances
+  private static clientPool: Map<string, DirectusWebClient> = new Map();
+  private static readonly MAX_POOL_SIZE = 3;
+  private lastUsed: number = Date.now();
+  
+  // 🚀 CIRCUIT BREAKER: Prevent cascade failures
+  private static errorCount = 0;
+  private static readonly MAX_ERRORS = 10;
+  private static lastErrorReset = Date.now();
+  private static readonly ERROR_RESET_INTERVAL = 60000; // 1 minute
 
   constructor(lang?: string) {
     const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
@@ -303,6 +314,22 @@ class DirectusWebClient {
       headers,
       maxContentLength: 10 * 1024 * 1024, // 10MB max
       maxBodyLength: 5 * 1024 * 1024,     // 5MB max
+      // 🚀 MEMORY OPTIMIZATION: Limit connections and enable cleanup
+      maxRedirects: 3,
+      httpAgent: typeof window === 'undefined' ? new (require('http').Agent)({ 
+        keepAlive: true,
+        maxSockets: 5,        // Limit concurrent connections
+        maxFreeSockets: 2,    // Limit idle connections
+        timeout: 5000,        // Connection timeout
+        freeSocketTimeout: 10000, // Close idle sockets after 10s
+      }) : undefined,
+      httpsAgent: typeof window === 'undefined' ? new (require('https').Agent)({ 
+        keepAlive: true,
+        maxSockets: 5,
+        maxFreeSockets: 2,
+        timeout: 5000,
+        freeSocketTimeout: 10000,
+      }) : undefined,
     });
 
     this.setupInterceptors();
@@ -337,9 +364,21 @@ class DirectusWebClient {
   }
 
   private async makeRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+    // 🚀 CIRCUIT BREAKER: Check if we should allow the request
+    if (!DirectusWebClient.shouldAllowRequest()) {
+      throw new Error('Circuit breaker is OPEN - too many errors');
+    }
+    
+    // Add delay if we're at the limit
+    while (DirectusWebClient.activeCalls >= DirectusWebClient.MAX_CONCURRENT_CALLS) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     try {
       return await requestFn();
     } catch (error) {
+      // 🚨 Record error for circuit breaker
+      DirectusWebClient.recordError();
       throw error;
     }
   }
@@ -616,15 +655,111 @@ class DirectusWebClient {
     }
   }
 
+  // 🚀 CIRCUIT BREAKER: Check if we should allow requests
+  private static shouldAllowRequest(): boolean {
+    const now = Date.now();
+    
+    // Reset error count after interval
+    if (now - DirectusWebClient.lastErrorReset > DirectusWebClient.ERROR_RESET_INTERVAL) {
+      DirectusWebClient.errorCount = 0;
+      DirectusWebClient.lastErrorReset = now;
+    }
+    
+    // Block if too many errors
+    if (DirectusWebClient.errorCount >= DirectusWebClient.MAX_ERRORS) {
+      console.warn('🚨 Circuit breaker OPEN - blocking requests due to too many errors');
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // 🚀 CIRCUIT BREAKER: Record error
+  private static recordError() {
+    DirectusWebClient.errorCount++;
+  }
+
+  // 🚀 MEMORY OPTIMIZATION: Get client from pool or create new one
+  public static getClient(lang?: string): DirectusWebClient {
+    const key = lang || 'default';
+    
+    // Check if we have a client in the pool
+    if (DirectusWebClient.clientPool.has(key)) {
+      const client = DirectusWebClient.clientPool.get(key)!;
+      client.lastUsed = Date.now();
+      return client;
+    }
+    
+    // Create new client if pool is not full
+    if (DirectusWebClient.clientPool.size < DirectusWebClient.MAX_POOL_SIZE) {
+      const client = new DirectusWebClient(lang);
+      DirectusWebClient.clientPool.set(key, client);
+      return client;
+    }
+    
+    // Pool is full, find oldest client to replace
+    let oldestKey = '';
+    let oldestTime = Date.now();
+    
+    for (const [k, client] of DirectusWebClient.clientPool.entries()) {
+      if (client.lastUsed < oldestTime) {
+        oldestTime = client.lastUsed;
+        oldestKey = k;
+      }
+    }
+    
+    // Cleanup old client and create new one
+    if (oldestKey) {
+      const oldClient = DirectusWebClient.clientPool.get(oldestKey)!;
+      oldClient.cleanup();
+      DirectusWebClient.clientPool.delete(oldestKey);
+    }
+    
+    const client = new DirectusWebClient(lang);
+    DirectusWebClient.clientPool.set(key, client);
+    return client;
+  }
+
+  // 🧹 Clean up old clients periodically
+  public static cleanupOldClients() {
+    const now = Date.now();
+    const maxAge = 60000; // 1 minute
+    
+    for (const [key, client] of DirectusWebClient.clientPool.entries()) {
+      if (now - client.lastUsed > maxAge) {
+        client.cleanup();
+        DirectusWebClient.clientPool.delete(key);
+      }
+    }
+  }
+
   // 🎯 CLEANUP
   public cleanup() {
     this.client.interceptors.request.clear();
     this.client.interceptors.response.clear();
     DirectusWebClient.activeCalls = 0;
+    
+    // 🚀 MEMORY OPTIMIZATION: Force cleanup of axios instance
+    if (this.client && this.client.defaults) {
+      this.client.defaults.timeout = 1000; // Force quick timeout for pending requests
+    }
+    
+    // 🗑️ Clear any cached data
+    this.client = null as any;
+    
+    // 🧹 Force garbage collection if available (Node.js)
+    if (typeof global !== 'undefined' && global.gc) {
+      global.gc();
+    }
   }
 
   public static globalCleanup() {
     DirectusWebClient.activeCalls = 0;
+    
+    // 🧹 Force garbage collection if available (Node.js)
+    if (typeof global !== 'undefined' && global.gc) {
+      global.gc();
+    }
   }
 
   /**
@@ -1310,5 +1445,45 @@ export const getSupportedLanguages = async (): Promise<string[]> => {
   }
 };
 
-const directusWebClient = new DirectusWebClient();
+// 🚀 MEMORY OPTIMIZATION: Use pooled client instead of singleton
+const directusWebClient = {
+  // Proxy all method calls to use pooled client
+  ...DirectusWebClient.prototype,
+  
+  // Override methods to use pooled client
+  getDestinations: (options: any) => DirectusWebClient.getClient(options.lang).getDestinations(options),
+  getArticles: (options: any) => DirectusWebClient.getClient(options.lang).getArticles(options),
+  getCompanies: (options: any) => DirectusWebClient.getClient(options.lang).getCompanies(options),
+  getDestinationsByType: (type: 'region' | 'province' | 'municipality', lang: string) => DirectusWebClient.getClient(lang).getDestinationsByType(type, lang),
+  getHomepageDestinations: (lang: string) => DirectusWebClient.getClient(lang).getHomepageDestinations(lang),
+  getHomepageCompanies: (lang: string) => DirectusWebClient.getClient(lang).getHomepageCompanies(lang),
+  getHomepageArticles: (lang: string) => DirectusWebClient.getClient(lang).getHomepageArticles(lang),
+  getFeaturedDestinations: (lang: string) => DirectusWebClient.getClient(lang).getFeaturedDestinations(lang),
+  getCategories: (lang: string) => DirectusWebClient.getClient(lang).getCategories(lang),
+  getDestinationBySlug: (slug: string, lang: string) => DirectusWebClient.getClient(lang).getDestinationBySlug(slug, lang),
+  getDestinationByUUID: (uuid: string, lang: string) => DirectusWebClient.getClient(lang).getDestinationByUUID(uuid, lang),
+  getArticleBySlug: (slug: string, lang: string) => DirectusWebClient.getClient(lang).getArticleBySlug(slug, lang),
+  getArticleByUUID: (uuid: string, lang: string) => DirectusWebClient.getClient(lang).getArticleByUUID(uuid, lang),
+  getCompanyBySlug: (slug: string, lang: string) => DirectusWebClient.getClient(lang).getCompanyBySlug(slug, lang),
+  getCompanyByUUID: (uuid: string, lang: string) => DirectusWebClient.getClient(lang).getCompanyByUUID(uuid, lang),
+  getCompanyCategories: (lang: string) => DirectusWebClient.getClient(lang).getCompanyCategories(lang),
+  getDestinationsForSitemap: (lang: string) => DirectusWebClient.getClient(lang).getDestinationsForSitemap(lang),
+  getArticlesForSitemap: (lang: string) => DirectusWebClient.getClient(lang).getArticlesForSitemap(lang),
+  getCompaniesForSitemap: () => DirectusWebClient.getClient().getCompaniesForSitemap(),
+  getCategoriesForSitemap: (lang: string) => DirectusWebClient.getClient(lang).getCategoriesForSitemap(lang),
+  get: (url: string, config?: any) => DirectusWebClient.getClient().get(url, config),
+  
+  // Add cleanup methods
+  cleanup: () => DirectusWebClient.globalCleanup(),
+  cleanupOldClients: () => DirectusWebClient.cleanupOldClients(),
+};
+
+// 🚀 MEMORY OPTIMIZATION: Auto-cleanup every 2 minutes
+if (typeof window === 'undefined') {
+  // Only in Node.js environment
+  setInterval(() => {
+    DirectusWebClient.cleanupOldClients();
+  }, 120000); // 2 minutes
+}
+
 export default directusWebClient; 
