@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, CancelTokenSource } from 'axios';
 import { getOptimizedImageUrl } from "./imageUtils";
 import { getProvincesForRegion, getMunicipalitiesForProvince, getDestinationDetails } from './static-destinations';
 
@@ -267,25 +267,24 @@ const COMPANY_FIELD_PRESETS = {
 };
 
 /**
- * 🎯 WEB-OPTIMIZED DirectusClient 
- * Only public read-only operations for maximum performance
+ * 🚀 MEMORY-OPTIMIZED DirectusWebClient
+ * Key improvements:
+ * - Proper cleanup mechanisms
+ * - Request cancellation
+ * - Interceptor management
+ * - Response data cleanup
+ * - Static variable management
  */
 class DirectusWebClient {
   private client: AxiosInstance;
+  private cancelTokenSource: CancelTokenSource;
+  private requestInterceptor: number | null = null;
+  private responseInterceptor: number | null = null;
+  private static instances = new WeakSet<DirectusWebClient>();
   private static activeCalls = 0;
   private static readonly MAX_CONCURRENT_CALLS = 10;
-  private static readonly REQUEST_TIMEOUT = 10000; // Reduced from 30s to 10s
-  
-  // 🚀 MEMORY OPTIMIZATION: Client pool to reuse instances
-  private static clientPool: Map<string, DirectusWebClient> = new Map();
-  private static readonly MAX_POOL_SIZE = 3;
-  private lastUsed: number = Date.now();
-  
-  // 🚀 CIRCUIT BREAKER: Prevent cascade failures
-  private static errorCount = 0;
-  private static readonly MAX_ERRORS = 10;
-  private static lastErrorReset = Date.now();
-  private static readonly ERROR_RESET_INTERVAL = 60000; // 1 minute
+  private static readonly REQUEST_TIMEOUT = 8000; // Reduced timeout
+  private isDestroyed = false;
 
   constructor(lang?: string) {
     const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
@@ -293,8 +292,12 @@ class DirectusWebClient {
       throw new Error('NEXT_PUBLIC_DIRECTUS_URL environment variable is not set');
     }
 
-    // 🔐 Use appropriate token for authentication
-    // For server-side calls, use DIRECTUS_TOKEN; for client-side, use NEXT_PUBLIC_DIRECTUS_TOKEN
+    // Create cancel token for request cancellation
+    this.cancelTokenSource = axios.CancelToken.source();
+
+    // Track instances
+    DirectusWebClient.instances.add(this);
+
     const serverToken = process.env.DIRECTUS_TOKEN;
     const publicToken = process.env.NEXT_PUBLIC_DIRECTUS_TOKEN;
     const token = serverToken || publicToken;
@@ -312,36 +315,28 @@ class DirectusWebClient {
       baseURL,
       timeout: DirectusWebClient.REQUEST_TIMEOUT,
       headers,
-      maxContentLength: 10 * 1024 * 1024, // 10MB max
-      maxBodyLength: 5 * 1024 * 1024,     // 5MB max
-      // 🚀 MEMORY OPTIMIZATION: Limit connections and enable cleanup
-      maxRedirects: 3,
-      httpAgent: typeof window === 'undefined' ? new (require('http').Agent)({ 
-        keepAlive: true,
-        maxSockets: 5,        // Limit concurrent connections
-        maxFreeSockets: 2,    // Limit idle connections
-        timeout: 5000,        // Connection timeout
-        freeSocketTimeout: 10000, // Close idle sockets after 10s
-      }) : undefined,
-      httpsAgent: typeof window === 'undefined' ? new (require('https').Agent)({ 
-        keepAlive: true,
-        maxSockets: 5,
-        maxFreeSockets: 2,
-        timeout: 5000,
-        freeSocketTimeout: 10000,
-      }) : undefined,
+      maxContentLength: 5 * 1024 * 1024, // Reduced from 10MB to 5MB
+      maxBodyLength: 2 * 1024 * 1024,    // Reduced from 5MB to 2MB
+      maxRedirects: 2, // Reduced from 3 to 2
+      cancelToken: this.cancelTokenSource.token,
     });
 
     this.setupInterceptors();
   }
 
   private setupInterceptors() {
-    this.client.interceptors.request.use(
+    // Store interceptor IDs for cleanup
+    this.requestInterceptor = this.client.interceptors.request.use(
       (config) => {
-        // 🚀 TEMPORARILY REMOVED: Concurrent calls limit causing 404s
-        // if (DirectusWebClient.activeCalls >= DirectusWebClient.MAX_CONCURRENT_CALLS) {
-        //   throw new Error(`Max concurrent calls exceeded: ${DirectusWebClient.activeCalls}`);
-        // }
+        if (this.isDestroyed) {
+          throw new axios.Cancel('Client destroyed');
+        }
+        
+        // Limit concurrent calls
+        if (DirectusWebClient.activeCalls >= DirectusWebClient.MAX_CONCURRENT_CALLS) {
+          throw new Error(`Max concurrent calls exceeded: ${DirectusWebClient.activeCalls}`);
+        }
+        
         DirectusWebClient.activeCalls++;
         return config;
       },
@@ -351,9 +346,16 @@ class DirectusWebClient {
       }
     );
 
-    this.client.interceptors.response.use(
+    this.responseInterceptor = this.client.interceptors.response.use(
       (response) => {
         DirectusWebClient.activeCalls = Math.max(0, DirectusWebClient.activeCalls - 1);
+        
+        // 🚀 MEMORY FIX: Clean up large response data
+        if (response.data && typeof response.data === 'object') {
+          // Remove circular references
+          response.data = this.sanitizeResponseData(response.data);
+        }
+        
         return response;
       },
       (error) => {
@@ -363,29 +365,81 @@ class DirectusWebClient {
     );
   }
 
+  /**
+   * 🧹 SANITIZE RESPONSE DATA
+   * Removes circular references and unnecessary data
+   */
+  private sanitizeResponseData(data: any): any {
+    if (data === null || typeof data !== 'object') {
+      return data;
+    }
+
+    // Check for circular references using WeakSet
+    const seen = new WeakSet();
+    
+    const sanitize = (obj: any): any => {
+      if (obj === null || typeof obj !== 'object') {
+        return obj;
+      }
+
+      if (seen.has(obj)) {
+        return '[Circular Reference]';
+      }
+
+      seen.add(obj);
+
+      if (Array.isArray(obj)) {
+        return obj.map(item => sanitize(item));
+      }
+
+      const sanitized: any = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          sanitized[key] = sanitize(obj[key]);
+        }
+      }
+
+      return sanitized;
+    };
+
+    return sanitize(data);
+  }
+
+  /**
+   * 🚀 IMPROVED REQUEST METHOD WITH AUTOMATIC CLEANUP
+   */
   private async makeRequest<T>(requestFn: () => Promise<T>): Promise<T> {
-    // 🚀 CIRCUIT BREAKER: Check if we should allow the request
-    if (!DirectusWebClient.shouldAllowRequest()) {
-      throw new Error('Circuit breaker is OPEN - too many errors');
+    if (this.isDestroyed) {
+      throw new Error('Client has been destroyed');
     }
-    
-    // Add delay if we're at the limit
-    while (DirectusWebClient.activeCalls >= DirectusWebClient.MAX_CONCURRENT_CALLS) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
+
     try {
-      return await requestFn();
+      const result = await requestFn();
+      
+      // 🚀 MEMORY FIX: Explicit cleanup of large objects
+      if (typeof result === 'object' && result !== null) {
+        // Force garbage collection hint
+        if (global.gc) {
+          global.gc();
+        }
+      }
+      
+      return result;
     } catch (error) {
-      // 🚨 Record error for circuit breaker
-      DirectusWebClient.recordError();
+      if (axios.isCancel(error)) {
+        console.log('Request cancelled:', error.message);
+        return Promise.reject(new Error('Request cancelled'));
+      }
       throw error;
     }
   }
 
   public async get(url: string, config?: object) {
     return this.makeRequest(async () => {
-      const response = await this.client.get(url, config);
+      const response = await this.client.get(url, {
+        ...config,
+        cancelToken: this.cancelTokenSource.token
+      });
       return response;
     });
   }
@@ -655,186 +709,177 @@ class DirectusWebClient {
     }
   }
 
-  // 🚀 CIRCUIT BREAKER: Check if we should allow requests
-  private static shouldAllowRequest(): boolean {
-    const now = Date.now();
-    
-    // Reset error count after interval
-    if (now - DirectusWebClient.lastErrorReset > DirectusWebClient.ERROR_RESET_INTERVAL) {
-      DirectusWebClient.errorCount = 0;
-      DirectusWebClient.lastErrorReset = now;
-    }
-    
-    // Block if too many errors
-    if (DirectusWebClient.errorCount >= DirectusWebClient.MAX_ERRORS) {
-      console.warn('🚨 Circuit breaker OPEN - blocking requests due to too many errors');
-      return false;
-    }
-    
-    return true;
-  }
-  
-  // 🚀 CIRCUIT BREAKER: Record error
-  private static recordError() {
-    DirectusWebClient.errorCount++;
-  }
+  // 🚀 MEMORY LEAK FIX: Removed all pooling logic
 
-  // 🚀 MEMORY OPTIMIZATION: Get client from pool or create new one
-  public static getClient(lang?: string): DirectusWebClient {
-    const key = lang || 'default';
-    
-    // Check if we have a client in the pool
-    if (DirectusWebClient.clientPool.has(key)) {
-      const client = DirectusWebClient.clientPool.get(key)!;
-      client.lastUsed = Date.now();
-      return client;
-    }
-    
-    // Create new client if pool is not full
-    if (DirectusWebClient.clientPool.size < DirectusWebClient.MAX_POOL_SIZE) {
-      const client = new DirectusWebClient(lang);
-      DirectusWebClient.clientPool.set(key, client);
-      return client;
-    }
-    
-    // Pool is full, find oldest client to replace
-    let oldestKey = '';
-    let oldestTime = Date.now();
-    
-    for (const [k, client] of DirectusWebClient.clientPool.entries()) {
-      if (client.lastUsed < oldestTime) {
-        oldestTime = client.lastUsed;
-        oldestKey = k;
-      }
-    }
-    
-    // Cleanup old client and create new one
-    if (oldestKey) {
-      const oldClient = DirectusWebClient.clientPool.get(oldestKey)!;
-      oldClient.cleanup();
-      DirectusWebClient.clientPool.delete(oldestKey);
-    }
-    
-    const client = new DirectusWebClient(lang);
-    DirectusWebClient.clientPool.set(key, client);
-    return client;
-  }
-
-  // 🧹 Clean up old clients periodically
-  public static cleanupOldClients() {
-    const now = Date.now();
-    const maxAge = 60000; // 1 minute
-    
-    for (const [key, client] of DirectusWebClient.clientPool.entries()) {
-      if (now - client.lastUsed > maxAge) {
-        client.cleanup();
-        DirectusWebClient.clientPool.delete(key);
-      }
-    }
-  }
-
-  // 🎯 CLEANUP
+  /**
+   * 🧹 CLEANUP METHOD
+   */
   public cleanup() {
-    this.client.interceptors.request.clear();
-    this.client.interceptors.response.clear();
+    if (this.isDestroyed) {
+      return;
+    }
+
+    this.isDestroyed = true;
+
+    // Cancel all pending requests
+    this.cancelTokenSource.cancel('Client cleanup');
+
+    // Remove interceptors
+    if (this.requestInterceptor !== null) {
+      this.client.interceptors.request.eject(this.requestInterceptor);
+    }
+    if (this.responseInterceptor !== null) {
+      this.client.interceptors.response.eject(this.responseInterceptor);
+    }
+
+    // Clear static counters
     DirectusWebClient.activeCalls = 0;
-    
-    // 🚀 MEMORY OPTIMIZATION: Force cleanup of axios instance
-    if (this.client && this.client.defaults) {
-      this.client.defaults.timeout = 1000; // Force quick timeout for pending requests
-    }
-    
-    // 🗑️ Clear any cached data
-    this.client = null as any;
-    
-    // 🧹 Force garbage collection if available (Node.js)
-    if (typeof global !== 'undefined' && global.gc) {
-      global.gc();
-    }
+
+    // Remove from instances tracking
+    DirectusWebClient.instances.delete(this);
   }
 
+  /**
+   * 🌍 GLOBAL CLEANUP FOR ALL INSTANCES
+   */
   public static globalCleanup() {
     DirectusWebClient.activeCalls = 0;
     
-    // 🧹 Force garbage collection if available (Node.js)
-    if (typeof global !== 'undefined' && global.gc) {
+    // Force garbage collection if available
+    if (global.gc) {
       global.gc();
     }
   }
 
   /**
-   * 🚀 UNIFIED DESTINATION METHOD
-   * Replaces: getDestinationsByType, getFeaturedDestinations, getHomepageDestinations, getDestinationsForSitemap
-   * Handles all destination queries with optimized performance
+   * 🚀 IMPROVED DESTINATIONS METHOD WITH MEMORY OPTIMIZATION
    */
   async getDestinations(options: DestinationQueryOptions): Promise<Destination[]> {
     try {
-      // 🚀 TWO-STEP QUERY: Avoid 403 errors by using destinations_translations table first
+      // 🚀 MEMORY FIX: Limit field selection more aggressively
+      const optimizedFields = this.getOptimizedFields(options.fields || 'full');
+      
       if (options.slug) {
-        // Step 1: Get translation data
-        
-        // Step 1: Get FULL translation data (not just ID)
-        const translationUrl = '/items/destinations_translations';
-        const translationParams = {
+        try {
+          const params = {
+            ...this.buildOptimizedParams(options),
+            fields: optimizedFields // Use optimized fields
+          };
+          
+          const response = await this.client.get('/items/destinations', { 
+            params,
+            cancelToken: this.cancelTokenSource.token
+          });
+          
+          const data = response.data?.data || [];
+          
+          // 🚀 MEMORY FIX: Immediate cleanup of response
+          response.data = null;
+          
+          return data;
+        } catch (error) {
+          // Fallback with even more limited fields
+          return await this.getDestinationWithLimitedFields(options);
+        }
+      }
+      
+      const params = {
+        ...this.buildOptimizedParams(options),
+        fields: optimizedFields
+      };
+      
+      const response = await this.client.get('/items/destinations', { 
+        params,
+        cancelToken: this.cancelTokenSource.token
+      });
+      
+      const data = response.data?.data || [];
+      
+      // 🚀 MEMORY FIX: Immediate cleanup
+      response.data = null;
+      
+      return data;
+    } catch (error) {
+      console.error('Error in getDestinations:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 🚀 MEMORY-OPTIMIZED FIELD SELECTION
+   */
+  private getOptimizedFields(fieldType: string): string[] {
+    const baseFields = ['id', 'uuid_id', 'type'];
+    
+    switch (fieldType) {
+      case 'minimal':
+        return [...baseFields, 'translations.destination_name', 'translations.slug_permalink'];
+      case 'sitemap':
+        return ['type', 'translations.slug_permalink'];
+      case 'navigation':
+        return [...baseFields, 'translations.destination_name', 'translations.slug_permalink'];
+      case 'homepage':
+        return [
+          ...baseFields, 'image', 'featured_status',
+          'translations.destination_name', 'translations.slug_permalink'
+        ];
+      default:
+        return [
+          ...baseFields, 'image', 'featured_status',
+          'translations.destination_name', 'translations.slug_permalink', 'translations.seo_title'
+        ];
+    }
+  }
+
+  /**
+   * 🚀 FALLBACK METHOD WITH MINIMAL MEMORY FOOTPRINT
+   */
+  private async getDestinationWithLimitedFields(options: DestinationQueryOptions): Promise<Destination[]> {
+    try {
+      // Step 1: Get only essential translation data
+      const translationResponse = await this.client.get('/items/destinations_translations', {
+        params: {
           filter: { 
             slug_permalink: { _eq: options.slug },
             languages_code: { _eq: options.lang }
           },
-                      fields: [
-              'destinations_id', 'languages_code', 'destination_name', 
-              'slug_permalink', 'seo_title', 'seo_summary', 
-              'description'
-            ]
-        };
-        const translationResponse = await this.client.get(translationUrl, { 
-          params: translationParams
-        });
-        
-        const translationData = translationResponse.data?.data || [];
-        if (translationData.length === 0) {
-          return [];
-        }
-        
-        const translation = translationData[0];
-        const destinationId = translation.destinations_id;
-        
-        // Step 2: Get ONLY base destination data (NO deep relations, NO 403!)
-        const destinationResponse = await this.client.get(`/items/destinations/${destinationId}`, { 
-          params: {
-            fields: ['id', 'uuid_id', 'type', 'image', 'featured_status', 'region_id', 'province_id']
-          }
-        });
-        
-        const baseDestination = destinationResponse.data?.data;
-        if (!baseDestination) {
-          return [];
-        }
-        
-        // Filter by type if specified
-        if (options.type && baseDestination.type !== options.type) {
-          return [];
-        }
-        
-        // Step 3: Combine the two separate results into the expected format
-        const combinedDestination = {
-          ...baseDestination,
-          translations: [translation] // Add the translation data from Step 1
-        };
-        
-        const result = [combinedDestination];
-        
-        return result;
+          fields: ['destinations_id', 'destination_name', 'slug_permalink']
+        },
+        cancelToken: this.cancelTokenSource.token
+      });
+      
+      const translations = translationResponse.data?.data || [];
+      translationResponse.data = null; // Immediate cleanup
+      
+      if (translations.length === 0) {
+        return [];
       }
       
-      // 🎯 For non-slug queries, use optimized params
-      const params = this.buildOptimizedParams(options);
-      const response = await this.client.get('/items/destinations', { params });
-      const data = response.data?.data || [];
+      const translation = translations[0];
       
-      return data;
+      // Step 2: Get minimal destination data
+      const destinationResponse = await this.client.get(`/items/destinations/${translation.destinations_id}`, {
+        params: {
+          fields: ['id', 'uuid_id', 'type', 'featured_status']
+        },
+        cancelToken: this.cancelTokenSource.token
+      });
+      
+      const destination = destinationResponse.data?.data;
+      destinationResponse.data = null; // Immediate cleanup
+      
+      if (!destination) {
+        return [];
+      }
+      
+      // Combine with minimal memory footprint
+      const result = {
+        ...destination,
+        translations: [translation]
+      };
+      
+      return [result];
     } catch (error) {
-      // Silent error handling for destinations
-      
       return [];
     }
   }
@@ -847,9 +892,18 @@ class DirectusWebClient {
    */
   async getArticles(options: ArticleQueryOptions): Promise<Article[] | { articles: Article[], total: number } | Article | null> {
     try {
-      // 🚀 SEPARATE QUERY APPROACH for single articles to avoid 403 errors
+      // 🚀 MEMORY LEAK FIX: Try single query first, fall back to separate queries
       if (options.slug || options.uuid) {
-        return await this.getArticleWithSeparateQueries(options);
+        try {
+          // Try single query first
+          const params = this.buildArticleParams(options);
+          const response = await this.client.get('/items/articles', { params });
+          const articles = response.data?.data || [];
+          return articles.length > 0 ? articles[0] : null;
+        } catch (error) {
+          // Fallback to separate queries only if single query fails
+          return await this.getArticleWithSeparateQueries(options);
+        }
       }
       
       // 🎯 Build optimized query parameters for list queries
@@ -1445,45 +1499,38 @@ export const getSupportedLanguages = async (): Promise<string[]> => {
   }
 };
 
-// 🚀 MEMORY OPTIMIZATION: Use pooled client instead of singleton
-const directusWebClient = {
-  // Proxy all method calls to use pooled client
-  ...DirectusWebClient.prototype,
-  
-  // Override methods to use pooled client
-  getDestinations: (options: any) => DirectusWebClient.getClient(options.lang).getDestinations(options),
-  getArticles: (options: any) => DirectusWebClient.getClient(options.lang).getArticles(options),
-  getCompanies: (options: any) => DirectusWebClient.getClient(options.lang).getCompanies(options),
-  getDestinationsByType: (type: 'region' | 'province' | 'municipality', lang: string) => DirectusWebClient.getClient(lang).getDestinationsByType(type, lang),
-  getHomepageDestinations: (lang: string) => DirectusWebClient.getClient(lang).getHomepageDestinations(lang),
-  getHomepageCompanies: (lang: string) => DirectusWebClient.getClient(lang).getHomepageCompanies(lang),
-  getHomepageArticles: (lang: string) => DirectusWebClient.getClient(lang).getHomepageArticles(lang),
-  getFeaturedDestinations: (lang: string) => DirectusWebClient.getClient(lang).getFeaturedDestinations(lang),
-  getCategories: (lang: string) => DirectusWebClient.getClient(lang).getCategories(lang),
-  getDestinationBySlug: (slug: string, lang: string) => DirectusWebClient.getClient(lang).getDestinationBySlug(slug, lang),
-  getDestinationByUUID: (uuid: string, lang: string) => DirectusWebClient.getClient(lang).getDestinationByUUID(uuid, lang),
-  getArticleBySlug: (slug: string, lang: string) => DirectusWebClient.getClient(lang).getArticleBySlug(slug, lang),
-  getArticleByUUID: (uuid: string, lang: string) => DirectusWebClient.getClient(lang).getArticleByUUID(uuid, lang),
-  getCompanyBySlug: (slug: string, lang: string) => DirectusWebClient.getClient(lang).getCompanyBySlug(slug, lang),
-  getCompanyByUUID: (uuid: string, lang: string) => DirectusWebClient.getClient(lang).getCompanyByUUID(uuid, lang),
-  getCompanyCategories: (lang: string) => DirectusWebClient.getClient(lang).getCompanyCategories(lang),
-  getDestinationsForSitemap: (lang: string) => DirectusWebClient.getClient(lang).getDestinationsForSitemap(lang),
-  getArticlesForSitemap: (lang: string) => DirectusWebClient.getClient(lang).getArticlesForSitemap(lang),
-  getCompaniesForSitemap: () => DirectusWebClient.getClient().getCompaniesForSitemap(),
-  getCategoriesForSitemap: (lang: string) => DirectusWebClient.getClient(lang).getCategoriesForSitemap(lang),
-  get: (url: string, config?: any) => DirectusWebClient.getClient().get(url, config),
-  
-  // Add cleanup methods
-  cleanup: () => DirectusWebClient.globalCleanup(),
-  cleanupOldClients: () => DirectusWebClient.cleanupOldClients(),
-};
+// 🚀 MEMORY-SAFE SINGLETON PATTERN
+class DirectusClientManager {
+  private static instance: DirectusWebClient | null = null;
+  private static createdAt: number = 0;
+  private static readonly MAX_INSTANCE_AGE = 300000; // 5 minutes
 
-// 🚀 MEMORY OPTIMIZATION: Auto-cleanup every 2 minutes
-if (typeof window === 'undefined') {
-  // Only in Node.js environment
-  setInterval(() => {
-    DirectusWebClient.cleanupOldClients();
-  }, 120000); // 2 minutes
+  static getInstance(): DirectusWebClient {
+    const now = Date.now();
+    
+    // Auto-cleanup old instances
+    if (this.instance && (now - this.createdAt) > this.MAX_INSTANCE_AGE) {
+      this.instance.cleanup();
+      this.instance = null;
+    }
+
+    if (!this.instance) {
+      this.instance = new DirectusWebClient();
+      this.createdAt = now;
+    }
+
+    return this.instance;
+  }
+
+  static cleanup() {
+    if (this.instance) {
+      this.instance.cleanup();
+      this.instance = null;
+    }
+    DirectusWebClient.globalCleanup();
+  }
 }
 
-export default directusWebClient; 
+// Export the managed instance
+export default DirectusClientManager.getInstance();
+export { DirectusClientManager }; 
