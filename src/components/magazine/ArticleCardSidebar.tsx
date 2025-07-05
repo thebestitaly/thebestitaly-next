@@ -35,6 +35,7 @@ const ArticleCardSidebar: React.FC<ArticleCardSidebarProps> = ({ article, lang }
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                 sizes="80px"
+                unoptimized={true}
               />
             </div>
           </div>

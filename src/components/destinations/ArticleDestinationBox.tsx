@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import directusWebClient from "@/lib/directus-web";
 import { useSectionTranslations } from "@/hooks/useTranslations";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
+import { useFlags } from "@/hooks/useFlags";
 
 interface ArticleDestinationBoxProps {
   destinationId: string | number;
@@ -12,6 +13,7 @@ interface ArticleDestinationBoxProps {
 
 const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinationId, lang }) => {
   const { t } = useSectionTranslations('navigation', lang);
+  const { getFlagUrl } = useFlags();
   
   const { data: destination, isLoading } = useQuery({
     queryKey: ["destination", destinationId, lang],
@@ -147,14 +149,14 @@ const ArticleDestinationBox: React.FC<ArticleDestinationBoxProps> = ({ destinati
                       onError={(e) => {
                         // Fallback alla bandiera italiana se l'immagine non carica
                         const target = e.target as HTMLImageElement;
-                        target.src = '/images/flags/it.svg';
+                        target.src = getFlagUrl('it');
                         target.className = 'w-8 h-6 object-contain';
                       }}
                     />
                   ) : (
                     // Fallback diretto alla bandiera italiana
                     <img
-                      src="/images/flags/it.svg"
+                      src={getFlagUrl('it')}
                       alt={item.name}
                       className="w-8 h-6 object-contain"
                     />

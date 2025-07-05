@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Search, X, Menu, ChevronDown, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSectionTranslations } from '@/hooks/useTranslations';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
+import { useFlags } from '@/hooks/useFlags';
 import InteractiveMap from './InteractiveMap';
 import SearchBar from '../../components/search/SearchBar';
 import { Destination, Category } from '@/lib/directus-web';
@@ -25,6 +26,9 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
 
   // Hook per le traduzioni del menu con il nuovo sistema
   const { translations: menuTranslations, loading: menuLoading } = useSectionTranslations('menu', lang);
+  
+  // Hook per le bandiere
+  const { getFlagUrl } = useFlags();
 
   // Gestione scroll
   useEffect(() => {
@@ -280,7 +284,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
                   className="flex items-center space-x-2 hover:text-blue-600 transition-colors"
                 >
                   <img
-                    src={`/images/flags/${lang}.svg`}
+                    src={getFlagUrl(lang)}
                     alt=""
                     width={24}
                     height={18}
@@ -425,7 +429,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
                       onClick={() => setIsLanguageModalOpen(true)}
                     >
                       <img
-                        src={`/images/flags/${lang}.svg`}
+                        src={getFlagUrl(lang)}
                         alt=""
                         width={24}
                         height={18}
@@ -467,7 +471,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
                     }`}
                   >
                     <img
-                      src={`/images/flags/${language.flag}.svg`}
+                      src={getFlagUrl(language.flag)}
                       alt=""
                       width={20}
                       height={15}

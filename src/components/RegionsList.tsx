@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import directusWebClient from '../lib/directus-web';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
+import Image from 'next/image';
 
 const RegionsList = () => {
   const { data: regions, isLoading, error } = useQuery({
@@ -32,13 +33,13 @@ const RegionsList = () => {
             <div key={region.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               {region.image && (
                 <div className="relative aspect-[4/3] h-48">
-                  <img 
+                  <Image 
                     src={getOptimizedImageUrl(region.image, 'CARD')}
                     alt={translation?.destination_name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    width="150"
-                    height="100"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                    unoptimized={true}
                   />
                 </div>
               )}

@@ -20,9 +20,10 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, alt, className, com
         <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
           <Image
             src={getOptimizedImageUrl(image.directus_files_id || image, 'CARD')}
-            alt={alt || companyName || `Image ${index + 1}`}
+            alt={`${alt} - ${companyName}`}
             fill
             className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
             unoptimized={true}
           />
         </div>

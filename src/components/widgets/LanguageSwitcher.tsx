@@ -7,6 +7,7 @@ import { useParams, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from "@/lib/languages";
+import { useFlags } from "@/hooks/useFlags";
 
 interface Language {
   code: string;
@@ -24,6 +25,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const params = useParams();
   const pathname = usePathname();
   const currentLang = (params?.lang as string) || "it";
+  const { getFlagUrl } = useFlags();
 
   const getCollectionTypeAndSlug = () => {
     if (!pathname) return null;
@@ -276,13 +278,14 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 className: 'relative w-5 h-4 flex-shrink-0 mr-3 ml-1 mb-1'
               },
               React.createElement(Image, {
-                src: `/images/flags/${language.code}.svg`,
+                src: getFlagUrl(language.code),
                 alt: "",
                 fill: true,
                 className: 'rounded-sm object-cover',
                 sizes: "20px",
                 loading: "lazy",
-                role: "presentation"
+                role: "presentation",
+                unoptimized: true // Disabilita l'ottimizzazione Next.js per le bandiere CDN
               })
             ),
             React.createElement(

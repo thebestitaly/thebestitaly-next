@@ -144,6 +144,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propL
                 className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
                 priority
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                unoptimized={true}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
             </>

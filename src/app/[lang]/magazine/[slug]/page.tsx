@@ -278,11 +278,12 @@ export default async function MagazineArticlePage({ params }: PageProps) {
               <div className="relative aspect-[16/9] md:aspect-[4/3] lg:aspect-[1/1] overflow-hidden rounded-xl md:rounded-2xl">
                 <Image
                   src={getOptimizedImageUrl(article.image, 'HERO_DESKTOP')}
-                  alt={translation?.titolo_articolo || ''}
+                  alt={translation.titolo_articolo}
                   fill
                   className="object-cover"
                   priority
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 50vw"
+                  sizes="(max-width: 768px) 100vw, 80vw"
+                  unoptimized={true}
                 />
               </div>
             </div>

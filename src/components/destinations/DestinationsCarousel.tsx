@@ -130,6 +130,7 @@ const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang, type 
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         priority={currentIndex === 0} // Prioritize loading for first visible set
+                        unoptimized={true}
                       />
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70" />

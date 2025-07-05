@@ -196,6 +196,7 @@ export default function DestinationLayout({
               className="object-cover"
               priority
               sizes="(max-width: 768px) 100vw, 80vw"
+              unoptimized={true}
             />
           </div>
         </div>

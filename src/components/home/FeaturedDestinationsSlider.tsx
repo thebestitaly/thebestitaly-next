@@ -160,6 +160,8 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                   alt={`${destination.translations?.[0]?.destination_name || 'Beautiful destination'} - scenic landscape view`}
                   fill
                   className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 80vw"
+                  unoptimized={true}
                   priority={index === 0}
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
@@ -288,6 +290,8 @@ const FeaturedDestinationsSlider: React.FC<FeaturedDestinationsSliderProps> = ({
                     width={128}
                     height={80}
                     className="object-cover w-full h-full"
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                    unoptimized={true}
                   />
                 )}
                 <div className={`absolute inset-0 bg-black/20 transition-opacity ${

@@ -124,6 +124,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
                             fill
                             className="object-cover"
                             sizes="100vw"
+                            unoptimized={true}
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
@@ -198,6 +199,7 @@ const FeaturedHomepageArticles: React.FC<FeaturedHomepageArticlesProps> = ({ lan
                             fill
                             className="object-cover"
                             sizes="50vw"
+                            unoptimized={true}
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">

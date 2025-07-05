@@ -152,8 +152,9 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                           src={getOptimizedImageUrl(region.image, 'CARD')}
                           alt={`${translation.destination_name} - scenic regional landscape`}
                           fill
-                          sizes="(max-width: 768px) 50vw, 33vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                          unoptimized={true}
                         />
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70" />
                       </div>
@@ -232,8 +233,9 @@ const HomepageDestinationsCarousel: React.FC<HomepageDestinationsCarouselProps> 
                             src={getOptimizedImageUrl(region.image, 'CARD')}
                             alt={`${translation.destination_name} - scenic regional landscape`}
                             fill
-                            sizes="(max-width: 1200px) 33vw, 20vw"
-                            className="object-cover transition-transform duration-700 group-hover:scale-110"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                            unoptimized={true}
                           />
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80 group-hover:to-black/90 transition-all duration-500" />

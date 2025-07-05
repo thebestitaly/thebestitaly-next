@@ -74,7 +74,7 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ initi
                             alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
                             fill
                             className="object-cover"
-                            sizes="100vw"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                             unoptimized={true}
                           />
                         ) : (
@@ -111,7 +111,7 @@ const FeaturedCompaniesSlider: React.FC<FeaturedCompaniesSliderProps> = ({ initi
                             alt={`${company.company_name} - ${translation?.seo_title || 'company image'}`}
                             fill
                             className="object-cover"
-                            sizes="50vw"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                             unoptimized={true}
                           />
                         ) : (
