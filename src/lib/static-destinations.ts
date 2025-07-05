@@ -340,10 +340,19 @@ function getSafeId(value: any): string | null {
     return null;
 }
 
-// Ottieni dettagli destinazione (ULTRA-VELOCE)
+// Ottieni dettagli destinazione (DIRECT DIRECTUS APPROACH)
 export async function getDestinationDetails(slug: string, lang: string, type: 'region' | 'province' | 'municipality'): Promise<Destination | null> {
-  // 🚀 SKIP: Avoid querying non-destination slugs
-  if (slug.includes('.') || slug === 'monitoring' || slug.includes('chrome') || slug.includes('font') || slug.includes('well-known')) {
+  // 🚀 ENHANCED SKIP: Avoid querying non-destination slugs
+  if (slug.includes('.') || 
+      slug === 'monitoring' || 
+      slug.includes('chrome') || 
+      slug.includes('font') || 
+      slug.includes('well-known') ||
+      slug === 'api' || 
+      slug === 'admin' || 
+      slug === 'translations' ||
+      slug.includes('_next') ||
+      slug.includes('favicon')) {
     if (process.env.NODE_ENV === 'development') {
       console.log(`🚫 SKIPPING: Non-destination slug "${slug}"`);
     }
@@ -351,51 +360,8 @@ export async function getDestinationDetails(slug: string, lang: string, type: 'r
   }
   
   try {
-    // La chiamata a loadStaticData qui è commentata perché la funzione non esiste più con questa firma
-    // const staticData = await loadStaticData(`destinations-${lang}`);
-    const filePath = getCacheFileName('destinations', lang);
-    if (!existsSync(filePath)) {
-         console.warn(`File statico non trovato per ${lang}, fallback a Directus per la destinazione ${slug}`);
-         // 🚀 FIXED: Pass type parameter to getDestinations for precise matching
-         const destinations = await directusWebClient.getDestinations({
-           slug,
-           type,
-           lang,
-           fields: 'full',
-           limit: 1
-         });
-         return destinations[0] || null;
-    }
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const staticData = JSON.parse(fileContent);
-
-    if (!staticData) {
-      console.warn(`Dati statici per ${lang} non trovati nel file, fallback a Directus per la destinazione ${slug}`);
-      // 🚀 FIXED: Pass type parameter to getDestinations for precise matching
-      const destinations = await directusWebClient.getDestinations({
-        slug,
-        type,
-        lang,
-        fields: 'full',
-        limit: 1
-      });
-      return destinations[0] || null;
-    }
-    
-    // Correzione del linter: Object.values() restituisce un array su cui possiamo usare .find()
-    const allDetails: Destination[] = Object.values(staticData.data.destinationDetails).flatMap((langDetails: any) => Object.values(langDetails));
-    
-    const destination = allDetails.find(
-      (d: Destination) => d.type === type && d.translations[0]?.slug_permalink === slug
-    );
-
-    if (destination) {
-      console.log(`🚀 STATIC HIT: Dettagli per ${slug} (${lang})`);
-      return destination;
-    }
-
-    console.warn(`Destinazione non trovata nei dati statici: ${slug} (${lang}), fallback a Directus.`);
-    // 🚀 FIXED: Pass type parameter to getDestinations for precise matching
+    // 🚀 DIRECT DIRECTUS APPROACH: Skip static files for now, go directly to Directus
+    console.log(`📝 Direct Directus lookup for destination: ${slug} (${lang}, ${type})`);
     const destinations = await directusWebClient.getDestinations({
       slug,
       type,
@@ -403,19 +369,18 @@ export async function getDestinationDetails(slug: string, lang: string, type: 'r
       fields: 'full',
       limit: 1
     });
-    return destinations[0] || null;
+    
+    if (destinations && destinations.length > 0) {
+      console.log(`✅ Found destination: ${destinations[0].translations[0]?.destination_name}`);
+      return destinations[0];
+    }
+    
+    console.log(`❌ No destination found for slug: ${slug}`);
+    return null;
 
   } catch (error) {
-    console.error(`Errore nel caricare i dettagli della destinazione ${slug}:`, error);
-    // 🚀 FIXED: Pass type parameter to getDestinations for precise matching
-    const destinations = await directusWebClient.getDestinations({
-      slug,
-      type,
-      lang,
-      fields: 'full',
-      limit: 1
-    });
-    return destinations[0] || null;
+    console.error(`❌ Error loading destination ${slug}:`, error);
+    return null;
   }
 }
 

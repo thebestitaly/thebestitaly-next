@@ -87,7 +87,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "url": "https://thebestitaly.eu",
         "logo": {
           "@type": "ImageObject",
-          "url": `${baseUrl}/images/logo.png`,
+          "url": `https://cdn.thebestitaly.eu/assets/4f65540f-332a-4ec3-b9fe-8185c06ce8de`,
           "width": 200,
           "height": 60
         }
@@ -190,7 +190,7 @@ export default async function MagazineArticlePage({ params }: PageProps) {
       "url": "https://thebestitaly.eu",
       "logo": {
         "@type": "ImageObject",
-        "url": `${baseUrl}/images/logo.png`,
+        "url": `https://cdn.thebestitaly.eu/assets/4f65540f-332a-4ec3-b9fe-8185c06ce8de`,
         "width": 200,
         "height": 60
       }

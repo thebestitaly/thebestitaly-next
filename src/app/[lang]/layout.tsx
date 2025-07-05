@@ -18,8 +18,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   // 🛡️ LANG VALIDATION: Ensure we have a valid language
   const validLang = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tr', 'nl', 'ro', 'sv', 'pl', 'vi', 'id', 'el', 'uk', 'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja', 'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg', 'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca', 'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is', 'sw', 'zh-tw', 'no'].includes(lang) ? lang : 'it';
 
-  console.log(`🌍 [LAYOUT] Loading layout for language: ${validLang}`);
-
+ 
   // Fetch data for the header on the server with fallback
   let destinations = [];
   let categories = [];

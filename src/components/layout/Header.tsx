@@ -119,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
             {/* Logo */}
             <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
             <img
-              src="/images/logo-black.webp"
+              src="https://cdn.thebestitaly.eu/assets/4f65540f-332a-4ec3-b9fe-8185c06ce8de"
               alt={`The Best Italy ${lang}`}
               width={105}
               height={60}
@@ -305,7 +305,7 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
                 <div className="h-20 border-b border-gray-100 flex items-center justify-between px-4">
                   <Link href={lang ? `/${lang}/` : "/"} className="flex-shrink-0">
                   <img
-                    src="/images/logo-black.webp"
+                    src="https://cdn.thebestitaly.eu/assets/4f65540f-332a-4ec3-b9fe-8185c06ce8de"
                     alt={`The Best Italy ${lang}`}
                     width={70}
                     height={40}

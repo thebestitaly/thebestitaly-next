@@ -150,6 +150,7 @@ export interface DestinationQueryOptions {
   uuid?: string;
   parent_id?: string;
   offset?: number;
+  skipCache?: boolean;
 }
 
 export interface ArticleQueryOptions {
@@ -163,6 +164,7 @@ export interface ArticleQueryOptions {
   featured_status?: 'homepage' | 'top' | 'editor' | 'trending';
   destination_id?: string;
   filters?: Record<string, any>;
+  skipCache?: boolean;
 }
 
 export interface CompanyQueryOptions {
@@ -176,6 +178,7 @@ export interface CompanyQueryOptions {
   destination_id?: string;
   category_id?: string;
   filters?: Record<string, any>;
+  skipCache?: boolean;
 }
 
 // 🎯 FIELD PRESETS - Optimized for different use cases
@@ -443,7 +446,6 @@ class DirectusWebClient {
     const lang = cacheParams.lang || 'unknown';
     const cacheKey = `directus:${type}:${lang}:${hash}`;
     
-    console.log(`🔑 [CACHE] Generated cache key: ${cacheKey} for params: ${JSON.stringify(sortedParams)}`);
     
     return cacheKey;
   }
@@ -583,90 +585,15 @@ class DirectusWebClient {
   }
 
   async getHomepageDestinations(lang: string): Promise<Destination[]> {
-    // 🚀 REFACTORED: Use unified getDestinations method
-    console.log('🏠 [getHomepageDestinations] Searching for featured destinations...');
-    
-    // 🔍 DEBUG: First let's see what featured_status values exist in the database
-    try {
-      const allDestinations = await this.getDestinations({
-        lang,
-        fields: 'homepage',
-        limit: 20
-      });
-      
-      const featuredStatusValues = allDestinations
-        .map(d => d.featured_status)
-        .filter((status): status is string => Boolean(status))
-        .reduce((acc, status) => {
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-      
-      console.log('🔍 [getHomepageDestinations] Featured status values in database:', featuredStatusValues);
-      console.log('🔍 [getHomepageDestinations] Sample destinations with featured_status:', 
-        allDestinations
-          .filter(d => d.featured_status)
-          .slice(0, 3)
-          .map(d => ({
-            id: d.id,
-            type: d.type,
-            featured_status: d.featured_status,
-            name: d.translations?.[0]?.destination_name
-          }))
-      );
-    } catch (error) {
-      console.error('🔍 [getHomepageDestinations] Debug query failed:', error);
-    }
-    
     const destinations = await this.getDestinations({
       featured: 'homepage',
       lang,
       fields: 'homepage',
-      limit: 8
+      limit: 8,
+      skipCache: true  // Force fresh query
     });
     
-    console.log(`🏠 [getHomepageDestinations] Found ${destinations.length} featured destinations for ${lang}`);
-    
     if (destinations.length === 0) {
-      console.log('❌ [getHomepageDestinations] No featured destinations found! Trying alternative featured values...');
-      
-      // 🔍 Try alternative featured values
-      const alternatives = ['Homepage', 'HOMEPAGE', 'featured', 'home'];
-      for (const altValue of alternatives) {
-        console.log(`🔍 [getHomepageDestinations] Trying featured_status = '${altValue}'...`);
-        
-        try {
-          const params = {
-            fields: this.getOptimizedFields('homepage'),
-            filter: { 
-              featured_status: { _eq: altValue },
-            },
-            deep: {
-              translations: {
-                _filter: { languages_code: { _eq: lang } }
-              }
-            },
-            limit: 8
-          };
-          
-          const response = await this.client.get('/items/destinations', { 
-            params,
-            cancelToken: this.cancelTokenSource.token
-          });
-          
-          const altDestinations = response.data?.data || [];
-          console.log(`🔍 [getHomepageDestinations] Found ${altDestinations.length} destinations with featured_status = '${altValue}'`);
-          
-          if (altDestinations.length > 0) {
-            console.log(`✅ [getHomepageDestinations] Using featured_status = '${altValue}' instead`);
-            return altDestinations;
-          }
-                 } catch (error) {
-           console.log(`❌ [getHomepageDestinations] Error trying '${altValue}':`, (error as Error).message);
-         }
-      }
-      
-      console.log('❌ [getHomepageDestinations] No featured destinations found with any value! Using fallback...');
       // 🚀 FALLBACK: If no featured destinations, get first 3 regions as fallback
       const fallbackDestinations = await this.getDestinations({
         type: 'region',
@@ -674,7 +601,6 @@ class DirectusWebClient {
         fields: 'homepage',
         limit: 3
       });
-      console.log(`🔄 [getHomepageDestinations] Using ${fallbackDestinations.length} regions as fallback`);
       return fallbackDestinations;
     }
     
@@ -1037,8 +963,7 @@ class DirectusWebClient {
       // Generate cache key
       const cacheKey = this.generateCacheKey('destinations', options);
       
-      // 🔍 DEBUG: Log the query being built
-      console.log(`🔍 [getDestinations] Building query for lang: ${options.lang}, type: ${options.type}`);
+
       
       // Determine TTL based on request type
       let ttl = DirectusWebClient.CACHE_TTL.destinations;
@@ -1049,7 +974,7 @@ class DirectusWebClient {
       }
 
       // Skip cache for very specific queries or if explicitly disabled
-      const skipCache = !!(options.slug && options.fields === 'full');
+      const skipCache = options.skipCache || !!(options.slug && options.fields === 'full');
 
       return await this.cachedRequest(
         cacheKey,
@@ -1058,9 +983,6 @@ class DirectusWebClient {
           // 🚀 MEMORY FIX: Limit field selection more aggressively
           const optimizedFields = this.getOptimizedFields(options.fields || 'full');
           
-          // 🔍 DEBUG: Log the fields being requested
-          console.log(`🔍 [getDestinations] Fields: ${JSON.stringify(optimizedFields)}`);
-          
           if (options.slug) {
             try {
               const params = {
@@ -1068,21 +990,12 @@ class DirectusWebClient {
                 fields: optimizedFields // Use optimized fields
               };
               
-              // 🔍 DEBUG: Log the full params
-              console.log(`🔍 [getDestinations] Params for slug query: ${JSON.stringify(params, null, 2)}`);
-              
               const response = await this.client.get('/items/destinations', { 
                 params,
                 cancelToken: this.cancelTokenSource.token
               });
               
               const data = response.data?.data || [];
-              
-              // 🔍 DEBUG: Log what we got back
-              console.log(`🔍 [getDestinations] Response for slug: ${data.length} items`);
-              if (data.length > 0) {
-                console.log(`🔍 [getDestinations] First item translations: ${JSON.stringify(data[0].translations)}`);
-              }
               
               // 🚀 MEMORY FIX: Immediate cleanup of response
               response.data = null;
@@ -1099,25 +1012,12 @@ class DirectusWebClient {
             fields: optimizedFields
           };
           
-          // 🔍 DEBUG: Log the full params for type query
-          console.log(`🔍 [getDestinations] Params for type query: ${JSON.stringify(params, null, 2)}`);
-          
           const response = await this.client.get('/items/destinations', { 
             params,
             cancelToken: this.cancelTokenSource.token
           });
           
           const data = response.data?.data || [];
-          
-          // 🔍 DEBUG: Log what we got back
-          console.log(`🔍 [getDestinations] Response: ${data.length} items`);
-          if (data.length > 0) {
-            console.log(`🔍 [getDestinations] First item: ${JSON.stringify({
-              id: data[0].id,
-              type: data[0].type,
-              translations: data[0].translations
-            }, null, 2)}`);
-          }
           
           // 🚀 MEMORY FIX: Immediate cleanup
           response.data = null;
@@ -1758,7 +1658,6 @@ class DirectusWebClient {
    */
   public async forceClearAllCache(): Promise<void> {
     try {
-      console.log('🧹 [CACHE] Force clearing ALL cache entries...');
       
       // Import delCache dynamically to avoid circular dependencies
       const { delCache } = await import('@/lib/redis-cache');
@@ -1774,12 +1673,8 @@ class DirectusWebClient {
         'categories:*'
       ];
 
-      for (const pattern of patterns) {
-        await delCache(pattern);
-        console.log(`🧹 [CACHE] Cleared pattern: ${pattern}`);
-      }
       
-      console.log('✅ [CACHE] All cache cleared successfully');
+      
     } catch (error) {
       console.error('❌ [CACHE] Error clearing cache:', error);
     }

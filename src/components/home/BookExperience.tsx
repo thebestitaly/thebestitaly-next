@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useSectionTranslations } from '@/hooks/useTranslations';
 
-const BookExperienceImage = "/images/book-experience.webp";
+const BookExperienceImage = "https://cdn.thebestitaly.eu/assets/7e22ac3c-51bd-47d5-90be-19b0a7c256fb";
 
 const BookExperience: React.FC = () => {
   const params = useParams<{ lang: string }>();
@@ -24,6 +24,7 @@ const BookExperience: React.FC = () => {
         sizes="100vw"
         className="object-cover"
         quality={85}
+        unoptimized={true}
       />
 
       <div className="absolute inset-0 bg-black/40" />

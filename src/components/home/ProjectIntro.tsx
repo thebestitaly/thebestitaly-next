@@ -5,8 +5,8 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useSectionTranslations } from '@/hooks/useTranslations';
 
-const FlorenceImage = '/images/home/florence.webp';
-const SanPietroImage = '/images/home/san-pietro.webp';
+const FlorenceImage = 'https://cdn.thebestitaly.eu/assets/1fb9420d-60d6-48c7-8cdc-285d337fc224';
+const SanPietroImage = 'https://cdn.thebestitaly.eu/assets/b460110e-459e-4692-a083-a68cc80d4801';
 
 const ProjectIntro: React.FC = () => {
   const params = useParams();
@@ -27,7 +27,8 @@ const ProjectIntro: React.FC = () => {
               alt="Florence scenic cityscape with Duomo" 
               fill
               sizes="(max-width: 768px) 50vw, 25vw"
-              className="object-cover rounded-3xl shadow-lg" 
+              className="object-cover rounded-3xl shadow-lg"
+              unoptimized={true}
             />
           </div>
           {/* Immagine anteriore (San Pietro) */}
@@ -37,7 +38,8 @@ const ProjectIntro: React.FC = () => {
               alt="St. Peter's Basilica in Vatican City" 
               fill
               sizes="(max-width: 768px) 80vw, 40vw"
-              className="object-cover rounded-3xl shadow-2xl" 
+              className="object-cover rounded-3xl shadow-2xl"
+              unoptimized={true}
             />
           </div>
         </div>
@@ -81,7 +83,8 @@ const ProjectIntro: React.FC = () => {
               alt="St. Peter's Basilica in Vatican City" 
               fill
               sizes="50vw"
-              className="object-cover" 
+              className="object-cover"
+              unoptimized={true}
             />
           </div>
           <div className="relative h-64 rounded-xl overflow-hidden">
@@ -90,7 +93,8 @@ const ProjectIntro: React.FC = () => {
               alt="Florence scenic cityscape with Duomo" 
               fill
               sizes="50vw"
-              className="object-cover" 
+              className="object-cover"
+              unoptimized={true}
             />
           </div>
         </div>
