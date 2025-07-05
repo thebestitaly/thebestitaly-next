@@ -104,10 +104,9 @@ const Header: React.FC<HeaderProps> = ({ lang, destinations, categories }) => {
   ];
 
   const handleLanguageChange = (newLang: string) => {
-    const currentPath = window.location.pathname;
-    const pathParts = currentPath.split('/');
-    pathParts[1] = newLang; // Replace the language part
-    const newPath = pathParts.join('/');
+    // 🚨 TEMPORARY FIX: All language links point to homepage
+    // TODO: Later implement proper slug translation from database
+    const newPath = `/${newLang}`;
     window.location.href = newPath;
     setIsLanguageModalOpen(false);
     setIsMobileMenuOpen(false);

@@ -229,35 +229,9 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       'div',
       { className: 'flex flex-wrap gap-2' },
       languages.map((language) => {
-        let newPath;
-        
-        if (!pageInfo || !pageInfo.pageType) {
-          newPath = `/${language.code}`;
-        } else if (pageInfo.isDestination) {
-          const destinationLink = translatedSlugs?.[language.code];
-          if (destinationLink) {
-            // Per le destinazioni, translatedSlugs ora contiene già il link completo
-            newPath = destinationLink;
-          } else {
-            newPath = pathname ? `/${language.code}${pathname.substring(currentLang.length + 1)}` : `/${language.code}`;
-          }
-        } else if (pageInfo.pageType === 'magazine' && translatedSlugs) {
-          const slug = translatedSlugs[language.code];
-          if (slug) {
-            newPath = `/${language.code}/magazine/${slug}`;
-          } else {
-            newPath = `/${language.code}/magazine/${pageInfo.slug}`;
-          }
-        } else if (pageInfo.pageType === 'poi' && translatedSlugs) {
-          const slug = translatedSlugs[language.code];
-          if (slug) {
-            newPath = `/${language.code}/poi/${slug}`;
-          } else {
-            newPath = `/${language.code}/poi/${pageInfo.slug}`;
-          }
-        } else {
-          newPath = pathname ? `/${language.code}${pathname.substring(currentLang.length + 1)}` : `/${language.code}`;
-        }
+        // 🚨 TEMPORARY FIX: All language links point to homepage
+        // TODO: Later implement proper slug translation from database
+        let newPath = `/${language.code}`;
 
         const isCurrentLang = currentLang === language.code;
 
