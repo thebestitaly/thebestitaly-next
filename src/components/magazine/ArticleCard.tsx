@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Article } from "@/lib/directus";
+import { Article } from "@/lib/directus-web";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface ArticleCardProps {

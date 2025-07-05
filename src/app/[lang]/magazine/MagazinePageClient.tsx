@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Image from "next/image";
-import { Category } from "@/lib/directus";
+import { Category } from "@/lib/directus-web";
 
 interface MagazinePageClientProps {
   lang: string;

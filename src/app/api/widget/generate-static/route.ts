@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 
 export async function POST(request: NextRequest) {
     try {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         try {
             if (type === 'company') {
                 // Per le aziende, ottieni tutti i dati con tutte le traduzioni
-                const companyResponse = await directusClient.get(`/items/companies/${contentId}`, {
+                const companyResponse = await directusWebClient.get(`/items/companies/${contentId}`, {
                     params: {
                         'fields[]': [
                             'id',
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
                 
             } else if (type === 'destination') {
                 // Per le destinazioni, ottieni tutti i dati con tutte le traduzioni
-                const destinationResponse = await directusClient.get(`/items/destinations/${contentId}`, {
+                const destinationResponse = await directusWebClient.get(`/items/destinations/${contentId}`, {
                     params: {
                         'fields[]': [
                             'id',
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
                 
             } else if (type === 'article') {
                 // Per gli articoli, ottieni tutti i dati con tutte le traduzioni
-                const articleResponse = await directusClient.get(`/items/articles/${contentId}`, {
+                const articleResponse = await directusWebClient.get(`/items/articles/${contentId}`, {
                     params: {
                         'fields[]': [
                             'id',

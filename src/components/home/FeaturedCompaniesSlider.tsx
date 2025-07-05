@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
-import { Company } from '@/lib/directus'; // Import tipo
+import { Company } from '@/lib/directus-web'; // Import tipo
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface FeaturedCompaniesSliderProps {

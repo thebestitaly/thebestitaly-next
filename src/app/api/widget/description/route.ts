@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 
 interface DescriptionParams {
   type: 'articolo' | 'destinazione' | 'azienda';
@@ -110,9 +110,9 @@ async function getDestinationDescription(uuid: string, language: string): Promis
     } else {
       // Prova a trovare la destinazione con uuid_id reale
       const [regions, provinces, municipalities] = await Promise.all([
-        directusClient.getDestinations({ type: 'region', lang: language }),
-        directusClient.getDestinations({ type: 'province', lang: language }),
-        directusClient.getDestinations({ type: 'municipality', lang: language })
+        directusWebClient.getDestinations({ type: 'region', lang: language }),
+        directusWebClient.getDestinations({ type: 'province', lang: language }),
+        directusWebClient.getDestinations({ type: 'municipality', lang: language })
       ]);
       
       const allDestinations = [...regions, ...provinces, ...municipalities];
@@ -128,7 +128,7 @@ async function getDestinationDescription(uuid: string, language: string): Promis
       // Chiamata diretta a Directus per caricare la description completa
       console.log(`📖 Loading full description for destination ${destinationType}-${destinationId}`);
       
-      const response = await directusClient.get('/items/destinations', {
+      const response = await directusWebClient.get('/items/destinations', {
         params: {
           'filter[id][_eq]': destinationId,
           'fields[]': [
@@ -165,7 +165,8 @@ async function getCompanyDescription(uuid: string, language: string): Promise<st
     console.log(`🔍 Looking for company with identifier: ${uuid}`);
     
     // Usa la stessa funzione che funziona in search
-    const allCompanies = await directusClient.getCompaniesForListing(language, {});
+    const allCompaniesResult = await directusWebClient.getCompanies({ lang: language, filters: {} });
+    const allCompanies = Array.isArray(allCompaniesResult) ? allCompaniesResult : (allCompaniesResult ? [allCompaniesResult] : []);
     
     let company;
     
@@ -184,7 +185,7 @@ async function getCompanyDescription(uuid: string, language: string): Promise<st
 
     if (company) {
       const translation = company?.translations?.[0];
-      const description = translation?.description || company?.description || 'Eccellenza italiana di qualità premium.';
+      const description = translation?.description || 'Eccellenza italiana di qualità premium.';
       console.log(`✅ Found company description, length: ${description.length}`);
       return description;
     } else {
@@ -199,7 +200,7 @@ async function getCompanyDescription(uuid: string, language: string): Promise<st
 
 async function getArticleDescription(uuid: string, language: string): Promise<string> {
   try {
-    const response = await directusClient.get('/items/articles', {
+    const response = await directusWebClient.get('/items/articles', {
       params: {
         'filter[uuid_id][_eq]': uuid,
         'fields[]': [

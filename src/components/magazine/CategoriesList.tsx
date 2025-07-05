@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 import { useSectionTranslations } from '@/hooks/useTranslations';
-import { Category } from '@/lib/directus';
+import { Category } from '@/lib/directus-web';
 
 interface CategoriesListProps {
   lang: string;

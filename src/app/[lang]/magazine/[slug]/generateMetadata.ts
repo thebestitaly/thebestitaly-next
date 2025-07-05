@@ -1,13 +1,13 @@
 // app/[lang]/magazine/[slug]/generateMetadata.ts
 import { Metadata } from 'next';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 
 export async function generateMetadata({ 
   params 
 }: { 
   params: { lang: string; slug: string } 
 }): Promise<Metadata> {
-  const article = await directusClient.getArticleBySlug(params.slug, params.lang);
+  const article = await directusWebClient.getArticleBySlug(params.slug, params.lang);
   const translation = article?.translations[0];
 
   if (!translation) {

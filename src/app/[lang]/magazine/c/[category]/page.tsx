@@ -1,7 +1,7 @@
 // src/app/[lang]/magazine/c/[category]/page.tsx
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 import MagazineCategoryPageClient from './MagazineCategoryPageClient';
 
@@ -19,9 +19,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     // Get categories and find the one matching the slug
-    const categories = await directusClient.getCategories(lang);
-    const categoryInfo = categories.find(cat => 
-      cat.translations.some(t => t.slug_permalink === category)
+    const categories = await directusWebClient.getCategories(lang);
+    const categoryInfo = categories.find((cat: any) => 
+      cat.translations.some((t: any) => t.slug_permalink === category)
     );
     
     const translation = categoryInfo?.translations?.[0];

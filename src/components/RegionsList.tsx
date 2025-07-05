@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import directusClient from '../lib/directus';
+import directusWebClient from '../lib/directus-web';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 const RegionsList = () => {
   const { data: regions, isLoading, error } = useQuery({
     queryKey: ['regions', 'it'],
-    queryFn: () => directusClient.getDestinationsByType('region', 'it')
+    queryFn: () => directusWebClient.getDestinationsByType('region', 'it')
   });
 
   if (isLoading) {

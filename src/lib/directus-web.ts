@@ -736,11 +736,8 @@ class DirectusWebClient {
     
     // Featured status filtering
     if (options.featured_status) {
-      if (options.featured_status === 'homepage') {
-        filters.featured_status = { _in: ['homepage', 'top'] };
-      } else {
-        filters.featured_status = { _eq: options.featured_status };
-      }
+      // Be more specific - only get exact featured status
+      filters.featured_status = { _eq: options.featured_status };
     }
     
     // Category filtering

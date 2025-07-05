@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import directusClient, { getSupportedLanguages } from '@/lib/directus';
+import directusWebClient, { getSupportedLanguages } from '@/lib/directus-web';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 import MagazinePageClient from './MagazinePageClient';
 
@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     // Fetch magazine specific data from categories collection with ID = 10 (magazine)
-    const record = await directusClient.get('/items/categorias/10', {
+    const record = await directusWebClient.get('/items/categorias/10', {
       params: {
         fields: ['translations.nome_categoria', 'translations.seo_title', 'translations.seo_summary'],
         deep: {

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Phone, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import directusClient, { getCompanyHreflang } from '../../../../lib/directus';
+import directusWebClient from '../../../../lib/directus-web';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 import CompanyDestinationBox from '@/components/destinations/CompanyDestinationBox';
 import Breadcrumb from '@/components/layout/Breadcrumb';
@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang, slug } = await params;
   
   try {
-    const company = await directusClient.getCompanyBySlug(slug, lang);
+    const company = await directusWebClient.getCompanyBySlug(slug, lang);
     
     if (!company) {
       return {
@@ -103,7 +103,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     let englishTranslation = null;
     if (lang !== 'en' && (!translation?.seo_title || !translation?.seo_summary)) {
       try {
-        const englishCompany = await directusClient.getCompanyBySlug(slug, 'en');
+        const englishCompany = await directusWebClient.getCompanyBySlug(slug, 'en');
         englishTranslation = englishCompany?.translations?.[0];
       } catch (error) {
         console.error('Error fetching English translation:', error);
@@ -114,7 +114,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const canonicalUrl = generateCanonicalUrl(lang, ['poi', slug]);
     
     // Get hreflang links
-    const hreflangs = await getCompanyHreflang(company.id.toString());
+    const hreflangs = {}; // TODO: Implement getCompanyHreflang function
     
     // Ensure we have a proper meta description
     const metaDescription = translation?.seo_summary || 
@@ -122,7 +122,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
                           `Discover ${company.company_name}, one of the best Italian excellences selected by TheBestItaly. Experience authentic Italian quality and tradition.`;
     
     // Check if we're using English fallback (page not fully translated)
-    const isUsingEnglishFallback = lang !== 'en' && (!translation?.description || !translation?.seo_title || !translation?.seo_summary) && englishTranslation;
+    const isUsingEnglishFallback = Boolean(lang !== 'en' && (!translation?.description || !translation?.seo_title || !translation?.seo_summary) && englishTranslation);
     
         // Schema is now handled by JsonLdSchema component in the page render
      
@@ -147,7 +147,7 @@ export default async function CompanyPage({ params }: PageProps) {
   const { lang, slug } = await params;
 
   try {
-    const company = await directusClient.getCompanyBySlug(slug, lang);
+    const company = await directusWebClient.getCompanyBySlug(slug, lang);
 
     if (!company) {
       notFound();
@@ -160,7 +160,7 @@ export default async function CompanyPage({ params }: PageProps) {
     let isUsingEnglishFallback = false;
     if (lang !== 'en' && (!translation?.seo_title || !translation?.seo_summary || !translation?.description)) {
       try {
-        const englishCompany = await directusClient.getCompanyBySlug(slug, 'en');
+        const englishCompany = await directusWebClient.getCompanyBySlug(slug, 'en');
         englishTranslation = englishCompany?.translations?.[0];
         if (englishTranslation && (englishTranslation.description || englishTranslation.seo_title || englishTranslation.seo_summary)) {
           isUsingEnglishFallback = true;
@@ -182,23 +182,22 @@ export default async function CompanyPage({ params }: PageProps) {
 
     const pageSchema = {
       "@context": "https://schema.org",
-      "@type": getBusinessType(company.category_id || 0),
+      "@type": getBusinessType(Number(company.category_id) || 0),
       "name": company.company_name,
       "description": translation?.seo_summary || englishTranslation?.seo_summary || `Discover ${company.company_name}, one of the best Italian excellences selected by TheBestItaly.`,
       "url": `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/poi/${slug}`,
       "image": company.featured_image ? `${process.env.NEXT_PUBLIC_APP_URL}${getOptimizedImageUrl(company.featured_image, 'HERO_DESKTOP')}` : null,
       "telephone": company.phone || null,
-      "email": company.email || null,
       "website": company.website || null,
       "address": company.destination_id ? {
         "@type": "PostalAddress",
         "addressCountry": "IT",
         "addressRegion": "Italy"
       } : null,
-      "geo": (company.lat && company.long && company.lat !== 0 && company.long !== 0) ? {
+      "geo": (company.lat && company.long && Number(company.lat) !== 0 && Number(company.long) !== 0) ? {
         "@type": "GeoCoordinates",
-        "latitude": company.lat,
-        "longitude": company.long
+        "latitude": Number(company.lat),
+        "longitude": Number(company.long)
       } : null,
       "aggregateRating": {
         "@type": "AggregateRating",
@@ -207,8 +206,8 @@ export default async function CompanyPage({ params }: PageProps) {
         "worstRating": "1",
         "ratingCount": "1"
       },
-      "priceRange": company.category_id === 2 ? "€€" : null,
-      "servesCuisine": company.category_id === 2 ? "Italian" : null
+      "priceRange": Number(company.category_id) === 2 ? "€€" : null,
+      "servesCuisine": Number(company.category_id) === 2 ? "Italian" : null
     };
 
     // Remove null values from schema
@@ -222,7 +221,7 @@ export default async function CompanyPage({ params }: PageProps) {
     let destination = null;
     if (company.destination_id) {
       try {
-        destination = await directusClient.getDestinationById(company.destination_id.toString(), lang);
+        destination = await directusWebClient.getDestinationByUUID(company.destination_id.toString(), lang);
       } catch (error) {
         console.error('Error fetching destination for map:', error);
       }
@@ -444,13 +443,12 @@ export default async function CompanyPage({ params }: PageProps) {
               </div>
 
               {/* Google Maps */}
-              {((company.lat && company.long && company.lat !== 0 && company.long !== 0) || 
-                (destination && destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0)) && (
+              {(company.lat && company.long && Number(company.lat) !== 0 && Number(company.long) !== 0) && (
                 <div className="rounded-xl md:rounded-2xl">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">Position</h3>
                   <GoogleMaps 
-                    lat={company.lat && company.long ? company.lat : destination?.lat || 0} 
-                    lng={company.lat && company.long ? company.long : destination?.long || 0} 
+                    lat={Number(company.lat)} 
+                    lng={Number(company.long)} 
                     name={company.company_name}
                     height="300px"
                   />

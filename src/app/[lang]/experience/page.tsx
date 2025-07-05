@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 import { getTranslationsForSection } from '@/lib/translations-server';
 import ExperienceClientComponent from './ExperienceClientComponent';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   try {
     // Fetch experience specific data from titles collection with ID = 4 (experience)
-    const record = await directusClient.get('/items/titles/2', {
+    const record = await directusWebClient.get('/items/titles/2', {
       params: {
         fields: ['translations.title', 'translations.seo_title', 'translations.seo_summary'],
         deep: {

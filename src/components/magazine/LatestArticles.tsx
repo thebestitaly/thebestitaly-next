@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import directusClient from "../../lib/directus";
+import directusWebClient from "../../lib/directus-web";
 import ArticleGrid from "./ArticleGrid";
 
 interface LatestArticlesProps {

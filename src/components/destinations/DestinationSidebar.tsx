@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
-import { DirectusItem, Destination } from "@/lib/directus";
+import { Destination } from "@/lib/directus-web";
 
 interface DestinationSidebarProps {
   destinations: { id: string; name: string; slug: string }[];
@@ -14,61 +14,7 @@ interface DestinationSidebarProps {
   destinationType: "region" | "province" | "municipality";
 }
 
-// Componente per renderizzare una singola destinazione nella sidebar
-const DestinationItem: React.FC<{
-  destination: DirectusItem;
-  link: string;
-}> = ({ destination, link }) => {
-  const translation = destination.translations?.[0];
-  if (!translation) return null;
-
-  return (
-    <Link
-      href={link}
-      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-    >
-      {destination.image && (
-        <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-          <img
-            src={getOptimizedImageUrl(destination.image, "THUMBNAIL")}
-            alt={translation.destination_name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-gray-900 text-sm">
-          {translation.destination_name}
-        </h4>
-      </div>
-    </Link>
-  );
-};
-
-// Sezione della Sidebar (es. "Regione", "Altre Province")
-const SidebarSection: React.FC<{
-  title: string;
-  items?: DirectusItem[];
-  generateLink: (item: DirectusItem) => string;
-}> = ({ title, items, generateLink }) => {
-  if (!items || items.length === 0) return null;
-
-  return (
-    <div>
-      <h3 className="text-lg font-bold mb-4">{title}</h3>
-      <div className="space-y-2">
-        {items.map((item) => (
-          <DestinationItem
-            key={item.id}
-            destination={item}
-            link={generateLink(item)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
+// Componenti helper rimossi - non utilizzati nel componente principale
 
 const DestinationSidebar: React.FC<DestinationSidebarProps> = ({
   destinations,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 
 export async function GET(
   request: NextRequest,
@@ -16,7 +16,7 @@ export async function GET(
     
     // Dobbiamo creare anche getCompanyByUUID in directus.ts
     // Per ora usiamo una query diretta
-    const response = await directusClient.get('/items/companies', {
+    const response = await directusWebClient.get('/items/companies', {
       params: {
         'filter[uuid_id][_eq]': uuid,
         'fields': [

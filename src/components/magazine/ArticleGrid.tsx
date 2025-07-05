@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Article } from "@/lib/directus";
+import { Article } from "@/lib/directus-web";
 import ArticleCard from "./ArticleCard";
 
 interface ArticleGridProps {

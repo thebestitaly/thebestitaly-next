@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import directusClient from "@/lib/directus";
+import directusWebClient from "@/lib/directus-web";
 import { useSectionTranslations } from "@/hooks/useTranslations";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 

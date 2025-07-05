@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Play } from 'lucide-react';
 import { getOptimizedImageUrl } from '../../lib/imageUtils';
-import { Destination } from '@/lib/directus'; // Aggiungiamo il tipo Destination
+import { Destination } from '@/lib/directus-web'; // Aggiungiamo il tipo Destination
 
 interface FeaturedDestinationsSliderProps {
   className?: string;

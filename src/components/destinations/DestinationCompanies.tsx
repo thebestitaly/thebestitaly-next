@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Phone, Mail, ExternalLink, Building2, Star } from "lucide-react";
-import directusClient from "@/lib/directus";
+import directusWebClient from "@/lib/directus-web";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 interface DestinationCompaniesProps {
@@ -39,7 +39,10 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
       const idString = String(destinationId);
       console.log('🔧 Converting destinationId to string:', { original: destinationId, converted: idString });
       
-      const result = await directusClient.getCompaniesByDestination(idString, lang, destinationType);
+      const result = await directusWebClient.getCompanies({
+        destination_id: idString,
+        lang: lang
+      });
       return result;
     },
     enabled: !!destinationId && typeof destinationId !== 'undefined',
@@ -93,7 +96,10 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
     );
   }
 
-  if (!companies?.length) {
+  // Ensure companies is always an array
+  const companiesArray = Array.isArray(companies) ? companies : [];
+
+  if (!companiesArray?.length) {
     return null;
   }
 
@@ -113,13 +119,13 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
           </div>
         </div>
         <div className="bg-blue-100 text-blue-800 text-sm font-semibold px-4 py-2 rounded-full">
-          {companies.length} {companies.length === 1 ? 'azienda' : 'aziende'}
+          {companiesArray.length} {companiesArray.length === 1 ? 'azienda' : 'aziende'}
         </div>
       </div>
 
       {/* Grid delle companies */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-        {companies.map((company: any) => {
+        {companiesArray.map((company: any) => {
           const translation = company.translations?.[0];
 
           return (

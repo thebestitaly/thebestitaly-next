@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '../../../../lib/directus';
+import directusWebClient from '../../../../lib/directus-web';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     console.log('🔥 [HOMEPAGE ARTICLES API] Fetching for lang:', lang);
     
     // Direct call - cache managed at Redis layer
-    const articles = await directusClient.getHomepageArticles(lang);
+    const articles = await directusWebClient.getHomepageArticles(lang);
     
     console.log('📊 [HOMEPAGE ARTICLES API] Raw articles from Directus:', articles?.length || 0);
     

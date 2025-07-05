@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getOptimizedImageUrl } from '../../lib/imageUtils';
-import { Destination } from '@/lib/directus';
+import { Destination } from '@/lib/directus-web';
 
 interface HomepageDestinationsCarouselProps {
   lang: string;

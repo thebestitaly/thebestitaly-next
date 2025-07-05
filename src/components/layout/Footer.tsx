@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import LanguageSwitcher from "../../components/widgets/LanguageSwitcher";
 import { useSectionTranslations } from '@/hooks/useTranslations';
-import { Destination, Category } from "@/lib/directus";
+import { Destination, Category } from "@/lib/directus-web";
 
 interface FooterProps {
   regions: Destination[];

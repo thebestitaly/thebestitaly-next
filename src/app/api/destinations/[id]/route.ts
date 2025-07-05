@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '../../../../lib/directus';
+import directusWebClient from '../../../../lib/directus-web';
 
 export async function GET(
   request: NextRequest,
@@ -20,7 +20,13 @@ export async function GET(
     console.log(`🔥 [DESTINATIONS API] Fetching destination ${id} for lang: ${lang}`);
     
     // Direct call - cache managed at Redis layer
-    const destination: any = await directusClient.getDestinationById(id, lang);
+    // TODO: Migrate to directus-web unified getDestinations method
+    const destination: any = await directusWebClient.get(`/items/destinations/${id}`, {
+      params: {
+        fields: ['*', 'translations.*'],
+        deep: { translations: { _filter: { languages_code: { _eq: lang } } } }
+      }
+    }).then(r => r.data?.data);
 
     if (!destination) {
       return NextResponse.json(

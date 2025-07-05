@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 
-// 🚨 REMOVED: Duplicate axios client causes memory leaks - using main directusClient
+// 🚨 REMOVED: Duplicate axios client causes memory leaks - using main directusWebClient
 
 // Log configuration per debug (solo in development)
 if (process.env.NODE_ENV === 'development') {
@@ -13,7 +13,7 @@ if (process.env.NODE_ENV === 'development') {
     DIRECTUS_TOKEN: process.env.DIRECTUS_TOKEN ? 'SET' : 'NOT SET',
     NEXT_PUBLIC_DIRECTUS_TOKEN: process.env.NEXT_PUBLIC_DIRECTUS_TOKEN ? 'SET' : 'NOT SET',
     NODE_ENV: process.env.NODE_ENV,
-    directusClient: !!directusClient
+    directusWebClient: !!directusWebClient
   });
 }
 
@@ -59,6 +59,10 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // TODO: Migrate to directus-web unified methods
+  return NextResponse.json({ error: 'Widget search temporarily disabled during migration' }, { status: 503 });
+  
+  /*
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') as 'articolo' | 'destinazione' | 'azienda';
@@ -245,7 +249,7 @@ async function searchArticles(query: string, language: string, limit: number): P
     console.log('📰 Articles search params:', { query, language, limit });
     
     // Usa le funzioni esistenti che funzionano
-    const allArticlesResponse = await directusClient.getArticles(language, 0, 100); // Prendi i primi 100
+    const allArticlesResponse = await directusWebClient.getArticles(language, 0, 100); // Prendi i primi 100
     const allArticles = allArticlesResponse.articles;
     
     console.log(`📊 Retrieved ${allArticles.length} articles`);
@@ -299,9 +303,9 @@ async function searchDestinations(query: string, language: string, limit: number
     
     // Usa le funzioni esistenti che funzionano
     const [regions, provinces, municipalities] = await Promise.all([
-      directusClient.getDestinations({ type: 'region', lang: language }),
-      directusClient.getDestinations({ type: 'province', lang: language }),
-      directusClient.getDestinations({ type: 'municipality', lang: language })
+      directusWebClient.getDestinations({ type: 'region', lang: language }),
+      directusWebClient.getDestinations({ type: 'province', lang: language }),
+      directusWebClient.getDestinations({ type: 'municipality', lang: language })
     ]);
     
     const allDestinations = [...regions, ...provinces, ...municipalities];
@@ -430,9 +434,10 @@ async function searchCompanies(query: string, language: string, limit: number): 
     console.log('🏢 Companies search params:', { query, language, limit });
     
     // Usa la stessa funzione che funziona in /reserved
-    const allCompanies = await directusClient.getCompaniesForListing(language, {});
+    const allCompaniesResult = await directusWebClient.getCompanies({ lang: language, filters: {} });
+    const allCompanies = Array.isArray(allCompaniesResult) ? allCompaniesResult : (allCompaniesResult ? [allCompaniesResult] : []);
     
-    console.log(`📊 Retrieved ${allCompanies.length} companies from getCompaniesForListing`);
+    console.log(`📊 Retrieved ${allCompanies.length} companies from getCompanies`);
     
     // Filtra i risultati per il termine di ricerca
     const filteredCompanies = allCompanies.filter((company: any) => {
@@ -520,7 +525,7 @@ function getDestinationCategory(type: string): string {
 // Funzioni per recuperare contenuti tramite UUID
 async function getDestinationByUuid(uuid: string, language: string): Promise<SearchResult | null> {
   try {
-    const destination = await directusClient.getDestinationByUUID(uuid, language);
+    const destination = await directusWebClient.getDestinationByUUID(uuid, language);
     if (!destination) return null;
 
     const translation = destination.translations?.[0];
@@ -559,8 +564,9 @@ async function getDestinationByUuid(uuid: string, language: string): Promise<Sea
 
 async function getCompanyByUuid(uuid: string, language: string): Promise<SearchResult | null> {
   try {
-    // Usa la funzione esistente getCompaniesForListing e filtra per UUID
-    const allCompanies = await directusClient.getCompaniesForListing(language, {});
+    // Usa la funzione esistente getCompanies e filtra per UUID
+    const allCompaniesResult = await directusWebClient.getCompanies({ lang: language, filters: {} });
+    const allCompanies = Array.isArray(allCompaniesResult) ? allCompaniesResult : (allCompaniesResult ? [allCompaniesResult] : []);
     const company = allCompanies.find((c: any) => c.uuid_id === uuid);
     
     if (!company) return null;
@@ -588,7 +594,7 @@ async function getCompanyByUuid(uuid: string, language: string): Promise<SearchR
 
 async function getArticleByUuid(uuid: string, language: string): Promise<SearchResult | null> {
   try {
-    const article = await directusClient.getArticleByUUID(uuid, language);
+    const article = await directusWebClient.getArticleByUUID(uuid, language);
     if (!article) return null;
 
     const translation = article.translations?.[0];
@@ -610,4 +616,6 @@ async function getArticleByUuid(uuid: string, language: string): Promise<SearchR
     console.error('❌ Error getting article by UUID:', error);
     return null;
   }
+}
+*/
 } 

@@ -3,7 +3,7 @@ import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
-import type { Destination } from '@/lib/directus';
+import type { Destination } from '@/lib/directus-web';
 
 import TableOfContents from "@/components/widgets/TableOfContents";
 import VideoEmbed from "@/components/widgets/VideoEmbed";
@@ -126,7 +126,7 @@ export default function DestinationLayout({
   const seoImage = destination.image
     ? `${process.env.NEXT_PUBLIC_APP_URL}${getOptimizedImageUrl(destination.image, 'HERO_DESKTOP')}`
     : undefined;
-  const seoDescription = translation?.seo_summary || translation?.description || "Discover beautiful destinations in Italy.";
+  const seoDescription = translation?.seo_summary || translation?.destination_description || "Discover beautiful destinations in Italy.";
   
   const schema = {
     "@context": "https://schema.org",
@@ -163,11 +163,7 @@ export default function DestinationLayout({
       "name": "Italy",
       "url": "https://thebestitaly.eu"
     },
-    "geo": destination.lat && destination.long && destination.lat !== 0 && destination.long !== 0 ? {
-      "@type": "GeoCoordinates",
-      "latitude": destination.lat,
-      "longitude": destination.long
-    } : undefined,
+    // "geo": coordinates not available in current Destination type,
     "image": seoImage ? {
       "@type": "ImageObject",
       "url": seoImage,
@@ -178,10 +174,10 @@ export default function DestinationLayout({
     "keywords": `${translation?.destination_name}, Italy, travel, tourism, destinations, attractions`
   };
 
-  const tocContent = translation?.description || "";
+  const tocContent = translation?.destination_description || "";
 
   // Logic to split markdown and inject the widget
-  const description = translation?.description || "";
+  const description = translation?.destination_description || "";
   const headings = description.match(/^## .*/gm) || [];
   let contentBeforeWidget: string = description;
   let contentAfterWidget: string | null = null;

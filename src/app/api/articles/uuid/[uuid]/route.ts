@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 
 export async function GET(
   request: NextRequest,
@@ -16,7 +16,7 @@ export async function GET(
     console.log(`🔍 API: Fetching article by UUID: ${uuid} (lang: ${lang})`);
     
     // Usa la nuova funzione UUID
-    const article = await directusClient.getArticleByUUID(uuid, lang);
+    const article = await directusWebClient.getArticleByUUID(uuid, lang);
     
     if (!article) {
       return NextResponse.json(

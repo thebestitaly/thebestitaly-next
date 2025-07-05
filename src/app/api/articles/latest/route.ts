@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '../../../../lib/directus';
+import directusWebClient from '../../../../lib/directus-web';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -10,15 +10,26 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔥 [LATEST ARTICLES API] Fetching for lang:', lang);
     
-    // Direct call - cache managed at Redis layer
-    const latestArticlesData: any = await directusClient.getLatestArticlesForHomepage(lang);
+    // Get latest articles (not featured) - exclude featured articles and category 9
+    const latestArticlesData: any = await directusWebClient.getArticles({
+      lang,
+      fields: 'full',
+      limit: 12,
+      filters: {
+        featured_status: { _neq: 'homepage' }, // Exclude featured articles
+        category_id: { _neq: 9 } // Exclude category 9
+      }
+    });
+    
+    // Convert to array if needed
+    const articles = Array.isArray(latestArticlesData) ? latestArticlesData : (latestArticlesData ? [latestArticlesData] : []);
     
     const response = {
-      data: latestArticlesData || [],
-      total: latestArticlesData?.length || 0
+      data: articles,
+      total: articles.length
     };
     
-    console.log(`✅ [LATEST ARTICLES API] Returning ${response.data.length} articles for ${lang}`);
+    console.log(`✅ [LATEST ARTICLES API] Returning ${response.data.length} latest articles for ${lang}`);
 
     return NextResponse.json(response);
   } catch (error) {

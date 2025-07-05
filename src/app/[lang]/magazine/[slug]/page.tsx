@@ -7,12 +7,11 @@ import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
 import Link from 'next/link';
 import remarkGfm from 'remark-gfm';
-import directusClient from '@/lib/directus';
+import directusWebClient from '@/lib/directus-web';
 import GetYourGuideWidget from '@/components/widgets/GetYourGuideWidget';
 import ArticlesSidebar from '@/components/widgets/ArticlesSidebar';
 import TableOfContents from '@/components/widgets/TableOfContents';
 import ArticleDestinationBox from '@/components/destinations/ArticleDestinationBox';
-import { getArticleHreflang } from '@/lib/directus';
 import { generateMetadata as generateSEO } from '@/components/widgets/seo-utils';
 import JsonLdSchema from '@/components/widgets/JsonLdSchema';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
@@ -33,7 +32,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { lang, slug } = resolvedParams;
   
   try {
-    const article = await directusClient.getArticleBySlug(slug, lang);
+    const articleResult = await directusWebClient.getArticles({slug, lang});
+    const article = articleResult as any; // Single article expected when slug is provided
     
     if (!article) {
       // Create meaningful fallback based on slug
@@ -52,8 +52,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     
     const canonicalUrl = `${baseUrl}/${lang}/magazine/${slug}`;
     
-    // Get hreflang links
-    const hreflangs = await getArticleHreflang(article.id);
+    // Get hreflang links - temporarily disabled since not available in directus-web
+    const hreflangs = {};
     
     // Ensure we have a proper meta description with better fallback
     const metaDescription = translation?.seo_summary || 
@@ -135,7 +135,8 @@ export default async function MagazineArticlePage({ params }: PageProps) {
 
   let article;
   try {
-    article = await directusClient.getArticleBySlug(slug, lang);
+    const articleResult = await directusWebClient.getArticles({slug, lang});
+    article = articleResult as any; // Single article expected when slug is provided
   } catch (error) {
     console.error('Error fetching article:', error);
     return (

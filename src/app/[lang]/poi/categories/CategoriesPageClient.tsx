@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import directusClient from "@/lib/directus";
+import directusWebClient from "@/lib/directus-web";
 import CategoryCard from "@/components/companies/CategoryCard";
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 export default function CategoriesPageClient({ lang }: Props) {
   const { data: categories, isLoading } = useQuery({
     queryKey: ["company-categories", lang],
-    queryFn: () => directusClient.getCompanyCategories(lang),
+    queryFn: () => directusWebClient.getCompanyCategories(lang),
   });
 
   if (isLoading) return <div>Loading...</div>;

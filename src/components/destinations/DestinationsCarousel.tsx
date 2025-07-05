@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import directusClient from '../../lib/directus';
+import directusWebClient from '../../lib/directus-web';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 interface DestinationsCarouselProps {
@@ -55,7 +55,7 @@ const DestinationsCarousel: React.FC<DestinationsCarouselProps> = ({ lang, type 
 
   const { data: destinations, isLoading } = useQuery({
     queryKey: ['destinations', type, lang],
-    queryFn: () => directusClient.getDestinationsByType(type, lang)
+    queryFn: () => directusWebClient.getDestinationsByType(type, lang)
   });
 
   if (isLoading || !destinations) {

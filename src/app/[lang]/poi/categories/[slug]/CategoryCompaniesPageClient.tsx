@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import directusClient from "@/lib/directus";
+import directusWebClient from "@/lib/directus-web";
 import CompanyCard from "@/components/companies/CompanyCard";
 
 interface Props {
@@ -11,16 +11,18 @@ interface Props {
 }
 
 export default function CategoryCompaniesPageClient({ lang, slug }: Props) {
-  const { data: companies, isLoading } = useQuery({
+  const { data: companiesResult, isLoading } = useQuery({
     queryKey: ["companies-by-category", lang, slug],
-    queryFn: () => directusClient.getCompanies(lang, {
-      category_id: {
-        translations: {
-          slug_permalink: { _eq: slug }
-        }
+    queryFn: () => directusWebClient.getCompanies({
+      lang,
+      filters: {
+        'category_id.translations.slug_permalink': { _eq: slug }
       }
     }),
   });
+
+  // Convert result to array
+  const companies = Array.isArray(companiesResult) ? companiesResult : (companiesResult ? [companiesResult] : []);
 
   if (isLoading) return <div>Loading...</div>;
 

@@ -6,7 +6,7 @@ import { Metadata } from 'next';
 import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/components/widgets/seo-utils';
 import { getProvincesForRegion, getDestinationDetails } from '@/lib/static-destinations';
 import { generateRegionStaticParams, STATIC_GENERATION_CONFIG } from '@/lib/static-generation';
-import { Destination } from '@/lib/directus';
+import { Destination } from '@/lib/directus-web';
 import { notFound } from 'next/navigation';
 
 interface RegionPageProps {
