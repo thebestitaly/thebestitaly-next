@@ -20,9 +20,6 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   console.log(`🌍 [LAYOUT] Loading layout for language: ${validLang}`);
 
-  // 🧹 FORCE COMPLETE CACHE CLEAR to fix language mixing
-  await directusWebClient.forceClearAllCache();
-
   // Fetch data for the header on the server with fallback
   let destinations = [];
   let categories = [];
