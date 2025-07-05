@@ -24,6 +24,14 @@ const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
 }) => {
   // Ensure companies is always an array
   const companiesArray = Array.isArray(companies) ? companies : [];
+  
+  // Debug logging
+  console.log('🏢 DestinationCompanies:', { 
+    destinationId, 
+    destinationType, 
+    companiesCount: companiesArray.length, 
+    companies: companiesArray.slice(0, 3) // Show first 3 companies
+  });
 
   if (!companiesArray?.length) {
     return null;

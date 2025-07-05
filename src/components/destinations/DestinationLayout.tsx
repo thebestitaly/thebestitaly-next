@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import Breadcrumb from "@/components/layout/Breadcrumb";
@@ -273,13 +273,11 @@ export default function DestinationLayout({
               provinceSlug={provinceSlug}
               destinationType={destinationType}
             />
-            <Suspense fallback={<div>Loading articles...</div>}>
-              <DestinationArticlesSidebar 
-                destinationId={destination.id} 
-                lang={lang}
-                articles={sidebarData?.articles || []} 
-              />
-            </Suspense>
+            <DestinationArticlesSidebar 
+              destinationId={destination.id} 
+              lang={lang}
+              articles={sidebarData?.articles || []} 
+            />
             <GetYourGuideWidget destinationName={destinationName} lang={lang} />
           </aside>
         </div>

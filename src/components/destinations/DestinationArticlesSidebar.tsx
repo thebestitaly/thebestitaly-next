@@ -15,27 +15,17 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
   destinationId,
   articles
 }) => {
-  const [isClient, setIsClient] = React.useState(false);
   const { translation: featuredArticlesText } = useTranslation('featured_articles', lang, 'general');
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return (
-      <div className="p-4">
-        <div className="animate-pulse space-y-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-gray-200 h-20 rounded-lg"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   // Ensure articles is always an array
   const articlesArray = Array.isArray(articles) ? articles : [];
+  
+  // Debug logging
+  console.log('📰 DestinationArticlesSidebar:', { 
+    destinationId, 
+    articlesCount: articlesArray.length, 
+    articles: articlesArray.slice(0, 3) // Show first 3 articles
+  });
 
   if (articlesArray.length === 0) {
     return (
