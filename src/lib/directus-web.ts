@@ -744,22 +744,27 @@ class DirectusWebClient {
    */
   private async getArticleWithSeparateQueries(options: ArticleQueryOptions): Promise<Article | null> {
     try {
-      console.log(`🔍 [ARTICLE SEPARATE] Step 1: Getting translation data for slug: ${options.slug || options.uuid}`);
+      // Step 1: Get translation data
       
       // Step 1: Get translation data from articles_translations
-      const translationUrl = '/items/articles_translations';
-      const translationParams: any = {
-        fields: [
-          'articles_id', 'languages_code', 'titolo_articolo', 
-          'slug_permalink', 'seo_title', 'seo_summary', 'description'
-        ]
-      };
+      // 🚀 SIMPLIFIED: Use manual URL construction like curl to avoid serialization issues
+      let translationUrl = '/items/articles_translations';
+      let translationResponse: any;
       
       if (options.slug) {
-        translationParams.filter = {
-          slug_permalink: { _eq: options.slug },
-          languages_code: { _eq: options.lang }
-        };
+        const params = new URLSearchParams();
+        params.append('filter[slug_permalink][_eq]', options.slug);
+        params.append('filter[languages_code][_eq]', options.lang);
+        params.append('fields[]', 'articles_id');
+        params.append('fields[]', 'languages_code');
+        params.append('fields[]', 'titolo_articolo');
+        params.append('fields[]', 'slug_permalink');
+        params.append('fields[]', 'seo_summary');
+        params.append('fields[]', 'description');
+        
+        translationUrl += '?' + params.toString();
+        
+        translationResponse = await this.client.get(translationUrl);
       } else if (options.uuid) {
         // For UUID, we need to get the article ID first
         const articleResponse = await this.client.get('/items/articles', {
@@ -774,24 +779,26 @@ class DirectusWebClient {
           return null;
         }
         
-        translationParams.filter = {
-          articles_id: { _eq: articleResponse.data.data[0].id },
-          languages_code: { _eq: options.lang }
-        };
+        const params = new URLSearchParams();
+        params.append('filter[articles_id][_eq]', articleResponse.data.data[0].id);
+        params.append('filter[languages_code][_eq]', options.lang);
+        params.append('fields[]', 'articles_id');
+        params.append('fields[]', 'languages_code');
+        params.append('fields[]', 'titolo_articolo');
+        params.append('fields[]', 'slug_permalink');
+        params.append('fields[]', 'seo_summary');
+        params.append('fields[]', 'description');
+        
+        translationUrl += '?' + params.toString();
+        
+        translationResponse = await this.client.get(translationUrl);
       }
       
-      console.log(`🚀 [DEBUG] Article translation URL: ${this.client.defaults.baseURL}${translationUrl}`);
-      
-      const translationResponse = await this.client.get(translationUrl, { params: translationParams });
-      
       if (!translationResponse.data?.data?.[0]) {
-        console.log(`🔍 [ARTICLE SEPARATE] No translation found for article: ${options.slug || options.uuid}`);
         return null;
       }
       
       const translation = translationResponse.data.data[0];
-      
-      console.log(`🔍 [ARTICLE SEPARATE] Step 2: Getting base article data for ID: ${translation.articles_id}`);
       
       // Step 2: Get base article data without deep parameters
       const articleResponse = await this.client.get('/items/articles', {
@@ -806,7 +813,6 @@ class DirectusWebClient {
       });
       
       if (!articleResponse.data?.data?.[0]) {
-        console.log(`🔍 [ARTICLE SEPARATE] No base article found for ID: ${translation.articles_id}`);
         return null;
       }
       
@@ -844,7 +850,7 @@ class DirectusWebClient {
             }
           }
         } catch (categoryError) {
-          console.log(`🔍 [ARTICLE SEPARATE] Error getting category data:`, categoryError);
+          // Silent error for category data
         }
       }
       
@@ -855,17 +861,9 @@ class DirectusWebClient {
         category_id: categoryData
       };
       
-      console.log(`🎉 [ARTICLE SEPARATE] Successfully combined article: ${translation.titolo_articolo}`);
-      
       return result;
       
     } catch (error) {
-      console.error(`❌ [ARTICLE SEPARATE] Error for ${options.slug || options.uuid}:`, {
-        error: (error as any)?.message,
-        status: (error as any)?.response?.status,
-        data: (error as any)?.response?.data
-      });
-      
       return null;
     }
   }
