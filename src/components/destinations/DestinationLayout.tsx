@@ -255,7 +255,12 @@ export default function DestinationLayout({
                 </>
               )}
             </article>
-            <DestinationCompanies destinationId={destination.id} destinationType={destinationType} lang={lang} />
+            <DestinationCompanies 
+              destinationId={destination.id} 
+              destinationType={destinationType} 
+              lang={lang}
+              companies={sidebarData?.companies || []} 
+            />
           </div>
           <aside className="lg:col-span-1 space-y-8">
             <TableOfContents content={tocContent} />
@@ -269,7 +274,11 @@ export default function DestinationLayout({
               destinationType={destinationType}
             />
             <Suspense fallback={<div>Loading articles...</div>}>
-              <DestinationArticlesSidebar destinationId={destination.id} lang={lang} />
+              <DestinationArticlesSidebar 
+                destinationId={destination.id} 
+                lang={lang}
+                articles={sidebarData?.articles || []} 
+              />
             </Suspense>
             <GetYourGuideWidget destinationName={destinationName} lang={lang} />
           </aside>

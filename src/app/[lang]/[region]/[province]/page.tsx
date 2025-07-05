@@ -10,6 +10,7 @@ import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/compone
 import { getMunicipalitiesForProvince, getDestinationDetails } from '@/lib/static-destinations';
 import { generateProvinceStaticParams, STATIC_GENERATION_CONFIG } from '@/lib/static-generation';
 import { Destination } from '@/lib/directus-web';
+import directusWebClient from '@/lib/directus-web';
 import { notFound } from 'next/navigation';
 
 interface ProvincePageProps {
@@ -75,13 +76,32 @@ export default async function ProvincePage({ params: { lang, region, province } 
     notFound();
   }
   
-  const municipalities = await getMunicipalitiesForProvince(provinceDetails.id, lang) || [];
-  
-  const lightMunicipalities = municipalities.map(m => ({
-    id: m.id,
-    name: m.translations[0]?.destination_name || '',
-    slug: m.translations[0]?.slug_permalink || '',
-  }));
+  // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies, articles, and municipalities
+  const [companies, articles, lightMunicipalities] = await Promise.all([
+    // Get companies for this province
+    directusWebClient.getCompanies({
+      lang,
+      destination_id: provinceDetails.id,
+      fields: 'full',
+      limit: 30
+    }),
+    // Get articles for this province
+    directusWebClient.getArticles({
+      lang,
+      destination_id: provinceDetails.id,
+      fields: 'sidebar',
+      limit: 15
+    }),
+    // Get municipalities for this province
+    (async () => {
+      const municipalities = await getMunicipalitiesForProvince(provinceDetails.id, lang) || [];
+      return municipalities.map(m => ({
+        id: m.id,
+        name: m.translations[0]?.destination_name || '',
+        slug: m.translations[0]?.slug_permalink || '',
+      }));
+    })()
+  ]);
 
   const breadcrumbs = [
     { name: region, href: `/${lang}/${region}` },
@@ -99,7 +119,10 @@ export default async function ProvincePage({ params: { lang, region, province } 
       description={`Esplora i comuni e le meraviglie della provincia di ${provinceName}.`}
       breadcrumbs={breadcrumbs}
       destinationType="province"
-      sidebarData={null}
+      sidebarData={{
+        companies: Array.isArray(companies) ? companies : [],
+        articles: Array.isArray(articles) ? articles : []
+      }}
     />
   );
 }

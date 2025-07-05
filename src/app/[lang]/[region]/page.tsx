@@ -7,6 +7,7 @@ import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/compone
 import { getProvincesForRegion, getDestinationDetails } from '@/lib/static-destinations';
 import { generateRegionStaticParams, STATIC_GENERATION_CONFIG } from '@/lib/static-generation';
 import { Destination } from '@/lib/directus-web';
+import directusWebClient from '@/lib/directus-web';
 import { notFound } from 'next/navigation';
 
 interface RegionPageProps {
@@ -43,13 +44,32 @@ export default async function RegionPage({ params: { lang, region } }: { params:
     notFound();
   }
 
-  const provinces = await getProvincesForRegion(regionDetails.id, lang) || [];
-  
-  const lightProvinces = provinces.map(p => ({
-    id: p.id,
-    name: p.translations[0]?.destination_name || '',
-    slug: p.translations[0]?.slug_permalink || '',
-  }));
+  // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies, articles, and provinces
+  const [companies, articles, lightProvinces] = await Promise.all([
+    // Get companies for this region
+    directusWebClient.getCompanies({
+      lang,
+      destination_id: regionDetails.id,
+      fields: 'full',
+      limit: 50
+    }),
+    // Get articles for this region
+    directusWebClient.getArticles({
+      lang,
+      destination_id: regionDetails.id,
+      fields: 'sidebar',
+      limit: 20
+    }),
+    // Get provinces for this region
+    (async () => {
+      const provinces = await getProvincesForRegion(regionDetails.id, lang) || [];
+      return provinces.map(p => ({
+        id: p.id,
+        name: p.translations[0]?.destination_name || '',
+        slug: p.translations[0]?.slug_permalink || '',
+      }));
+    })()
+  ]);
 
   const breadcrumbs = [
     { name: regionDetails.translations[0]?.destination_name || region, href: `/${lang}/${region}` },
@@ -66,7 +86,10 @@ export default async function RegionPage({ params: { lang, region } }: { params:
       description={`Esplora le province e le meraviglie della regione ${regionName}.`}
       breadcrumbs={breadcrumbs}
       destinationType="region"
-      sidebarData={null}
+      sidebarData={{
+        companies: Array.isArray(companies) ? companies : [],
+        articles: Array.isArray(articles) ? articles : []
+      }}
     />
   );
 }

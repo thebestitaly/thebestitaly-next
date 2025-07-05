@@ -10,6 +10,7 @@ import { generateMetadata as generateSEO, generateCanonicalUrl } from '@/compone
 import { getMunicipalitiesForProvince, getDestinationDetails } from '@/lib/static-destinations';
 import { generateMunicipalityStaticParams, STATIC_GENERATION_CONFIG } from '@/lib/static-generation';
 import { Destination } from '@/lib/directus-web';
+import directusWebClient from '@/lib/directus-web';
 import { notFound } from 'next/navigation';
 
 interface MunicipalityPageProps {
@@ -48,20 +49,37 @@ export default async function MunicipalityPage({ params: { lang, region, provinc
     notFound();
   }
   
-  // Per i comuni, carichiamo gli altri comuni della stessa provincia per la sidebar
-  const provinceId = municipalityDetails.province_id?.id;
-  let relatedMunicipalities: { id: string; name: string; slug: string; }[] = [];
-  if (provinceId) {
+  // 🚀 SERVER-SIDE DATA FETCHING: Fetch companies and articles for this destination
+  const [companies, articles, relatedMunicipalities] = await Promise.all([
+    // Get companies for this municipality
+    directusWebClient.getCompanies({
+      lang,
+      destination_id: municipalityDetails.id,
+      fields: 'full',
+      limit: 20
+    }),
+    // Get articles for this municipality
+    directusWebClient.getArticles({
+      lang,
+      destination_id: municipalityDetails.id,
+      fields: 'sidebar',
+      limit: 10
+    }),
+    // Get related municipalities
+    (async () => {
+      const provinceId = municipalityDetails.province_id?.id;
+      if (!provinceId) return [];
+      
       const allMunicipalities = await getMunicipalitiesForProvince(provinceId, lang) || [];
-      // Escludiamo il comune corrente dalla lista
-      relatedMunicipalities = allMunicipalities
+      return allMunicipalities
         .filter(m => m.id !== municipalityDetails.id)
         .map((m: Destination) => ({
-            id: m.id,
-            name: m.translations[0]?.destination_name || '',
-            slug: m.translations[0]?.slug_permalink || '',
+          id: m.id,
+          name: m.translations[0]?.destination_name || '',
+          slug: m.translations[0]?.slug_permalink || '',
         }));
-  }
+    })()
+  ]);
 
   const breadcrumbs = [
     { name: region, href: `/${lang}/${region}` },
@@ -80,7 +98,10 @@ export default async function MunicipalityPage({ params: { lang, region, provinc
       description={`Esplora le meraviglie e le attrazioni di ${municipalityName}.`}
       breadcrumbs={breadcrumbs}
       destinationType="municipality"
-      sidebarData={null}
+      sidebarData={{
+        companies: Array.isArray(companies) ? companies : [],
+        articles: Array.isArray(articles) ? articles : []
+      }}
     />
   );
 }

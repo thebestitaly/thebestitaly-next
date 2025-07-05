@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, CancelTokenSource } from 'axios';
 import { getOptimizedImageUrl } from "./imageUtils";
 import { getProvincesForRegion, getMunicipalitiesForProvince, getDestinationDetails } from './static-destinations';
+import { getCache, setCache, delCache, CacheKeys } from './redis-cache';
 
 // Interfaces
 export interface Translation {
@@ -285,6 +286,17 @@ class DirectusWebClient {
   private static readonly MAX_CONCURRENT_CALLS = 10;
   private static readonly REQUEST_TIMEOUT = 8000; // Reduced timeout
   private isDestroyed = false;
+  
+  // 🚀 CACHE CONFIGURATION
+  private static readonly CACHE_TTL = {
+    destinations: 3600,    // 1 hour - destinations change rarely
+    articles: 900,         // 15 minutes - articles updated more frequently
+    companies: 1800,       // 30 minutes - companies updated occasionally
+    categories: 7200,      // 2 hours - categories very stable
+    homepage: 300,         // 5 minutes - homepage content needs fresh data
+    sitemap: 1800,         // 30 minutes - sitemap can be cached longer
+    translations: 3600     // 1 hour - translations very stable
+  };
 
   constructor(lang?: string) {
     const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
@@ -406,6 +418,83 @@ class DirectusWebClient {
   }
 
   /**
+   * 🚀 CACHE KEY GENERATION
+   * Generates consistent cache keys for different types of requests
+   */
+  private generateCacheKey(type: string, params: any): string {
+    const sortedParams = Object.keys(params)
+      .sort()
+      .reduce((result: any, key: string) => {
+        result[key] = params[key];
+        return result;
+      }, {});
+    
+    const paramString = JSON.stringify(sortedParams);
+    const hash = Buffer.from(paramString).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+    
+    return `directus:${type}:${hash}`;
+  }
+
+  /**
+   * 🚀 CACHED REQUEST WRAPPER
+   * Wraps API requests with intelligent caching
+   */
+  private async cachedRequest<T>(
+    cacheKey: string,
+    ttl: number,
+    requestFn: () => Promise<T>,
+    skipCache: boolean = false
+  ): Promise<T> {
+    if (this.isDestroyed) {
+      throw new Error('Client has been destroyed');
+    }
+
+    // Skip cache for specific requests or if explicitly disabled
+    if (skipCache) {
+      return await this.makeRequest(requestFn);
+    }
+
+    try {
+      // Try to get from cache first
+      const cachedResult = await getCache(cacheKey);
+      if (cachedResult) {
+        return cachedResult;
+      }
+
+      // Cache miss - make the request
+      const result = await this.makeRequest(requestFn);
+      
+      // Cache the result
+      await setCache(cacheKey, result, ttl);
+      
+      return result;
+    } catch (error) {
+      // If cache fails, fall back to direct request
+      return await this.makeRequest(requestFn);
+    }
+  }
+
+  /**
+   * 🧹 CACHE INVALIDATION
+   * Invalidates cache entries for specific types
+   */
+  private async invalidateCache(type: string, id?: string): Promise<void> {
+    try {
+      const patterns = [
+        `directus:${type}:*`,
+        `directus:homepage:*`,
+        `directus:sitemap:*`
+      ];
+
+      for (const pattern of patterns) {
+        await delCache(pattern);
+      }
+    } catch (error) {
+      console.warn(`⚠️ Cache invalidation failed for ${type}:`, error);
+    }
+  }
+
+  /**
    * 🚀 IMPROVED REQUEST METHOD WITH AUTOMATIC CLEANUP
    */
   private async makeRequest<T>(requestFn: () => Promise<T>): Promise<T> {
@@ -427,7 +516,6 @@ class DirectusWebClient {
       return result;
     } catch (error) {
       if (axios.isCancel(error)) {
-        console.log('Request cancelled:', error.message);
         return Promise.reject(new Error('Request cancelled'));
       }
       throw error;
@@ -584,23 +672,38 @@ class DirectusWebClient {
 
   async getCategories(languageCode: string): Promise<Category[]> {
     try {
-      const response = await this.client.get('/items/categorias', {
-        params: {
-          filter: { visible: { _eq: true } },
-          fields: [
-            'id', 'uuid_id', 'nome_categoria', 'image', 'visible',
-            'translations.nome_categoria', 'translations.seo_title',
-            'translations.seo_summary', 'translations.slug_permalink'
-          ],
-          deep: {
-            translations: {
-              _filter: { languages_code: { _eq: languageCode } }
-            }
-          }
-        }
-      });
+      // Generate cache key
+      const cacheKey = this.generateCacheKey('categories', { lang: languageCode });
+      
+      return await this.cachedRequest(
+        cacheKey,
+        DirectusWebClient.CACHE_TTL.categories,
+        async () => {
+          const response = await this.client.get('/items/categorias', {
+            params: {
+              filter: { visible: { _eq: true } },
+              fields: [
+                'id', 'uuid_id', 'nome_categoria', 'image', 'visible',
+                'translations.nome_categoria', 'translations.seo_title',
+                'translations.seo_summary', 'translations.slug_permalink'
+              ],
+              deep: {
+                translations: {
+                  _filter: { languages_code: { _eq: languageCode } }
+                }
+              }
+            },
+            cancelToken: this.cancelTokenSource.token
+          });
 
-      return response.data.data || [];
+          const data = response.data.data || [];
+          
+          // 🚀 MEMORY FIX: Immediate cleanup
+          response.data = null;
+          
+          return data;
+        }
+      );
     } catch (error) {
       console.error('Error fetching categories:', error);
       return [];
@@ -752,18 +855,113 @@ class DirectusWebClient {
   }
 
   /**
-   * 🚀 IMPROVED DESTINATIONS METHOD WITH MEMORY OPTIMIZATION
+   * 🗑️ PUBLIC CACHE INVALIDATION
+   * Allows manual cache invalidation for specific content types
+   */
+  public async invalidateContentCache(type: 'destinations' | 'articles' | 'companies' | 'categories', id?: string): Promise<void> {
+    await this.invalidateCache(type, id);
+  }
+
+  /**
+   * 🔄 FORCE CACHE REFRESH FOR DESTINATIONS
+   * Invalidates all destination cache entries to ensure description field is loaded
+   */
+  public static async refreshDestinationsCache(): Promise<void> {
+    try {
+      // Import delCache dynamically to avoid circular dependencies
+      const { delCache } = await import('./redis-cache');
+      
+      // Invalidate all destination-related cache entries
+      const patterns = [
+        'directus:destinations:*',
+        'directus:homepage:*',
+        'directus:sitemap:*'
+      ];
+
+      for (const pattern of patterns) {
+        await delCache(pattern);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to refresh destinations cache:', error);
+    }
+  }
+
+  /**
+   * 🔧 FORCE CACHE REFRESH FOR SIDEBAR
+   * Invalidates sidebar-related cache entries to fix destination filtering
+   */
+  public static async refreshSidebarCache(): Promise<void> {
+    try {
+      // Import delCache dynamically to avoid circular dependencies
+      const { delCache } = await import('./redis-cache');
+      
+      // Invalidate all sidebar-related cache entries
+      const patterns = [
+        'directus:articles:*', // All article cache entries
+        'directus:companies:*' // All company cache entries
+      ];
+
+      for (const pattern of patterns) {
+        await delCache(pattern);
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to refresh sidebar cache:', error);
+    }
+  }
+
+  /**
+   * 🚀 CACHED DESTINATIONS METHOD WITH MEMORY OPTIMIZATION
    */
   async getDestinations(options: DestinationQueryOptions): Promise<Destination[]> {
     try {
-      // 🚀 MEMORY FIX: Limit field selection more aggressively
-      const optimizedFields = this.getOptimizedFields(options.fields || 'full');
+      // Generate cache key
+      const cacheKey = this.generateCacheKey('destinations', options);
       
-      if (options.slug) {
-        try {
+      // Determine TTL based on request type
+      let ttl = DirectusWebClient.CACHE_TTL.destinations;
+      if (options.fields === 'homepage') {
+        ttl = DirectusWebClient.CACHE_TTL.homepage;
+      } else if (options.fields === 'sitemap') {
+        ttl = DirectusWebClient.CACHE_TTL.sitemap;
+      }
+
+      // Skip cache for very specific queries or if explicitly disabled
+      const skipCache = !!(options.slug && options.fields === 'full');
+
+      return await this.cachedRequest(
+        cacheKey,
+        ttl,
+        async () => {
+          // 🚀 MEMORY FIX: Limit field selection more aggressively
+          const optimizedFields = this.getOptimizedFields(options.fields || 'full');
+          
+          if (options.slug) {
+            try {
+              const params = {
+                ...this.buildOptimizedParams(options),
+                fields: optimizedFields // Use optimized fields
+              };
+              
+              const response = await this.client.get('/items/destinations', { 
+                params,
+                cancelToken: this.cancelTokenSource.token
+              });
+              
+              const data = response.data?.data || [];
+              
+              // 🚀 MEMORY FIX: Immediate cleanup of response
+              response.data = null;
+              
+              return data;
+            } catch (error) {
+              // Fallback with even more limited fields
+              return await this.getDestinationWithLimitedFields(options);
+            }
+          }
+          
           const params = {
             ...this.buildOptimizedParams(options),
-            fields: optimizedFields // Use optimized fields
+            fields: optimizedFields
           };
           
           const response = await this.client.get('/items/destinations', { 
@@ -773,32 +971,13 @@ class DirectusWebClient {
           
           const data = response.data?.data || [];
           
-          // 🚀 MEMORY FIX: Immediate cleanup of response
+          // 🚀 MEMORY FIX: Immediate cleanup
           response.data = null;
           
           return data;
-        } catch (error) {
-          // Fallback with even more limited fields
-          return await this.getDestinationWithLimitedFields(options);
-        }
-      }
-      
-      const params = {
-        ...this.buildOptimizedParams(options),
-        fields: optimizedFields
-      };
-      
-      const response = await this.client.get('/items/destinations', { 
-        params,
-        cancelToken: this.cancelTokenSource.token
-      });
-      
-      const data = response.data?.data || [];
-      
-      // 🚀 MEMORY FIX: Immediate cleanup
-      response.data = null;
-      
-      return data;
+        },
+        skipCache
+      );
     } catch (error) {
       console.error('Error in getDestinations:', error);
       return [];
@@ -821,12 +1000,13 @@ class DirectusWebClient {
       case 'homepage':
         return [
           ...baseFields, 'image', 'featured_status',
-          'translations.destination_name', 'translations.slug_permalink'
+          'translations.destination_name', 'translations.slug_permalink', 'translations.seo_summary'
         ];
       default:
         return [
           ...baseFields, 'image', 'featured_status',
-          'translations.destination_name', 'translations.slug_permalink', 'translations.seo_title'
+          'translations.destination_name', 'translations.slug_permalink', 'translations.seo_title',
+          'translations.seo_summary', 'translations.description'
         ];
     }
   }
@@ -836,14 +1016,17 @@ class DirectusWebClient {
    */
   private async getDestinationWithLimitedFields(options: DestinationQueryOptions): Promise<Destination[]> {
     try {
-      // Step 1: Get only essential translation data
+      // Step 1: Get translation data including description
       const translationResponse = await this.client.get('/items/destinations_translations', {
         params: {
           filter: { 
             slug_permalink: { _eq: options.slug },
             languages_code: { _eq: options.lang }
           },
-          fields: ['destinations_id', 'destination_name', 'slug_permalink']
+          fields: [
+            'destinations_id', 'destination_name', 'slug_permalink', 
+            'description', 'seo_title', 'seo_summary'
+          ]
         },
         cancelToken: this.cancelTokenSource.token
       });
@@ -857,10 +1040,10 @@ class DirectusWebClient {
       
       const translation = translations[0];
       
-      // Step 2: Get minimal destination data
+      // Step 2: Get destination data with image
       const destinationResponse = await this.client.get(`/items/destinations/${translation.destinations_id}`, {
         params: {
-          fields: ['id', 'uuid_id', 'type', 'featured_status']
+          fields: ['id', 'uuid_id', 'type', 'featured_status', 'image']
         },
         cancelToken: this.cancelTokenSource.token
       });
@@ -872,7 +1055,7 @@ class DirectusWebClient {
         return [];
       }
       
-      // Combine with minimal memory footprint
+      // Combine with essential data
       const result = {
         ...destination,
         translations: [translation]
@@ -892,35 +1075,82 @@ class DirectusWebClient {
    */
   async getArticles(options: ArticleQueryOptions): Promise<Article[] | { articles: Article[], total: number } | Article | null> {
     try {
-      // 🚀 MEMORY LEAK FIX: Try single query first, fall back to separate queries
-      if (options.slug || options.uuid) {
-        try {
-          // Try single query first
+      // Generate cache key
+      const cacheKey = this.generateCacheKey('articles', options);
+      
+      // Determine TTL based on request type
+      let ttl = DirectusWebClient.CACHE_TTL.articles;
+      if (options.fields === 'homepage') {
+        ttl = DirectusWebClient.CACHE_TTL.homepage;
+      } else if (options.fields === 'sitemap') {
+        ttl = DirectusWebClient.CACHE_TTL.sitemap;
+      }
+
+      // Skip cache for paginated queries, destination-specific queries, or very specific single article queries
+      const skipCache = !!(
+        options.offset !== undefined || 
+        options.destination_id || // 🚀 FIX: Always skip cache for destination-filtered queries (sidebar)
+        (options.slug && options.fields === 'full')
+      );
+      
+      return await this.cachedRequest(
+        cacheKey,
+        ttl,
+        async () => {
+          // 🚀 MEMORY LEAK FIX: Try single query first, fall back to separate queries
+          if (options.slug || options.uuid) {
+            try {
+              // Try single query first
+              const params = this.buildArticleParams(options);
+              
+              const response = await this.client.get('/items/articles', { 
+                params,
+                cancelToken: this.cancelTokenSource.token
+              });
+              
+              const articles = response.data?.data || [];
+              
+              // 🚀 MEMORY FIX: Immediate cleanup
+              response.data = null;
+              
+              return articles.length > 0 ? articles[0] : null;
+            } catch (error) {
+              // Fallback to separate queries only if single query fails
+              return await this.getArticleWithSeparateQueries(options);
+            }
+          }
+          
+          // 🎯 Build optimized query parameters for list queries
           const params = this.buildArticleParams(options);
-          const response = await this.client.get('/items/articles', { params });
-          const articles = response.data?.data || [];
-          return articles.length > 0 ? articles[0] : null;
-        } catch (error) {
-          // Fallback to separate queries only if single query fails
-          return await this.getArticleWithSeparateQueries(options);
-        }
-      }
-      
-      // 🎯 Build optimized query parameters for list queries
-      const params = this.buildArticleParams(options);
-      
-      // 🚀 Single API call for list queries
-      const response = await this.client.get('/items/articles', { params });
-      
-      // Return with total count if offset is specified (for pagination)
-      if (options.offset !== undefined) {
-        return {
-          articles: response.data?.data || [],
-          total: response.data?.meta?.filter_count || 0
-        };
-      }
-      
-      return response.data?.data || [];
+          
+          // 🚀 Single API call for list queries
+          const response = await this.client.get('/items/articles', { 
+            params,
+            cancelToken: this.cancelTokenSource.token
+          });
+          
+          // Return with total count if offset is specified (for pagination)
+          if (options.offset !== undefined) {
+            const result = {
+              articles: response.data?.data || [],
+              total: response.data?.meta?.total_count || 0
+            };
+            
+            // 🚀 MEMORY FIX: Immediate cleanup
+            response.data = null;
+            
+            return result;
+          }
+          
+          const data = response.data?.data || [];
+          
+          // 🚀 MEMORY FIX: Immediate cleanup
+          response.data = null;
+          
+          return data;
+        },
+        skipCache
+      );
     } catch (error) {
       // Silent fail for articles
       return options.slug || options.uuid ? null : [];
@@ -1058,25 +1288,57 @@ class DirectusWebClient {
   }
 
   /**
-   * 🚀 UNIFIED COMPANY METHOD
+   * 🚀 CACHED COMPANY METHOD
    * Replaces: getHomepageCompanies, getCompanyBySlug, getCompanyByUUID, getCompanies, 
    * getCompaniesByDestination, getCompaniesForSitemap
-   * Handles all company queries with optimized performance
+   * Handles all company queries with optimized caching
    */
   async getCompanies(options: CompanyQueryOptions): Promise<Company[] | Company | null> {
     try {
-      // 🎯 Build optimized query parameters
-      const params = this.buildCompanyParams(options);
+      // Generate cache key
+      const cacheKey = this.generateCacheKey('companies', options);
       
-      // 🚀 Single API call instead of multiple queries
-      const response = await this.client.get('/items/companies', { params });
-      
-      // Return single company or array based on query type
-      if (options.slug || options.uuid) {
-        return response.data?.data?.[0] || null;
+      // Determine TTL based on request type
+      let ttl = DirectusWebClient.CACHE_TTL.companies;
+      if (options.fields === 'homepage') {
+        ttl = DirectusWebClient.CACHE_TTL.homepage;
+      } else if (options.fields === 'sitemap') {
+        ttl = DirectusWebClient.CACHE_TTL.sitemap;
       }
-      
-      return response.data?.data || [];
+
+      // Skip cache for destination-specific or very specific single company queries
+      const skipCache = !!(
+        options.destination_id || // 🚀 FIX: Skip cache for destination-filtered queries
+        (options.slug && options.fields === 'full')
+      );
+
+      return await this.cachedRequest(
+        cacheKey,
+        ttl,
+        async () => {
+          // 🎯 Build optimized query parameters
+          const params = this.buildCompanyParams(options);
+          
+          // 🚀 Single API call instead of multiple queries
+          const response = await this.client.get('/items/companies', { 
+            params,
+            cancelToken: this.cancelTokenSource.token
+          });
+          
+          const data = response.data?.data || [];
+          
+          // 🚀 MEMORY FIX: Immediate cleanup
+          response.data = null;
+          
+          // Return single company or array based on query type
+          if (options.slug || options.uuid) {
+            return data[0] || null;
+          }
+          
+          return data;
+        },
+        skipCache
+      );
     } catch (error) {
       // Silent fail for companies
       return options.slug || options.uuid ? null : [];
@@ -1372,20 +1634,16 @@ export const getTranslations = async (lang: string, section: string) => {
     });
 
     if (!response?.data?.data?.[0]?.content) {
-      console.warn(`⚠️ No translation content found for section "${section}" and language "${lang}"`);
       return getTranslationFallback(section, lang);
     }
 
     try {
       const translations = JSON.parse(response.data.data[0].content);
-      console.log(`✅ Loaded translations for section "${section}" (${lang})`);
       return translations;
     } catch (parseError) {
-      console.error('❌ Error parsing translation content:', parseError);
       return getTranslationFallback(section, lang);
     }
   } catch (error) {
-    console.error(`❌ Translation fetch error for section "${section}" (${lang}):`, (error as any).message);
     return getTranslationFallback(section, lang);
   }
 };
@@ -1455,12 +1713,10 @@ const getTranslationFallback = (section: string, lang: string) => {
   if (sectionFallback) {
     const langFallback = sectionFallback[lang] || sectionFallback['it'] || sectionFallback['en'];
     if (langFallback) {
-      console.log(`🔄 Using fallback translations for section "${section}" (${lang})`);
       return langFallback;
     }
   }
 
-  console.warn(`⚠️ No fallback available for section "${section}" (${lang})`);
   return {};
 };
 
@@ -1533,4 +1789,17 @@ class DirectusClientManager {
 
 // Export the managed instance
 export default DirectusClientManager.getInstance();
-export { DirectusClientManager }; 
+export { DirectusClientManager };
+
+// 🔄 AUTO-REFRESH CACHE for destinations descriptions fix
+if (typeof window === 'undefined') { // Only on server side
+  // Auto-refresh destinations cache to load missing descriptions
+  DirectusWebClient.refreshDestinationsCache().catch(error => {
+    console.warn('⚠️ Auto-refresh destinations cache failed:', error);
+  });
+  
+  // Auto-refresh sidebar cache to fix destination filtering
+  DirectusWebClient.refreshSidebarCache().catch(error => {
+    console.warn('⚠️ Auto-refresh sidebar cache failed:', error);
+  });
+} 

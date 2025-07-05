@@ -1,101 +1,27 @@
 "use client";
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Phone, Mail, ExternalLink, Building2, Star } from "lucide-react";
-import directusWebClient from "@/lib/directus-web";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
+import type { Company } from "@/lib/directus-web";
 
 interface DestinationCompaniesProps {
   destinationId: string;
   destinationType: "region" | "province" | "municipality";
   lang: string;
   destinationName?: string;
+  companies: Company[];
 }
 
 const DestinationCompanies: React.FC<DestinationCompaniesProps> = ({
   destinationId,
   destinationType,
   lang,
-  destinationName = "questa destinazione"
+  destinationName = "questa destinazione",
+  companies
 }) => {
-  // Debug logging
-  React.useEffect(() => {
-    console.log('🔍 DestinationCompanies props:', { 
-      destinationId, 
-      destinationType, 
-      lang, 
-      typeOfDestinationId: typeof destinationId,
-      destinationIdValue: destinationId 
-    });
-  }, [destinationId, destinationType, lang]);
-
-  const { data: companies, isLoading, error } = useQuery({
-    queryKey: ["destination-companies", destinationId, lang],
-    queryFn: async () => {
-      // Assicuriamoci che destinationId sia una stringa
-      const idString = String(destinationId);
-      console.log('🔧 Converting destinationId to string:', { original: destinationId, converted: idString });
-      
-      const result = await directusWebClient.getCompanies({
-        destination_id: idString,
-        lang: lang
-      });
-      return result;
-    },
-    enabled: !!destinationId && typeof destinationId !== 'undefined',
-  });
-
-  // Log per debugging
-  React.useEffect(() => {
-    if (error) {
-      console.error('❌ DestinationCompanies query error:', error);
-    }
-  }, [error]);
-
-  if (isLoading) {
-    return (
-      <div className="my-12">
-        <div className="flex items-center mb-8">
-          <Building2 className="mr-3 text-blue-600" size={28} />
-          <h2 className="text-3xl font-bold text-gray-900">Punti di Interesse</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                <div className="aspect-[3/2] bg-gray-200"></div>
-                <div className="p-3 md:p-4 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-full"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="my-12">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 md:p-8 text-center">
-          <Building2 className="mx-auto mb-4 text-red-400" size={48} />
-          <h3 className="text-xl font-semibold text-red-800 mb-2">Errore nel caricamento</h3>
-          <p className="text-red-600">
-            Non è possibile caricare i punti di interesse al momento
-          </p>
-          <p className="text-red-500 text-sm mt-2">
-            {error.message || 'Errore sconosciuto'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // Ensure companies is always an array
   const companiesArray = Array.isArray(companies) ? companies : [];
 
