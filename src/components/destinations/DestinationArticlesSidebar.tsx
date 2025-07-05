@@ -19,13 +19,6 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
 
   // Ensure articles is always an array
   const articlesArray = Array.isArray(articles) ? articles : [];
-  
-  // Debug logging
-  console.log('📰 DestinationArticlesSidebar:', { 
-    destinationId, 
-    articlesCount: articlesArray.length, 
-    articles: articlesArray.slice(0, 3) // Show first 3 articles
-  });
 
   if (articlesArray.length === 0) {
     return (

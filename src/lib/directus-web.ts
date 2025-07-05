@@ -182,34 +182,34 @@ export interface CompanyQueryOptions {
 const FIELD_PRESETS = {
   minimal: [
     'id', 'uuid_id', 'type', 
-    'translations.destination_name', 
+    'translations.languages_code', 'translations.destination_name', 
     'translations.slug_permalink'
   ],
   
   full: [
     'id', 'uuid_id', 'type', 'image', 'lat', 'long', 'featured_status',
-    'region_id.id', 'region_id.uuid_id', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
-    'province_id.id', 'province_id.uuid_id', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
-    'translations.destination_name', 'translations.seo_title', 'translations.seo_summary', 
+    'region_id.id', 'region_id.uuid_id', 'region_id.translations.languages_code', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
+    'province_id.id', 'province_id.uuid_id', 'province_id.translations.languages_code', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
+    'translations.languages_code', 'translations.destination_name', 'translations.seo_title', 'translations.seo_summary', 
     'translations.description', 'translations.slug_permalink'
   ],
   
-  sitemap: ['type', 'translations.slug_permalink'],
+  sitemap: ['type', 'translations.languages_code', 'translations.slug_permalink'],
   
   homepage: [
     'id', 'uuid_id', 'type', 'image', 'featured_status',
     // 🚀 ADDED: Parent destination data for URL building
-    'region_id.id', 'region_id.uuid_id', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
-    'province_id.id', 'province_id.uuid_id', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
-    'translations.destination_name', 'translations.seo_title', 'translations.seo_summary', 'translations.slug_permalink'
+    'region_id.id', 'region_id.uuid_id', 'region_id.translations.languages_code', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
+    'province_id.id', 'province_id.uuid_id', 'province_id.translations.languages_code', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
+    'translations.languages_code', 'translations.destination_name', 'translations.seo_title', 'translations.seo_summary', 'translations.slug_permalink'
   ],
   
   navigation: [
     'id', 'uuid_id', 'type',
     // 🚀 ADDED: Parent destination data for URL building
-    'region_id.id', 'region_id.uuid_id', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
-    'province_id.id', 'province_id.uuid_id', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
-    'translations.destination_name', 'translations.slug_permalink'
+    'region_id.id', 'region_id.uuid_id', 'region_id.translations.languages_code', 'region_id.translations.destination_name', 'region_id.translations.slug_permalink',
+    'province_id.id', 'province_id.uuid_id', 'province_id.translations.languages_code', 'province_id.translations.destination_name', 'province_id.translations.slug_permalink',
+    'translations.languages_code', 'translations.destination_name', 'translations.slug_permalink'
   ]
 };
 
@@ -217,30 +217,30 @@ const FIELD_PRESETS = {
 const ARTICLE_FIELD_PRESETS = {
   minimal: [
     'id', 'uuid_id', 'date_created', 'featured_status',
-    'translations.titolo_articolo', 'translations.slug_permalink'
+    'translations.languages_code', 'translations.titolo_articolo', 'translations.slug_permalink'
   ],
   
   full: [
     'id', 'uuid_id', 'image', 'date_created', 'featured_status', 'destination_id',
-    'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
+    'category_id.id', 'category_id.uuid_id', 'category_id.translations.languages_code', 'category_id.translations.nome_categoria',
     'category_id.translations.slug_permalink', 'translations.*'
   ],
   
   sitemap: [
-    'id', 'date_created', 'translations.slug_permalink'
+    'id', 'date_created', 'translations.languages_code', 'translations.slug_permalink'
   ],
   
   homepage: [
     'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-    'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
-    'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
+    'category_id.id', 'category_id.uuid_id', 'category_id.translations.languages_code', 'category_id.translations.nome_categoria',
+    'translations.languages_code', 'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
   ],
   
   sidebar: [
     'id', 'uuid_id', 'image', 'date_created', 'featured_status',
-    'category_id.id', 'category_id.uuid_id', 'category_id.translations.nome_categoria',
+    'category_id.id', 'category_id.uuid_id', 'category_id.translations.languages_code', 'category_id.translations.nome_categoria',
     'category_id.translations.slug_permalink', 'destination_id',
-    'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
+    'translations.languages_code', 'translations.titolo_articolo', 'translations.seo_summary', 'translations.slug_permalink'
   ]
 };
 
@@ -248,7 +248,7 @@ const ARTICLE_FIELD_PRESETS = {
 const COMPANY_FIELD_PRESETS = {
   minimal: [
     'id', 'uuid_id', 'company_name', 'slug_permalink',
-    'translations.seo_title'
+    'translations.languages_code', 'translations.seo_title'
   ],
   
   full: [
@@ -263,7 +263,7 @@ const COMPANY_FIELD_PRESETS = {
   
   homepage: [
     'id', 'uuid_id', 'website', 'company_name', 'slug_permalink', 'featured_image',
-    'phone', 'category_id', 'destination_id', 'featured_status', 'translations.seo_title', 'translations.seo_summary'
+    'phone', 'category_id', 'destination_id', 'featured_status', 'translations.languages_code', 'translations.seo_title', 'translations.seo_summary'
   ]
 };
 
@@ -422,17 +422,30 @@ class DirectusWebClient {
    * Generates consistent cache keys for different types of requests
    */
   private generateCacheKey(type: string, params: any): string {
-    const sortedParams = Object.keys(params)
+    // Ensure language is always part of the cache key
+    const cacheParams = {
+      ...params,
+      // Make sure lang is always present for language-specific caching
+      lang: params.lang || params.languageCode || 'it'
+    };
+    
+    const sortedParams = Object.keys(cacheParams)
       .sort()
       .reduce((result: any, key: string) => {
-        result[key] = params[key];
+        result[key] = cacheParams[key];
         return result;
       }, {});
     
     const paramString = JSON.stringify(sortedParams);
     const hash = Buffer.from(paramString).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
     
-    return `directus:${type}:${hash}`;
+    // Include language directly in cache key for better debugging
+    const lang = cacheParams.lang || 'unknown';
+    const cacheKey = `directus:${type}:${lang}:${hash}`;
+    
+    console.log(`🔑 [CACHE] Generated cache key: ${cacheKey} for params: ${JSON.stringify(sortedParams)}`);
+    
+    return cacheKey;
   }
 
   /**
@@ -675,28 +688,46 @@ class DirectusWebClient {
       // Generate cache key
       const cacheKey = this.generateCacheKey('categories', { lang: languageCode });
       
+      // 🔍 DEBUG: Log the query being built
+      console.log(`🔍 [getCategories] Building query for lang: ${languageCode}`);
+      
       return await this.cachedRequest(
         cacheKey,
         DirectusWebClient.CACHE_TTL.categories,
         async () => {
-          const response = await this.client.get('/items/categorias', {
-            params: {
-              filter: { visible: { _eq: true } },
-              fields: [
-                'id', 'uuid_id', 'nome_categoria', 'image', 'visible',
-                'translations.nome_categoria', 'translations.seo_title',
-                'translations.seo_summary', 'translations.slug_permalink'
-              ],
-              deep: {
-                translations: {
-                  _filter: { languages_code: { _eq: languageCode } }
-                }
+          const queryParams = {
+            filter: { visible: { _eq: true } },
+            fields: [
+              'id', 'uuid_id', 'nome_categoria', 'image', 'visible',
+              'translations.languages_code', 'translations.nome_categoria', 'translations.seo_title',
+              'translations.seo_summary', 'translations.slug_permalink'
+            ],
+            deep: {
+              translations: {
+                _filter: { languages_code: { _eq: languageCode } }
               }
-            },
+            }
+          };
+          
+          // 🔍 DEBUG: Log the full params
+          console.log(`🔍 [getCategories] Params: ${JSON.stringify(queryParams, null, 2)}`);
+          
+          const response = await this.client.get('/items/categorias', {
+            params: queryParams,
             cancelToken: this.cancelTokenSource.token
           });
 
           const data = response.data.data || [];
+          
+          // 🔍 DEBUG: Log what we got back
+          console.log(`🔍 [getCategories] Response: ${data.length} items`);
+          if (data.length > 0) {
+            console.log(`🔍 [getCategories] First item: ${JSON.stringify({
+              id: data[0].id,
+              nome_categoria: data[0].nome_categoria,
+              translations: data[0].translations
+            }, null, 2)}`);
+          }
           
           // 🚀 MEMORY FIX: Immediate cleanup
           response.data = null;
@@ -917,6 +948,9 @@ class DirectusWebClient {
       // Generate cache key
       const cacheKey = this.generateCacheKey('destinations', options);
       
+      // 🔍 DEBUG: Log the query being built
+      console.log(`🔍 [getDestinations] Building query for lang: ${options.lang}, type: ${options.type}`);
+      
       // Determine TTL based on request type
       let ttl = DirectusWebClient.CACHE_TTL.destinations;
       if (options.fields === 'homepage') {
@@ -935,6 +969,9 @@ class DirectusWebClient {
           // 🚀 MEMORY FIX: Limit field selection more aggressively
           const optimizedFields = this.getOptimizedFields(options.fields || 'full');
           
+          // 🔍 DEBUG: Log the fields being requested
+          console.log(`🔍 [getDestinations] Fields: ${JSON.stringify(optimizedFields)}`);
+          
           if (options.slug) {
             try {
               const params = {
@@ -942,12 +979,21 @@ class DirectusWebClient {
                 fields: optimizedFields // Use optimized fields
               };
               
+              // 🔍 DEBUG: Log the full params
+              console.log(`🔍 [getDestinations] Params for slug query: ${JSON.stringify(params, null, 2)}`);
+              
               const response = await this.client.get('/items/destinations', { 
                 params,
                 cancelToken: this.cancelTokenSource.token
               });
               
               const data = response.data?.data || [];
+              
+              // 🔍 DEBUG: Log what we got back
+              console.log(`🔍 [getDestinations] Response for slug: ${data.length} items`);
+              if (data.length > 0) {
+                console.log(`🔍 [getDestinations] First item translations: ${JSON.stringify(data[0].translations)}`);
+              }
               
               // 🚀 MEMORY FIX: Immediate cleanup of response
               response.data = null;
@@ -964,12 +1010,25 @@ class DirectusWebClient {
             fields: optimizedFields
           };
           
+          // 🔍 DEBUG: Log the full params for type query
+          console.log(`🔍 [getDestinations] Params for type query: ${JSON.stringify(params, null, 2)}`);
+          
           const response = await this.client.get('/items/destinations', { 
             params,
             cancelToken: this.cancelTokenSource.token
           });
           
           const data = response.data?.data || [];
+          
+          // 🔍 DEBUG: Log what we got back
+          console.log(`🔍 [getDestinations] Response: ${data.length} items`);
+          if (data.length > 0) {
+            console.log(`🔍 [getDestinations] First item: ${JSON.stringify({
+              id: data[0].id,
+              type: data[0].type,
+              translations: data[0].translations
+            }, null, 2)}`);
+          }
           
           // 🚀 MEMORY FIX: Immediate cleanup
           response.data = null;
@@ -992,20 +1051,20 @@ class DirectusWebClient {
     
     switch (fieldType) {
       case 'minimal':
-        return [...baseFields, 'translations.destination_name', 'translations.slug_permalink'];
+        return [...baseFields, 'translations.languages_code', 'translations.destination_name', 'translations.slug_permalink'];
       case 'sitemap':
-        return ['type', 'translations.slug_permalink'];
+        return ['type', 'translations.languages_code', 'translations.slug_permalink'];
       case 'navigation':
-        return [...baseFields, 'translations.destination_name', 'translations.slug_permalink'];
+        return [...baseFields, 'translations.languages_code', 'translations.destination_name', 'translations.slug_permalink'];
       case 'homepage':
         return [
           ...baseFields, 'image', 'featured_status',
-          'translations.destination_name', 'translations.slug_permalink', 'translations.seo_summary'
+          'translations.languages_code', 'translations.destination_name', 'translations.slug_permalink', 'translations.seo_summary'
         ];
       default:
         return [
           ...baseFields, 'image', 'featured_status',
-          'translations.destination_name', 'translations.slug_permalink', 'translations.seo_title',
+          'translations.languages_code', 'translations.destination_name', 'translations.slug_permalink', 'translations.seo_title',
           'translations.seo_summary', 'translations.description'
         ];
     }
@@ -1602,6 +1661,39 @@ class DirectusWebClient {
     if (options.featured_status) return 10;
     if (options.destination_id) return 25;
     return 50; // Default reasonable limit
+  }
+
+  /**
+   * 🧹 FORCE COMPLETE CACHE CLEAR
+   * Clears all cache entries to solve language mixing issues
+   */
+  public async forceClearAllCache(): Promise<void> {
+    try {
+      console.log('🧹 [CACHE] Force clearing ALL cache entries...');
+      
+      // Import delCache dynamically to avoid circular dependencies
+      const { delCache } = await import('@/lib/redis-cache');
+      
+      // Clear all possible cache patterns
+      const patterns = [
+        'directus:*',
+        'homepage:*',
+        'sitemap:*',
+        'destinations:*',
+        'articles:*',
+        'companies:*',
+        'categories:*'
+      ];
+
+      for (const pattern of patterns) {
+        await delCache(pattern);
+        console.log(`🧹 [CACHE] Cleared pattern: ${pattern}`);
+      }
+      
+      console.log('✅ [CACHE] All cache cleared successfully');
+    } catch (error) {
+      console.error('❌ [CACHE] Error clearing cache:', error);
+    }
   }
 }
 

@@ -18,43 +18,20 @@ export default async function Layout({ children, params }: LayoutProps) {
   // 🛡️ LANG VALIDATION: Ensure we have a valid language
   const validLang = ['it', 'en', 'fr', 'es', 'de', 'pt', 'tr', 'nl', 'ro', 'sv', 'pl', 'vi', 'id', 'el', 'uk', 'ru', 'bn', 'zh', 'hi', 'ar', 'fa', 'ur', 'ja', 'ko', 'am', 'cs', 'da', 'fi', 'af', 'hr', 'bg', 'sk', 'sl', 'sr', 'th', 'ms', 'tl', 'he', 'ca', 'et', 'lv', 'lt', 'mk', 'az', 'ka', 'hy', 'is', 'sw', 'zh-tw', 'no'].includes(lang) ? lang : 'it';
 
-  // 🔄 DEBUG: Log language being used
-  console.log(`🌍 [LAYOUT] Loading layout for language: ${validLang} (original: ${lang})`);
+  console.log(`🌍 [LAYOUT] Loading layout for language: ${validLang}`);
+
+  // 🧹 FORCE COMPLETE CACHE CLEAR to fix language mixing
+  await directusWebClient.forceClearAllCache();
 
   // Fetch data for the header on the server with fallback
   let destinations = [];
   let categories = [];
   
   try {
-    // 🔄 FORCE CACHE REFRESH: Clear cache for destinations and categories
-    await directusWebClient.invalidateContentCache('destinations');
-    await directusWebClient.invalidateContentCache('categories');
-    
-    console.log(`🔄 [LAYOUT] Cache cleared, fetching fresh data for ${validLang}`);
-    
     [destinations, categories] = await Promise.all([
       directusWebClient.getDestinationsByType('region', validLang),
       directusWebClient.getCategories(validLang)
     ]);
-    
-    // 🔄 DEBUG: Log what we got
-    console.log(`🏛️ [LAYOUT] Destinations loaded: ${destinations.length} items`);
-    console.log(`📂 [LAYOUT] Categories loaded: ${categories.length} items`);
-    
-    // 🔄 DEBUG: Check language in first destination
-    if (destinations.length > 0) {
-      const firstDest = destinations[0];
-      console.log(`🎯 [LAYOUT] First destination language: ${firstDest.translations?.[0]?.languages_code}`);
-      console.log(`🎯 [LAYOUT] First destination name: ${firstDest.translations?.[0]?.destination_name}`);
-    }
-    
-    // 🔄 DEBUG: Check language in first category
-    if (categories.length > 0) {
-      const firstCat = categories[0];
-      console.log(`🎯 [LAYOUT] First category language: ${firstCat.translations?.[0]?.languages_code}`);
-      console.log(`🎯 [LAYOUT] First category name: ${firstCat.translations?.[0]?.nome_categoria}`);
-    }
-    
   } catch (error) {
     console.error('❌ [LAYOUT] Directus error, using fallback data:', error);
     
