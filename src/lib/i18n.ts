@@ -39,6 +39,7 @@ export function isRTLLanguage(lang: string): boolean {
 // 🚨 EMERGENCY: In-memory cache per evitare richieste duplicate
 const translationCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+const MAX_CACHE_SIZE = 100; // 🚨 EMERGENCY: Limit cache size
 
 // Le funzioni sono già importate sopra
 
@@ -59,7 +60,15 @@ export const getTranslations = async (lang: string, section: string) => {
     
     const result = data.success ? data.translations : {};
     
-    // 🚨 EMERGENCY: Cache result
+    // 🚨 EMERGENCY: Cache result with size limit
+    if (translationCache.size >= MAX_CACHE_SIZE) {
+      // Remove oldest entry
+      const oldestKey = translationCache.keys().next().value;
+      if (oldestKey) {
+        translationCache.delete(oldestKey);
+      }
+    }
+    
     translationCache.set(cacheKey, {
       data: result,
       timestamp: Date.now()
@@ -83,14 +92,15 @@ export const getTranslation = async (key: string, lang: string, section?: string
   }
 };
 
-// 🚨 EMERGENCY: Cleanup cache periodically
-setInterval(() => {
+// 🚨 EMERGENCY: REMOVED setInterval - causes memory leaks
+// Manual cleanup only when needed
+export const cleanupTranslationCache = () => {
   const now = Date.now();
   for (const [key, value] of translationCache.entries()) {
     if (now - value.timestamp > CACHE_TTL) {
       translationCache.delete(key);
     }
   }
-}, CACHE_TTL);
+};
 
 export { RTL_LANGUAGES, SUPPORTED_LANGUAGES };

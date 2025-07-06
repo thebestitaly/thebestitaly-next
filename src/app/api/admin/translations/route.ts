@@ -99,6 +99,7 @@ const FALLBACK_TRANSLATIONS = {
 // 🚨 EMERGENCY: Cache per evitare loop infiniti
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+const MAX_CACHE_SIZE = 50; // 🚨 EMERGENCY: Limit cache size
 
 export async function GET(request: NextRequest) {
   try {
@@ -127,7 +128,15 @@ export async function GET(request: NextRequest) {
       result = langTranslations;
     }
 
-    // 🚨 EMERGENCY: Cache result
+    // 🚨 EMERGENCY: Cache result with size limit
+    if (cache.size >= MAX_CACHE_SIZE) {
+      // Remove oldest entry
+      const oldestKey = cache.keys().next().value;
+      if (oldestKey) {
+        cache.delete(oldestKey);
+      }
+    }
+    
     cache.set(cacheKey, {
       data: result,
       timestamp: Date.now()
@@ -149,12 +158,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 🚨 EMERGENCY: Cleanup cache periodically
-setInterval(() => {
+// 🚨 EMERGENCY: REMOVED setInterval - causes memory leaks
+// Manual cleanup only when needed
+export const cleanupTranslationAPICache = () => {
   const now = Date.now();
   for (const [key, value] of cache.entries()) {
     if (now - value.timestamp > CACHE_TTL) {
       cache.delete(key);
     }
   }
-}, CACHE_TTL); 
+}; 

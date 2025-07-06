@@ -50,12 +50,12 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
       const result = await response.json();
       return result.data || [];
     },
-    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
-    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    staleTime: 180000, // 🚨 REDUCED: 3 minutes instead of 1 hour
+    gcTime: 360000, // 🚨 REDUCED: 6 minutes instead of 2 hours
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   // 🚨 RENDER WITHOUT QUERIES

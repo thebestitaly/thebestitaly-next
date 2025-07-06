@@ -53,12 +53,12 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       const result = await response.json();
       return result.data || [];
     },
-    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
-    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    staleTime: 300000, // 🚨 REDUCED: 5 minutes instead of 1 hour
+    gcTime: 600000, // 🚨 REDUCED: 10 minutes instead of 2 hours
     refetchOnWindowFocus: false, 
     refetchOnMount: false, 
     refetchOnReconnect: false, 
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   const { data: articlesByCategory } = useQuery({

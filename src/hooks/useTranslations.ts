@@ -8,7 +8,7 @@ export function useTranslation(
   section?: string,
   fallbackLanguage: string = 'it'
 ) {
-  // 🚨 EMERGENCY: Use React Query with aggressive caching
+  // 🚨 EMERGENCY: Reduced cache times to prevent memory accumulation
   const { data: translations, isLoading, error } = useQuery({
     queryKey: ["translation", languageCode, section || 'common'],
     queryFn: async () => {
@@ -16,12 +16,12 @@ export function useTranslation(
       const data = await response.json();
       return data.success ? data.translations : {};
     },
-    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
-    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    staleTime: 300000, // 🚨 REDUCED: 5 minutes instead of 1 hour
+    gcTime: 600000, // 🚨 REDUCED: 10 minutes instead of 2 hours
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   // 🚨 EMERGENCY: Fallback query only if main translation not found
@@ -32,13 +32,13 @@ export function useTranslation(
       const data = await response.json();
       return data.success ? data.translations : {};
     },
-    enabled: !!translations && !translations[keyName], // Only load if main translation missing
-    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
-    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    enabled: !!translations && !translations[keyName],
+    staleTime: 300000, // 🚨 REDUCED: 5 minutes instead of 1 hour
+    gcTime: 600000, // 🚨 REDUCED: 10 minutes instead of 2 hours
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   const translation = translations?.[keyName] || fallbackTranslations?.[keyName] || keyName;
@@ -56,7 +56,7 @@ export function useSectionTranslations(
   languageCode: string,
   fallbackLanguage: string = 'it'
 ) {
-  // 🚨 EMERGENCY: Use React Query with aggressive caching
+  // 🚨 EMERGENCY: Reduced cache times to prevent memory accumulation
   const { data: translations, isLoading, error } = useQuery({
     queryKey: ["section-translations", languageCode, section],
     queryFn: async () => {
@@ -64,12 +64,12 @@ export function useSectionTranslations(
       const data = await response.json();
       return data.success ? data.translations : {};
     },
-    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
-    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    staleTime: 300000, // 🚨 REDUCED: 5 minutes instead of 1 hour
+    gcTime: 600000, // 🚨 REDUCED: 10 minutes instead of 2 hours
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   // Funzione helper per ottenere una traduzione specifica
@@ -90,7 +90,7 @@ export function useAllTranslations(
   languageCode: string,
   fallbackLanguage: string = 'it'
 ) {
-  // 🚨 EMERGENCY: Use React Query with aggressive caching
+  // 🚨 EMERGENCY: Reduced cache times to prevent memory accumulation
   const { data: translations, isLoading, error, refetch } = useQuery({
     queryKey: ["all-translations", languageCode],
     queryFn: async () => {
@@ -98,12 +98,12 @@ export function useAllTranslations(
       const data = await response.json();
       return data.success ? data.translations : {};
     },
-    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
-    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    staleTime: 300000, // 🚨 REDUCED: 5 minutes instead of 1 hour
+    gcTime: 600000, // 🚨 REDUCED: 10 minutes instead of 2 hours
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   // Funzione helper per ottenere una traduzione specifica

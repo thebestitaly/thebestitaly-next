@@ -65,12 +65,12 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, categ
       return categoryResult;
     },
     enabled: !!currentCategory,
-    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
-    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    staleTime: 300000, // 🚨 REDUCED: 5 minutes instead of 1 hour
+    gcTime: 600000, // 🚨 REDUCED: 10 minutes instead of 2 hours
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   // 🚨 EMERGENCY: Query per articoli - SOLO REACT QUERY
@@ -106,12 +106,12 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, categ
       return articles;
     },
     enabled: !!categoryInfo?.id,
-    staleTime: 1800000, // 🚨 EMERGENCY: 30 minutes cache!
-    gcTime: 3600000, // 🚨 EMERGENCY: 1 hour garbage collection
+    staleTime: 180000, // 🚨 REDUCED: 3 minutes instead of 30 minutes
+    gcTime: 360000, // 🚨 REDUCED: 6 minutes instead of 1 hour
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
-    retry: 0, // 🚨 EMERGENCY: No retries!
+    retry: 0,
   });
 
   const loading = categoryLoading || articlesLoading;
