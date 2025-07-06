@@ -158,13 +158,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 🚨 EMERGENCY: REMOVED setInterval - causes memory leaks
-// Manual cleanup only when needed
-export const cleanupTranslationAPICache = () => {
+// 🚨 EMERGENCY: Manual cleanup function (not exported to avoid Route type error)
+function cleanupTranslationAPICache() {
   const now = Date.now();
   for (const [key, value] of cache.entries()) {
     if (now - value.timestamp > CACHE_TTL) {
       cache.delete(key);
     }
   }
-}; 
+} 
