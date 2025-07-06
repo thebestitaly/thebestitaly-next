@@ -42,7 +42,6 @@ function LoginPageContent() {
 
       // Successful login - redirect to original page or reserved area
       const returnUrl = searchParams.get('returnUrl') || '/reserved';
-      console.log('✅ Login successful, redirecting to:', returnUrl);
       router.push(returnUrl);
       router.refresh();
     } catch (error) {

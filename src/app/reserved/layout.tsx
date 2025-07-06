@@ -20,20 +20,20 @@ export default function ReservedLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const router = useRouter();
 
-  // Show loading screen while checking authentication
-  if (isLoading) {
-    return <AuthLoader />;
-  }
-
   // If not authenticated, redirect to login (except on login page)
+  // IMPORTANTE: useEffect deve essere chiamato sempre, prima dei return condizionali
   useEffect(() => {
     if (!user && !isLoading && pathname !== '/reserved/login') {
-      console.log('🔒 User not authenticated, redirecting to login...');
       // Save the current path to redirect back after login
       const returnUrl = encodeURIComponent(pathname);
       router.push(`/reserved/login?returnUrl=${returnUrl}`);
     }
   }, [user, isLoading, pathname, router]);
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return <AuthLoader />;
+  }
 
   // If not authenticated, show minimal layout
   if (!user) {

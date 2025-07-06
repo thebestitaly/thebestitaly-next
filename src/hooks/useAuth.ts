@@ -72,7 +72,7 @@ export function useAuth() {
         }
         
         // Force a hard redirect to bypass any cache
-        window.location.href = '/it/reserved/login';
+        window.location.href = '/reserved/login';
       } else {
         console.error('Logout API call failed');
       }
@@ -81,7 +81,7 @@ export function useAuth() {
       
       // Even if API fails, clear local state and redirect
       setUser(null);
-      window.location.href = '/it/reserved/login';
+      window.location.href = '/reserved/login';
     }
   };
 
