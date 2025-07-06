@@ -5,7 +5,11 @@
 import { promises as fs } from 'fs';
 import { existsSync } from 'fs';
 import path from 'path';
-import directusClient, { getSupportedLanguages, Destination } from './directus';
+import directusAdminClient from './directus-admin';
+
+// Temporary types and functions for compatibility
+type Destination = any;
+const getSupportedLanguages = () => ['it', 'en', 'fr', 'es', 'de', 'pt', 'tr'];
 
 const STATIC_DATA_DIR = path.join(process.cwd(), '.next', 'static-destinations');
 const CACHE_VERSION = '3.0-safe';
@@ -101,7 +105,7 @@ export async function generateStaticDestinations(langsToGenerate?: string[]) {
   try {
     // 1. Scarica TUTTE le regioni con TUTTE le loro traduzioni
     console.log('PASSO 1: Scarico tutte le regioni...');
-    const allRegions = await directusClient.getDestinations({ type: 'region', limit: -1 });
+    const allRegions = await directusAdminClient.getDestinations({ type: 'region', limit: -1 });
     console.log(`Trovate ${allRegions.length} regioni totali.`);
 
     // 2. Itera su ogni regione per scaricare le sue province

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import directusClient from '@/lib/directus';
+import directusAdminClient from '@/lib/directus-admin';
 import StagingTranslationManager from '@/components/translations/StagingTranslationManager';
 
 interface ArticleData {
@@ -92,7 +92,7 @@ const EditArticlePage = () => {
     const loadData = async () => {
       // Carica categorie (gestione errori separata)
       try {
-        const categoriesResponse = await directusClient.get('/items/categorias', {
+        const categoriesResponse = await directusAdminClient.get('/items/categorias', {
           params: {
             fields: 'id,translations.nome_categoria,translations.languages_code',
             'filter[visible][_eq]': true
@@ -106,7 +106,7 @@ const EditArticlePage = () => {
 
       // Carica destinazioni (gestione errori separata)
       try {
-        const destinationsResponse = await directusClient.get('/items/destinations', {
+        const destinationsResponse = await directusAdminClient.get('/items/destinations', {
           params: {
             fields: 'id,translations.destination_name,translations.languages_code'
           }

@@ -4,10 +4,10 @@ import React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSectionTranslations } from '@/hooks/useTranslations';
-import { Destination, Category } from "@/lib/directus";
+import { Translation, Category } from "@/lib/directus-admin";
 
 interface FooterProps {
-  regions: Destination[];
+  regions: any[];
   categories: Category[];
 }
 

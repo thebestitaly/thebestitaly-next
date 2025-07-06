@@ -672,6 +672,72 @@ class DirectusAdminClient {
   public static globalCleanup() {
     DirectusAdminClient.activeCalls = 0;
   }
+
+  // 🎯 SITEMAP METHODS (for compatibility with old directus.ts)
+  public async getArticlesForSitemap(lang: string): Promise<any[]> {
+    try {
+      const response = await this.client.get('/items/articles', {
+        params: {
+          fields: ['slug_permalink', 'date_created'],
+          deep: {
+            translations: {
+              _filter: { languages_code: { _eq: lang } }
+            }
+          },
+          limit: 1000
+        }
+      });
+      
+      return response.data?.data?.map((article: any) => ({
+        slug_permalink: article.translations?.[0]?.slug_permalink,
+        date_created: article.date_created
+      })).filter((article: any) => article.slug_permalink) || [];
+    } catch (error) {
+      console.error('Error fetching articles for sitemap:', error);
+      return [];
+    }
+  }
+
+  public async getCompaniesForSitemap(): Promise<any[]> {
+    try {
+      const response = await this.client.get('/items/companies', {
+        params: {
+          fields: ['slug_permalink'],
+          filter: { active: { _eq: true } },
+          limit: 1000
+        }
+      });
+      
+      return response.data?.data?.filter((company: any) => company.slug_permalink) || [];
+    } catch (error) {
+      console.error('Error fetching companies for sitemap:', error);
+      return [];
+    }
+  }
+
+  public async getCategoriesForSitemap(lang: string): Promise<any[]> {
+    try {
+      const response = await this.client.get('/items/categorias', {
+        params: {
+          fields: ['slug_permalink'],
+          deep: {
+            translations: {
+              _filter: { languages_code: { _eq: lang } }
+            }
+          },
+          filter: { visible: { _eq: true } },
+          limit: 100
+        }
+      });
+      
+      return response.data?.data?.map((category: any) => ({
+        slug_permalink: category.translations?.[0]?.slug_permalink
+      })).filter((category: any) => category.slug_permalink) || [];
+    } catch (error) {
+      console.error('Error fetching categories for sitemap:', error);
+      return [];
+    }
+  }
 }
 
 const directusAdminClient = new DirectusAdminClient();

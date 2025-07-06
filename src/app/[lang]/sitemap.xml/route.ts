@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import directusClient from '../../../lib/directus';
+import directusAdminClient from '../../../lib/directus-admin';
 
 interface SitemapEntry {
   url: string;
@@ -64,7 +64,7 @@ async function generateSitemap(lang: string): Promise<string> {
     console.log(`📰 Fetching articles using optimized method for ${lang}...`);
     
     // Usa il metodo esistente che ha fallback e caching
-    const articles = await directusClient.getArticlesForSitemap(lang);
+    const articles = await directusAdminClient.getArticlesForSitemap(lang);
     console.log(`📰 Found ${articles.length} articles from optimized method`);
 
     articles.forEach((article: any) => {
@@ -92,7 +92,7 @@ async function generateSitemap(lang: string): Promise<string> {
     console.log(`🏢 Fetching companies using optimized method...`);
     
     // Usa il metodo esistente che ha fallback e caching
-    const companies = await directusClient.getCompaniesForSitemap();
+    const companies = await directusAdminClient.getCompaniesForSitemap();
     console.log(`🏢 Found ${companies.length} companies from optimized method`);
 
     companies.forEach((company: any) => {
@@ -120,7 +120,7 @@ async function generateSitemap(lang: string): Promise<string> {
     console.log(`📂 Fetching categories using optimized method for ${lang}...`);
     
     // Usa il metodo esistente che ha fallback e caching
-    const categories = await directusClient.getCategoriesForSitemap(lang);
+    const categories = await directusAdminClient.getCategoriesForSitemap(lang);
     console.log(`📂 Found ${categories.length} categories from optimized method`);
 
     categories.forEach((category: any) => {

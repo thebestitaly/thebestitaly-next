@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '../../../../lib/directus';
+import directusAdminClient from '../../../../lib/directus-admin';
 
 // GET - Cache statistics and health check
 export async function GET(request: NextRequest) {

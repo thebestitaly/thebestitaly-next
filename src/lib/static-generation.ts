@@ -1,7 +1,7 @@
 // src/lib/static-generation.ts
 // 🚀 SISTEMA DI GENERAZIONE STATICA per 7.900 comuni italiani
 
-import { Destination } from './directus';
+import { Translation } from './directus-admin';
 
 // 🎯 Configurazione per la generazione statica
 import { SUPPORTED_LANGUAGES } from './languages';

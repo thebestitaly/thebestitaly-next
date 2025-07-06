@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import directusClient from '@/lib/directus';
+import directusAdminClient from '@/lib/directus-admin';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -26,7 +26,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         articlePayload.featured_status = body.featured_status;
       }
 
-      await directusClient.put(`/items/articles/${id}`, articlePayload);
+      await directusAdminClient.put(`/items/articles/${id}`, articlePayload);
     }
 
     // Update Italian translation
@@ -39,7 +39,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     };
 
     // Find existing translation
-    const existingTranslations = await directusClient.get(`/items/articles_translations`, {
+    const existingTranslations = await directusAdminClient.get(`/items/articles_translations`, {
       params: {
         filter: {
           articles_id: { _eq: id },
@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (existingTranslations.data.data.length > 0) {
       // Update existing translation
       const translationId = existingTranslations.data.data[0].id;
-      const translationResponse = await directusClient.put(`/items/articles_translations/${translationId}`, translationPayload);
+      const translationResponse = await directusAdminClient.put(`/items/articles_translations/${translationId}`, translationPayload);
       
       return NextResponse.json({
         success: true,
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         languages_code: 'it'
       };
       
-      const translationResponse = await directusClient.post('/items/articles_translations', newTranslationPayload);
+      const translationResponse = await directusAdminClient.post('/items/articles_translations', newTranslationPayload);
       
       return NextResponse.json({
         success: true,

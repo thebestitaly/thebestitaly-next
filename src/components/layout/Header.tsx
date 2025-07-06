@@ -5,11 +5,11 @@ import { Search, X, Menu, ChevronDown, Globe, ChevronLeft, ChevronRight } from '
 import { useSectionTranslations } from '@/hooks/useTranslations';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 import InteractiveMap from './InteractiveMap';
-import { Destination, Category } from '@/lib/directus';
+import { Translation, Category } from '@/lib/directus-admin';
 
 interface HeaderProps {
   lang: string;
-  destinations: Destination[];
+  destinations: any[];
   categories: Category[];
 }
 

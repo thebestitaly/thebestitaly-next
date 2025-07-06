@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import directusClient from '../lib/directus';
+import directusAdminClient from '../lib/directus-admin';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 
 const RegionsList = () => {
   const { data: regions, isLoading, error } = useQuery({
     queryKey: ['regions', 'it'],
-    queryFn: () => directusClient.getDestinationsByType('region', 'it')
+    queryFn: () => directusAdminClient.getDestinationsByType('region', 'it')
   });
 
   if (isLoading) {
@@ -26,7 +26,7 @@ const RegionsList = () => {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Regions</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {regions?.map((region) => {
+        {regions?.map((region: any) => {
           const translation = region.translations[0];
           return (
             <div key={region.id} className="bg-white rounded-lg shadow-md overflow-hidden">
