@@ -167,7 +167,7 @@ export default function EditCompanyPage() {
       console.log('Company aggiornata tramite API admin');
       
       alert('✅ Company aggiornata con successo!');
-      router.push('/it/reserved');
+      router.push('/reserved');
       
     } catch (error) {
       console.error('Errore durante l\'aggiornamento:', error);
@@ -219,7 +219,7 @@ export default function EditCompanyPage() {
               </p>
             </div>
             <button
-              onClick={() => router.push('/it/reserved')}
+              onClick={() => router.push('/reserved')}
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               ← Torna alla lista
@@ -441,7 +441,7 @@ export default function EditCompanyPage() {
 
                 <button
                   type="button"
-                  onClick={() => router.push('/it/reserved')}
+                  onClick={() => router.push('/reserved')}
                   className="inline-flex items-center justify-center px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200"
                 >
                   Annulla

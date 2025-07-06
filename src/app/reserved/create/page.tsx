@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import directusAdminClient from "../../../../lib/directus-admin";
+import directusAdminClient from "@/lib/directus-admin";
 
 interface Category {
   id: string;
@@ -188,7 +188,7 @@ export default function CreateArticlePage() {
       console.log('Articolo creato con successo:', result);
       
       alert('✅ Articolo creato con successo!');
-      router.push('/it/reserved');
+      router.push('/reserved');
       
     } catch (error) {
       console.error('Errore durante la creazione:', error);

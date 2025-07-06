@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import directusAdminClient from "../../../../../lib/directus-admin";
+import directusAdminClient from "@/lib/directus-admin";
 import StagingTranslationManager from "@/components/translations/StagingTranslationManager";
 
 // Tutte le lingue supportate (50+ lingue) - inglese come principale

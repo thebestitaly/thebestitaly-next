@@ -40,7 +40,7 @@ export default function LoginPage() {
       }
 
       // Successful login - redirect to reserved area
-      router.push('/it/reserved');
+      router.push('/reserved');
       router.refresh();
     } catch (error) {
       console.error('Login error:', error);

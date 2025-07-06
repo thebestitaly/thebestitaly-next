@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import directusAdminClient from "../../../../lib/directus-admin";
+import directusAdminClient from "@/lib/directus-admin";
 
 export default function CreateCompanyPage() {
   const router = useRouter();
@@ -292,7 +292,7 @@ export default function CreateCompanyPage() {
       console.log('Company creata con successo:', result);
       
       alert('✅ Company creata con successo!');
-      router.push('/it/reserved');
+      router.push('/reserved');
       
     } catch (error) {
       console.error('Errore durante la creazione:', error);

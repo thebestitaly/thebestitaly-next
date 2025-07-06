@@ -51,19 +51,19 @@ export default function ReservedLayout({ children }: { children: React.ReactNode
                 <>
                   {/* Navigation Links */}
                   <Link 
-                    href="/it/reserved" 
+                    href="/reserved" 
                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
                   >
                     📚 Articoli
                   </Link>
                   <Link 
-                    href="/it/reserved/create" 
+                    href="/reserved/create" 
                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
                   >
                     ✏️ Nuovo
                   </Link>
                   <Link 
-                    href="/it/reserved/widgets" 
+                    href="/reserved/widgets" 
                     className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
                   >
                     🔧 Widget

@@ -448,7 +448,7 @@ export default function TranslationsManagementPage() {
               🔄 Refresh Cache
             </button>
             <button
-              onClick={() => router.push('/it/reserved')}
+              onClick={() => router.push('/reserved')}
               className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
             >
               ← Torna alla lista

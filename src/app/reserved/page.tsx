@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import directusAdminClient from "../../../lib/directus-admin";
+import directusAdminClient from "@/lib/directus-admin";
 
 // Interfaccia per la risposta degli articoli da Directus
 interface ArticleDirectusResponse {
@@ -211,7 +211,7 @@ function ArticlesList() {
   async function triggerTranslate(articleId: number | string) {
     setTranslatingItems(prev => new Set(prev).add(articleId));
     try {
-      const res = await fetch(`/it/api/translate-articles/${articleId}`, {
+      const res = await fetch(`/api/translate-articles/${articleId}`, {
         method: "POST",
       });
       if (!res.ok) throw new Error(`Errore traduzione: ${res.status}`);
@@ -234,7 +234,7 @@ function ArticlesList() {
   async function triggerTranslateEnglish(articleId: number | string) {
     setTranslatingItems(prev => new Set(prev).add(articleId));
     try {
-      const res = await fetch(`/it/api/translate-articles/${articleId}`, {
+      const res = await fetch(`/api/translate-articles/${articleId}`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
@@ -399,7 +399,7 @@ function ArticlesList() {
   async function triggerTranslateCompany(companyId: number | string) {
     setTranslatingItems(prev => new Set(prev).add(companyId));
     try {
-      const res = await fetch(`/it/api/translate-companies/${companyId}`, {
+      const res = await fetch(`/api/translate-companies/${companyId}`, {
         method: "POST",
       });
       if (!res.ok) throw new Error(`Errore traduzione: ${res.status}`);
@@ -422,7 +422,7 @@ function ArticlesList() {
   async function triggerTranslateCompanyEnglish(companyId: number | string) {
     setTranslatingItems(prev => new Set(prev).add(companyId));
     try {
-      const res = await fetch(`/it/api/translate-companies/${companyId}`, {
+      const res = await fetch(`/api/translate-companies/${companyId}`, {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
@@ -452,7 +452,7 @@ function ArticlesList() {
     
     setTranslatingItems(prev => new Set(prev).add(articleId));
     try {
-      const res = await fetch(`/it/api/translate-articles/${articleId}/delete-all`, {
+      const res = await fetch(`/api/translate-articles/${articleId}/delete-all`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`Errore eliminazione: ${res.status}`);
@@ -533,7 +533,7 @@ function ArticlesList() {
     
     setTranslatingItems(prev => new Set(prev).add(companyId));
     try {
-      const res = await fetch(`/it/api/translate-companies/${companyId}/delete-all`, {
+      const res = await fetch(`/api/translate-companies/${companyId}/delete-all`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(`Errore eliminazione: ${res.status}`);
@@ -619,7 +619,7 @@ function ArticlesList() {
             </button>
             {activeTab === 'articles' && (
               <Link
-                href="/it/reserved/create"
+                href="/reserved/create"
                 className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 ✏️ Nuovo Articolo
@@ -627,14 +627,14 @@ function ArticlesList() {
             )}
             {activeTab === 'companies' && (
               <Link
-                href="/it/reserved/create-company"
+                href="/reserved/create-company"
                 className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 🏢 Nuova Company
               </Link>
             )}
             <Link
-              href="/it/reserved/translations"
+              href="/reserved/translations"
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
               🌐 Traduzioni
@@ -905,7 +905,7 @@ function ArticlesList() {
                             </button>
                             
                             <a
-                              href={`/it/reserved/edit/${article.id}`}
+                              href={`/reserved/edit/${article.id}`}
                               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold text-sm rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md text-center"
                             >
                               ✏️ Modifica
@@ -924,7 +924,7 @@ function ArticlesList() {
                   <h3 className="text-xl font-semibold text-gray-700 mb-2">Nessun articolo trovato</h3>
                   <p className="text-gray-900 mb-6">Non ci sono articoli pubblicati al momento</p>
                   <Link
-                    href="/it/reserved/create"
+                    href="/reserved/create"
                     className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
                   >
                     ✏️ Crea il Primo Articolo
@@ -1077,7 +1077,7 @@ function ArticlesList() {
                             </button>
                             
                             <a
-                              href={`/it/reserved/edit-destination/${destination.id}`}
+                              href={`/reserved/edit-destination/${destination.id}`}
                               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold text-sm rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md text-center"
                             >
                               ✏️ Modifica
@@ -1298,7 +1298,7 @@ function ArticlesList() {
                             </button>
                             
                             <a
-                              href={`/it/reserved/edit-company/${company.id}`}
+                              href={`/reserved/edit-company/${company.id}`}
                               className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold text-sm rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md text-center"
                             >
                               ✏️ Modifica

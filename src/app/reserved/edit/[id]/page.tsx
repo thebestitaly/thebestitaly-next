@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import directusClient from '../../../../../lib/directus';
-import StagingTranslationManager from '../../../../../components/translations/StagingTranslationManager';
+import directusClient from '@/lib/directus';
+import StagingTranslationManager from '@/components/translations/StagingTranslationManager';
 
 interface ArticleData {
   id: string | number;
@@ -190,7 +190,7 @@ const EditArticlePage = () => {
       }
 
       alert('✅ Articolo aggiornato con successo!');
-      router.push('/it/reserved');
+      router.push('/reserved');
     } catch (error) {
       console.error('Errore durante l\'aggiornamento:', error);
       alert(`❌ Errore durante l'aggiornamento: ${error}`);
@@ -232,7 +232,7 @@ const EditArticlePage = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Modifica Articolo #{article.id}</h1>
           <button
-            onClick={() => router.push('/it/reserved')}
+            onClick={() => router.push('/reserved')}
             className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
           >
             ← Torna alla lista
