@@ -5,13 +5,13 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// 🚨 EMERGENCY: Configure QueryClient to prevent memory accumulation
+// 🚨 EMERGENCY: Completely disable cache to identify memory leak
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // 🚨 Reduced cache times to prevent memory build-up
-      staleTime: 180000, // 3 minutes default
-      gcTime: 360000, // 6 minutes garbage collection
+      // 🚨 EMERGENCY: Disable all caching temporarily
+      staleTime: 0, // Always stale - no cache
+      gcTime: 0, // Immediate garbage collection
       refetchOnWindowFocus: false,
       refetchOnMount: true,
       refetchOnReconnect: false,
