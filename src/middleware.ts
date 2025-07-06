@@ -121,6 +121,6 @@ export const config = {
     // Match ALL language paths and root paths for language detection
     // 🔧 FIX: Aggiunto zh-tw alla lista
     '/(it|en|es|fr|de|pt|ru|zh|zh-tw|ja|ar|hi|bn|ur|ko|vi|th|tr|pl|nl|sv|da|no|fi|cs|sk|hu|ro|bg|hr|sr|sl|et|lv|lt|el|he|fa|am|az|ka|hy|tk|tl|sw|ms|id|is|mk|af)/:path*',
-    '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images).*)',
+    '/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|images|reserved).*)',
   ],
 };
