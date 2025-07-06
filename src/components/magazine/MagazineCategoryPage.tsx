@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
-import { singletonCache, CACHE_KEYS, CACHE_TTL } from "@/lib/singleton-cache";
+import { useQuery } from "@tanstack/react-query";
 
 import ArticleGrid from "./ArticleGrid";
 
@@ -29,124 +29,93 @@ interface CategoryData {
   }[];
 }
 
-// 🚨 EMERGENCY SINGLETON CACHE - Load data ONCE and share across all components
+// 🚨 EMERGENCY: Use React Query with aggressive caching
 const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, category }) => {
   const params = useParams();
   const currentLang = lang || (params?.lang as string) || 'it';
   const currentCategory = category || (params?.category as string);
 
-  const [categoryInfo, setCategoryInfo] = React.useState<CategoryData | null>(null);
-  const [articles, setArticles] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  // 🚨 EMERGENCY: Query per categorie - SOLO REACT QUERY
+  const { data: categoryInfo, isLoading: categoryLoading, error: categoryError } = useQuery<CategoryData | null>({
+    queryKey: ["category-info", currentCategory, currentLang],
+    queryFn: async () => {
+      if (!currentCategory) return null;
+      
+      console.log(`🔍 [DEBUG] Searching for category: ${currentCategory} in lang: ${currentLang}`);
+      
+      // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+      const params = new URLSearchParams();
+      params.append('filter[translations][slug_permalink][_eq]', currentCategory);
+      params.append('filter[visible][_eq]', 'true');
+      params.append('fields[]', 'id');
+      params.append('fields[]', 'nome_categoria');
+      params.append('fields[]', 'image');
+      params.append('fields[]', 'visible');
+      params.append('fields[]', 'translations.*');
+      params.append('limit', '1');
 
-  // 🚨 STABLE CACHE KEYS - Generate once and never change
-  const categoryInfoCacheKey = React.useMemo(() => 
-    CACHE_KEYS.CATEGORY_INFO(currentCategory, currentLang), 
-    [currentCategory, currentLang]
-  );
-
-  const articlesKey = React.useMemo(() => 
-    CACHE_KEYS.CATEGORY_ARTICLES(currentCategory, currentLang), 
-    [currentCategory, currentLang]
-  );
-
-  // 🚨 LOAD DATA ONCE - Using singleton cache
-  React.useEffect(() => {
-    let mounted = true;
-
-    const loadData = async () => {
-      if (!currentCategory) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // 🔍 LOAD CATEGORY INFO via Proxy (client-side CORS fix)
-        const categoryData = await singletonCache.get(
-          categoryInfoCacheKey,
-          async () => {
-            // 🔍 DEBUG: Log per debugging
-            console.log(`🔍 [DEBUG] Searching for category: ${currentCategory} in lang: ${currentLang}`);
-            
-            // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
-            const params = new URLSearchParams();
-            params.append('filter[translations][slug_permalink][_eq]', currentCategory);
-            params.append('filter[visible][_eq]', 'true');
-            params.append('fields[]', 'id');
-            params.append('fields[]', 'nome_categoria');
-            params.append('fields[]', 'image');
-            params.append('fields[]', 'visible');
-            params.append('fields[]', 'translations.*');
-            params.append('limit', '1');
-
-            const response = await fetch(`/api/directus/items/categorias?${params}`);
-            if (!response.ok) {
-              throw new Error(`Category query failed: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const categoryResult = data?.data?.[0] || null;
-            console.log(`🔍 [DEBUG] Found category (proxy):`, categoryResult);
-            return categoryResult;
-          },
-          CACHE_TTL.CATEGORIES // 1 hour cache
-        );
-
-        // 🚨 LOAD ARTICLES via Proxy (client-side CORS fix)
-        const articlesData = await singletonCache.get(
-          articlesKey,
-          async () => {
-            if (!categoryData?.id) return [];
-
-            console.log(`🔍 [DEBUG] Loading articles for category ID: ${categoryData.id}`);
-            
-            // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
-            const params = new URLSearchParams();
-            params.append('filter[status][_eq]', 'published');
-            params.append('filter[category_id][_eq]', String(categoryData.id));
-            params.append('fields[]', 'id');
-            params.append('fields[]', 'image');
-            params.append('fields[]', 'date_created');
-            params.append('fields[]', 'translations.titolo_articolo');
-            params.append('fields[]', 'translations.slug_permalink');
-            params.append('fields[]', 'translations.seo_summary');
-            params.append('deep[translations][_filter][languages_code][_eq]', currentLang);
-            params.append('sort[]', '-date_created');
-            params.append('limit', '24');
-
-            const response = await fetch(`/api/directus/items/articles?${params}`);
-            if (!response.ok) {
-              throw new Error(`Articles query failed: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const articles = data?.data || [];
-            console.log(`🔍 [DEBUG] Found ${articles.length} articles (proxy)`);
-            return articles;
-          },
-          CACHE_TTL.ARTICLES // 30 minutes cache
-        );
-
-        if (mounted) {
-          setCategoryInfo(categoryData);
-          setArticles(articlesData);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Unknown error');
-          setLoading(false);
-        }
+      const response = await fetch(`/api/directus/items/categorias?${params}`);
+      if (!response.ok) {
+        throw new Error(`Category query failed: ${response.status}`);
       }
-    };
 
-    loadData();
+      const data = await response.json();
+      const categoryResult = data?.data?.[0] || null;
+      console.log(`🔍 [DEBUG] Found category (proxy):`, categoryResult);
+      return categoryResult;
+    },
+    enabled: !!currentCategory,
+    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
+    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 0, // 🚨 EMERGENCY: No retries!
+  });
 
-    return () => {
-      mounted = false;
-    };
-  }, [categoryInfoCacheKey, articlesKey, currentCategory, currentLang]);
+  // 🚨 EMERGENCY: Query per articoli - SOLO REACT QUERY
+  const { data: articles, isLoading: articlesLoading, error: articlesError } = useQuery<any[]>({
+    queryKey: ["category-articles", currentCategory, currentLang, categoryInfo?.id],
+    queryFn: async () => {
+      if (!categoryInfo?.id) return [];
+
+      console.log(`🔍 [DEBUG] Loading articles for category ID: ${categoryInfo.id}`);
+      
+      // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+      const params = new URLSearchParams();
+      params.append('filter[status][_eq]', 'published');
+      params.append('filter[category_id][_eq]', String(categoryInfo.id));
+      params.append('fields[]', 'id');
+      params.append('fields[]', 'image');
+      params.append('fields[]', 'date_created');
+      params.append('fields[]', 'translations.titolo_articolo');
+      params.append('fields[]', 'translations.slug_permalink');
+      params.append('fields[]', 'translations.seo_summary');
+      params.append('deep[translations][_filter][languages_code][_eq]', currentLang);
+      params.append('sort[]', '-date_created');
+      params.append('limit', '24');
+
+      const response = await fetch(`/api/directus/items/articles?${params}`);
+      if (!response.ok) {
+        throw new Error(`Articles query failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const articles = data?.data || [];
+      console.log(`🔍 [DEBUG] Found ${articles.length} articles (proxy)`);
+      return articles;
+    },
+    enabled: !!categoryInfo?.id,
+    staleTime: 1800000, // 🚨 EMERGENCY: 30 minutes cache!
+    gcTime: 3600000, // 🚨 EMERGENCY: 1 hour garbage collection
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 0, // 🚨 EMERGENCY: No retries!
+  });
+
+  const loading = categoryLoading || articlesLoading;
+  const error = categoryError || articlesError;
 
   // 🚨 RENDER WITHOUT QUERIES
   if (loading) {
@@ -170,7 +139,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, categ
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <h2 className="text-red-800 font-semibold mb-2">Errore nel caricamento</h2>
-          <p className="text-red-600">{error}</p>
+          <p className="text-red-600">{error.message}</p>
         </div>
       </div>
     );
@@ -240,7 +209,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, categ
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">
           Articoli di {categoryName}
         </h2>
-        {articles.length > 0 && (
+        {articles && articles.length > 0 && (
           <p className="text-gray-600">
             {articles.length} articoli trovati
           </p>
@@ -248,7 +217,7 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, categ
       </div>
       
       <ArticleGrid 
-        articles={articles} 
+        articles={articles || []} 
         lang={currentLang} 
       />
     </div>

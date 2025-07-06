@@ -36,20 +36,36 @@ export function isRTLLanguage(lang: string): boolean {
   return RTL_LANGUAGES.includes(lang);
 }
 
+// 🚨 EMERGENCY: In-memory cache per evitare richieste duplicate
+const translationCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+
 // Le funzioni sono già importate sopra
 
 // Funzione per caricare traduzioni da database (compatibilità con sistema esistente)
 export const getTranslations = async (lang: string, section: string) => {
   try {
+    // 🚨 EMERGENCY: Check cache first
+    const cacheKey = `${lang}-${section}`;
+    const cached = translationCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+
     // Usa le API per ottenere le traduzioni
     const response = await fetch(`/api/admin/translations?language=${lang}&section=${section}`);
     const data = await response.json();
     
-    if (data.success) {
-      return data.translations;
-    }
+    const result = data.success ? data.translations : {};
     
-    return {};
+    // 🚨 EMERGENCY: Cache result
+    translationCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now()
+    });
+    
+    return result;
   } catch (error) {
     console.error('Error fetching translations:', error);
     return {};
@@ -66,5 +82,15 @@ export const getTranslation = async (key: string, lang: string, section?: string
     return key;
   }
 };
+
+// 🚨 EMERGENCY: Cleanup cache periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of translationCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      translationCache.delete(key);
+    }
+  }
+}, CACHE_TTL);
 
 export { RTL_LANGUAGES, SUPPORTED_LANGUAGES };
