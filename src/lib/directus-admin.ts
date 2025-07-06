@@ -52,9 +52,10 @@ export interface AdminCompany {
 
 export interface CompanyTranslation {
   languages_code: string;
-  description: string;
-  seo_title: string;
-  seo_summary: string;
+  description?: string;
+  seo_title?: string;
+  seo_summary?: string;
+  slug_permalink?: string;
 }
 
 export interface CompanyImage {
@@ -98,7 +99,11 @@ class DirectusAdminClient {
   private static readonly REQUEST_TIMEOUT = 60000; // Longer timeout for admin operations
 
   constructor() {
-    const baseURL = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+    // Use proxy in development, direct CDN in production
+    const baseURL = process.env.NODE_ENV === 'development' 
+      ? '/api/directus' 
+      : process.env.NEXT_PUBLIC_DIRECTUS_URL;
+      
     if (!baseURL) {
       throw new Error('NEXT_PUBLIC_DIRECTUS_URL environment variable is not set');
     }
@@ -359,15 +364,16 @@ class DirectusAdminClient {
   // 🎯 ADMIN COMPANY OPERATIONS
   public async getCompaniesForListing(lang: string, filters: Record<string, any> = {}, limit?: number): Promise<any[]> {
     try {
+      // Light query for listing - only essential fields, no description
       const response = await this.client.get('/items/companies', {
         params: {
           filter: { ...filters },
           fields: [
-            'id', 'uuid_id', 'website', 'company_name', 'slug_permalink',
+            'id', 'uuid_id', 'website', 'company_name', 
             'featured_image', 'images', 'phone', 'category_id', 'destination_id',
-            'featured', 'active', 'featured_status',
-            'translations.seo_title', 'translations.seo_summary', 'translations.slug_permalink',
-            'translations.description'
+            'active', 'featured', 'featured_status',
+            'translations.description', 
+            'translations.seo_title', 'translations.seo_summary'
           ],
           deep: {
             translations: {
@@ -382,6 +388,56 @@ class DirectusAdminClient {
     } catch (error) {
       console.error('Error fetching companies for listing:', error);
       return [];
+    }
+  }
+
+  public async getCompanyForEdit(uuid: string, lang: string): Promise<AdminCompany | null> {
+    try {
+      // Complete query for editing - all fields including description
+      const response = await this.client.get('/items/companies', {
+        params: {
+          filter: { uuid_id: { _eq: uuid } },
+          fields: [
+            'id', 'uuid_id', 'website', 'company_name', 
+            'featured_image', 'images', 'phone', 'category_id', 'destination_id',
+            'active', 'featured', 'featured_status', 'lat', 'long', 'socials',
+            'translations.description', 
+            'translations.seo_title', 'translations.seo_summary'
+          ],
+          deep: {
+            translations: {
+              _filter: { languages_code: { _eq: lang } }
+            }
+          },
+          limit: 1
+        }
+      });
+
+      const company = response.data?.data?.[0];
+      if (!company) return null;
+
+      return {
+        id: company.id,
+        uuid_id: company.uuid_id,
+        logo: company.logo || '',
+        website: company.website || '',
+        company_name: company.company_name || '',
+        slug_permalink: company.slug_permalink || '',
+        phone: company.phone || '',
+        lat: company.lat,
+        long: company.long,
+        category_id: company.category_id || '',
+        destination_id: company.destination_id || '',
+        active: company.active || false,
+        images: company.images || [],
+        featured: company.featured || false,
+        featured_image: company.featured_image,
+        socials: company.socials || {},
+        translations: company.translations || []
+      };
+    } catch (error) {
+      console.error('Error fetching company for edit:', error);
+      return null;
     }
   }
 

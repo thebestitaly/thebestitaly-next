@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";
 import StagingTranslationManager from "@/components/translations/StagingTranslationManager";
 
 
@@ -54,6 +53,9 @@ export default function EditCompanyPage() {
           const companyData = result.data[0];
           const italianTranslation = companyData.translations?.[0];
           
+          console.log('🔍 Company data:', companyData);
+          console.log('🖼️ Featured image ID:', companyData.featured_image);
+          
           setCompany(companyData);
           setCurrentImageId(companyData.featured_image);
           
@@ -69,9 +71,13 @@ export default function EditCompanyPage() {
             slug_permalink: companyData.slug_permalink || '' // Leggi dal campo principale, non dalla traduzione
           });
 
-          // Imposta preview immagine esistente
+          // Imposta preview immagine esistente dalla CDN
           if (companyData.featured_image) {
-            setImagePreview(`/api/directus/assets/${companyData.featured_image}`);
+            const imageUrl = `https://cdn.thebestitaly.eu/assets/${companyData.featured_image}`;
+            console.log('🔗 Image URL:', imageUrl);
+            setImagePreview(imageUrl);
+          } else {
+            console.log('❌ No featured_image found for company');
           }
         }
       } catch (error) {
@@ -231,7 +237,7 @@ export default function EditCompanyPage() {
             <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
               <h3 className="text-lg font-semibold mb-4">🖼️ Immagine Company</h3>
               <div className="flex items-center space-x-4">
-                <Image
+                <img
                   src={imagePreview}
                   alt={formData.company_name || "Company image"}
                   width={150}
