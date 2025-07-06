@@ -7,49 +7,36 @@ import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Image from "next/image";
 import { Category } from "@/lib/directus-web";
+import directusClient from '@/lib/directus-web';
 
 interface MagazinePageClientProps {
   lang: string;
 }
 
 const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
-  // Query per ottenere le traduzioni del magazine (categoria 10) - USA PROXY DIRECTUS
+  // Query per ottenere le traduzioni del magazine (categoria 10) - USA DIRECTUS CLIENT
   const { data: magazineData } = useQuery({
     queryKey: ["category", 10, lang],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      params.append('filter[id][_eq]', '10');
-      params.append('fields[]', '*');
-      params.append('fields[]', 'translations.*');
-      params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
-      
-      const response = await fetch(`/api/directus/items/categorias?${params}`);
-      const result = await response.json();
-      return result.data?.[0];
+      // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
+      const categories = await directusClient.getCategories(lang);
+      // Find category with ID 10 (Magazine)
+      const magazineCategory = categories.find(cat => cat.id === '10');
+      return magazineCategory;
     },
   });
 
-  // Query per ottenere le categorie - USA PROXY DIRECTUS
+  // Query per ottenere le categorie - USA DIRECTUS CLIENT
   const { data: categories } = useQuery<Category[]>({
-    queryKey: ["categories", lang, Date.now()],
+    queryKey: ["categories", lang],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      // Filtro per categorie visibili E escludo la categoria 10 (Magazine)
-      params.append('filter[visible][_eq]', 'true');
-      params.append('filter[id][_nin]', '10'); // Escludo la categoria Magazine
-      params.append('fields[]', 'id');
-      params.append('fields[]', 'nome_categoria');
-      params.append('fields[]', 'image');
-      params.append('fields[]', 'visible');
-      params.append('fields[]', 'translations.nome_categoria');
-      params.append('fields[]', 'translations.seo_title');
-      params.append('fields[]', 'translations.seo_summary');
-      params.append('fields[]', 'translations.slug_permalink');
-      params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
-      
-      const response = await fetch(`/api/directus/items/categorias?${params}`);
-      const result = await response.json();
-      return result.data || [];
+      // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
+      const allCategories = await directusClient.getCategories(lang);
+      // Filter visible categories and exclude Magazine category (ID 10)
+      const filteredCategories = allCategories.filter(cat => 
+        cat.visible && cat.id !== '10'
+      );
+      return filteredCategories;
     },
     staleTime: 1800000, // 🚨 FIXED: 30 minuti invece di 0!
     gcTime: 3600000, // 🚨 FIXED: 1 ora garbage collection
@@ -65,26 +52,21 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       const allArticles: Record<string, any> = {};
       if (categories) {
         for (const category of categories) {
-          // Usa il proxy Directus per gli articoli per categoria ID
+          // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
           const categoryId = category.id;
           if (categoryId) {
-            const params = new URLSearchParams();
-            params.append('filter[status][_eq]', 'published');
-            params.append('filter[category_id][_eq]', categoryId.toString());
-            params.append('fields[]', 'id');
-            params.append('fields[]', 'image');
-            params.append('fields[]', 'date_created');
-            params.append('fields[]', 'translations.titolo_articolo');
-            params.append('fields[]', 'translations.slug_permalink');
-            params.append('fields[]', 'translations.seo_summary');
-            params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
-            params.append('sort[]', '-date_created');
-            params.append('limit', '9');
-            
             try {
-              const response = await fetch(`/api/directus/items/articles?${params}`);
-              const result = await response.json();
-              allArticles[category.id] = result.data || [];
+              const articles = await directusClient.getArticles({
+                lang,
+                fields: 'homepage', // Optimized fields for homepage
+                limit: 9,
+                filters: {
+                  status: 'published',
+                  category_id: { _eq: categoryId }
+                }
+              });
+              
+              allArticles[category.id] = Array.isArray(articles) ? articles : [];
             } catch (error) {
               console.error(`Error fetching articles for category ${categoryId}:`, error);
               allArticles[category.id] = [];
@@ -199,63 +181,73 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
                   <h2 className="text-2xl md:text-4xl font-bold mb-2">
                     {translation?.nome_categoria}
                   </h2>
-                  <p className="text-gray-600 text-sm md:text-lg max-w-3xl">
-                    {translation?.seo_summary}
-                  </p>
+                  {translation?.seo_summary && (
+                    <p className="text-gray-600 text-base md:text-lg mb-4">
+                      {translation.seo_summary}
+                    </p>
+                  )}
                 </div>
 
                 {/* Articles Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                  {categoryArticles.map((article: any) => {
-                    const articleTranslation = article.translations[0];
-                    
-                    // Only render link if we have a valid slug
-                    if (!articleTranslation?.slug_permalink) {
-                      return null;
-                    }
-                    
-                    return (
-                      <Link
-                        key={article.id}
-                        href={`/${lang}/magazine/${articleTranslation.slug_permalink}/`}
-                        className="group"
-                      >
-                        <div className="rounded-lg overflow-hidden">
-                          {article.image && (
-                            <div className="aspect-[16/9] overflow-hidden rounded-lg">
-                              <Image
-                                src={getOptimizedImageUrl(article.image, 'CARD')}
-                                alt={articleTranslation?.titolo_articolo}
-                                width={400}
-                                height={225}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-lg"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                                unoptimized={true}
-                              />
-                            </div>
-                          )}
-                          <div className="p-3 md:p-6">
-                            <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-blue-600">
+                {categoryArticles.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                    {categoryArticles.map((article: any) => {
+                      const articleTranslation = article.translations?.[0];
+                      const categorySlug = translation?.slug_permalink;
+                      
+                      return (
+                        <Link
+                          key={article.id}
+                          href={`/${lang}/magazine/${articleTranslation?.slug_permalink}`}
+                          className="group block overflow-hidden rounded-lg bg-white shadow-lg hover:shadow-xl transition-shadow duration-300"
+                        >
+                          <div className="aspect-[16/9] relative overflow-hidden">
+                            <Image
+                              src={getOptimizedImageUrl(article.image, 'CARD')}
+                              alt={articleTranslation?.titolo_articolo || "Article"}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            />
+                          </div>
+                          <div className="p-4 md:p-6">
+                            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                               {articleTranslation?.titolo_articolo}
                             </h3>
-                            <p className="text-gray-600 line-clamp-2 text-sm md:text-base">
-                              {articleTranslation?.seo_summary}
-                            </p>
+                            {articleTranslation?.seo_summary && (
+                              <p className="text-gray-600 text-sm line-clamp-3 mb-3">
+                                {articleTranslation.seo_summary}
+                              </p>
+                            )}
+                            <div className="text-xs text-gray-500">
+                              {new Date(article.date_created).toLocaleDateString('it-IT', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">Nessun articolo disponibile per questa categoria.</p>
+                  </div>
+                )}
 
-                {/* View All Link */}
-                {translation?.slug_permalink && (
+                {/* See More Link */}
+                {categoryArticles.length > 0 && (
                   <div className="mt-8 text-center">
                     <Link
-                      href={`/${lang}/magazine/c/${translation.slug_permalink}/`}
-                      className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      href={`/${lang}/magazine/c/${translation?.slug_permalink}`}
+                      className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      View All {translation?.nome_categoria} Articles
+                      Vedi tutti gli articoli di {translation?.nome_categoria}
+                      <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </Link>
                   </div>
                 )}
