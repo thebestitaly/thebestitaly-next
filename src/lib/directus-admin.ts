@@ -99,14 +99,11 @@ class DirectusAdminClient {
   private static readonly REQUEST_TIMEOUT = 60000; // Longer timeout for admin operations
 
   constructor() {
-    // Use proxy in development, direct CDN in production
-    const baseURL = process.env.NODE_ENV === 'development' 
-      ? '/api/directus' 
-      : process.env.NEXT_PUBLIC_DIRECTUS_URL;
-      
-    if (!baseURL) {
-      throw new Error('NEXT_PUBLIC_DIRECTUS_URL environment variable is not set');
-    }
+    // Always use proxy to avoid CORS issues in both development and production
+    // Only server-side API routes should use direct CDN access
+    const baseURL = '/api/directus';
+    
+    console.log(`🔗 DirectusAdminClient using proxy: ${baseURL}`);
 
     this.client = axios.create({
       baseURL,
