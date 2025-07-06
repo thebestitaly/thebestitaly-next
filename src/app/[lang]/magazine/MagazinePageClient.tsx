@@ -7,36 +7,51 @@ import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Image from "next/image";
 import { Category } from "@/lib/directus-web";
-import directusClient from '@/lib/directus-web';
 
 interface MagazinePageClientProps {
   lang: string;
 }
 
 const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
-  // Query per ottenere le traduzioni del magazine (categoria 10) - USA DIRECTUS CLIENT
+  // Query per ottenere le traduzioni del magazine (categoria 10) - USA PROXY
   const { data: magazineData } = useQuery({
     queryKey: ["category", 10, lang],
     queryFn: async () => {
-      // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-      const categories = await directusClient.getCategories(lang);
-      // Find category with ID 10 (Magazine)
-      const magazineCategory = categories.find(cat => cat.id === '10');
-      return magazineCategory;
+      // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+      const params = new URLSearchParams();
+      params.append('filter[id][_eq]', '10');
+      params.append('fields[]', '*');
+      params.append('fields[]', 'translations.*');
+      params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
+      
+      const response = await fetch(`/api/directus/items/categorias?${params}`);
+      const result = await response.json();
+      return result.data?.[0];
     },
   });
 
-  // Query per ottenere le categorie - USA DIRECTUS CLIENT
+  // Query per ottenere le categorie - USA PROXY
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["categories", lang],
     queryFn: async () => {
-      // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-      const allCategories = await directusClient.getCategories(lang);
-      // Filter visible categories and exclude Magazine category (ID 10)
-      const filteredCategories = allCategories.filter(cat => 
-        cat.visible && cat.id !== '10'
-      );
-      return filteredCategories;
+      // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+      const params = new URLSearchParams();
+      // Filtro per categorie visibili E escludo la categoria 10 (Magazine)
+      params.append('filter[visible][_eq]', 'true');
+      params.append('filter[id][_nin]', '10'); // Escludo la categoria Magazine
+      params.append('fields[]', 'id');
+      params.append('fields[]', 'nome_categoria');
+      params.append('fields[]', 'image');
+      params.append('fields[]', 'visible');
+      params.append('fields[]', 'translations.nome_categoria');
+      params.append('fields[]', 'translations.seo_title');
+      params.append('fields[]', 'translations.seo_summary');
+      params.append('fields[]', 'translations.slug_permalink');
+      params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
+      
+      const response = await fetch(`/api/directus/items/categorias?${params}`);
+      const result = await response.json();
+      return result.data || [];
     },
     staleTime: 1800000, // 🚨 FIXED: 30 minuti invece di 0!
     gcTime: 3600000, // 🚨 FIXED: 1 ora garbage collection
@@ -52,21 +67,26 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       const allArticles: Record<string, any> = {};
       if (categories) {
         for (const category of categories) {
-          // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
+          // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
           const categoryId = category.id;
           if (categoryId) {
             try {
-              const articles = await directusClient.getArticles({
-                lang,
-                fields: 'homepage', // Optimized fields for homepage
-                limit: 9,
-                filters: {
-                  status: 'published',
-                  category_id: { _eq: categoryId }
-                }
-              });
+              const params = new URLSearchParams();
+              params.append('filter[status][_eq]', 'published');
+              params.append('filter[category_id][_eq]', categoryId.toString());
+              params.append('fields[]', 'id');
+              params.append('fields[]', 'image');
+              params.append('fields[]', 'date_created');
+              params.append('fields[]', 'translations.titolo_articolo');
+              params.append('fields[]', 'translations.slug_permalink');
+              params.append('fields[]', 'translations.seo_summary');
+              params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
+              params.append('sort[]', '-date_created');
+              params.append('limit', '9');
               
-              allArticles[category.id] = Array.isArray(articles) ? articles : [];
+              const response = await fetch(`/api/directus/items/articles?${params}`);
+              const result = await response.json();
+              allArticles[category.id] = result.data || [];
             } catch (error) {
               console.error(`Error fetching articles for category ${categoryId}:`, error);
               allArticles[category.id] = [];

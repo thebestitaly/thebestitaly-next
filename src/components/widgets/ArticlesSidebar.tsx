@@ -2,7 +2,6 @@
 import React from 'react';
 import ArticleCardSidebar from '../magazine/ArticleCardSidebar';
 import { singletonCache, CACHE_KEYS, CACHE_TTL } from '@/lib/singleton-cache';
-import directusClient from '@/lib/directus-web';
 
 interface ArticlesSidebarProps {
   lang: string;
@@ -45,21 +44,40 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
         const result = await singletonCache.get(
           cacheKey,
           async () => {
-            // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-            const articles = await directusClient.getArticles({
-              lang,
-              fields: 'sidebar', // Optimized fields for sidebar
-              limit: 8,
-              filters: {
-                status: 'published',
-                category_id: stableCategoryId && stableCategoryId !== '9' ? 
-                  { _eq: stableCategoryId } : 
-                  { _neq: '9' }, // Exclude Magazine category
-                ...(stableCurrentArticleId && { id: { _neq: stableCurrentArticleId } })
-              }
-            });
+            // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+            const params = new URLSearchParams();
+            params.append('filter[status][_eq]', 'published');
+            
+            // 🚨 ALWAYS EXCLUDE MAGAZINE CATEGORY (ID 9)
+            params.append('filter[category_id][_neq]', '9');
+            
+            // 🚨 INCLUDE ARTICLES FROM SAME CATEGORY (not exclude!)
+            if (stableCategoryId && stableCategoryId !== '9') {
+              params.append('filter[category_id][_eq]', stableCategoryId);
+            }
+            
+            // 🚨 EXCLUDE CURRENT ARTICLE
+            if (stableCurrentArticleId) {
+              params.append('filter[id][_neq]', stableCurrentArticleId);
+            }
 
-            return Array.isArray(articles) ? articles : [];
+            params.append('fields[]', 'id');
+            params.append('fields[]', 'image');
+            params.append('fields[]', 'date_created');
+            params.append('fields[]', 'translations.titolo_articolo');
+            params.append('fields[]', 'translations.slug_permalink');
+            params.append('fields[]', 'translations.seo_summary');
+            params.append('deep[translations][_filter][languages_code][_eq]', lang);
+            params.append('sort[]', '-date_created');
+            params.append('limit', '8');
+
+            const response = await fetch(`/api/directus/items/articles?${params}`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data?.data || [];
           },
           CACHE_TTL.SIDEBAR // 2 hours cache
         );

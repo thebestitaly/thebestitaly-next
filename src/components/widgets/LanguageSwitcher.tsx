@@ -7,8 +7,6 @@ import { useParams, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { getSupportedLanguages } from "@/lib/directus-web";
 import { getFlagImageUrl } from "@/lib/imageUtils";
-import directusClient from '@/lib/directus-web';
-
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from "@/lib/languages";
 
 interface Language {
@@ -16,10 +14,12 @@ interface Language {
   name: string;
   direction: string;
 }
+
 interface LanguageSwitcherProps {
   isDestination?: boolean;
   type?: 'region' | 'province' | 'municipality' | null;
 }
+
 const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ 
   isDestination = false,
   type = null
@@ -35,59 +35,70 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 
   const getCollectionTypeAndSlug = () => {
     if (!pathname) return null;
-    const pathParts = pathname.split("/").filter(Boolean);
-    if (pathParts.length < 2) return null;
-    const [, pageType, ...restSegments] = pathParts;
 
-    if (isDestination) {
-      console.log('Destination route detected:', { type, pathParts });
-      return { 
-        pageType: 'destinations',
-        routeType: type,
-        slug: restSegments[restSegments.length - 1],
-        isDestination: true 
-      };
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments.length < 2) return null;
+
+    const langIndex = 0;
+    const lang = segments[langIndex];
+
+    if (segments[1] === 'magazine') {
+      if (segments.length >= 3) {
+        return {
+          pageType: 'magazine',
+          slug: segments[2],
+          routeType: 'single'
+        };
+      }
     }
 
-    return { 
-      pageType, 
-      slug: restSegments[0],
-      isDestination: false 
-    };
+    return null;
   };
 
   const pageInfo = getCollectionTypeAndSlug();
-  
-  // Usa le lingue unificate - ESATTAMENTE 50 lingue!
-  const languages = SUPPORTED_LANGUAGES.map(lang => ({
-    code: lang.code,
-    name: lang.nativeName, // USA IL NOME NATIVO
-    direction: lang.rtl ? 'rtl' : 'ltr'
-  }));
 
-  // Query per ottenere l'ID del contenuto
+  // Query per ottenere le lingue supportate
+  const { data: languages } = useQuery({
+    queryKey: ["languages"],
+    queryFn: async () => {
+      return SUPPORTED_LANGUAGES.map(lang => ({
+        code: lang.code,
+        name: lang.nativeName,
+        direction: lang.rtl ? 'rtl' : 'ltr'
+      }));
+    },
+    staleTime: Infinity,
+  });
+
+  // Query per determinare il tipo di contenuto e ID
   const { data: contentId } = useQuery({
-    queryKey: ["contentId", pathname, currentLang],
+    queryKey: ["contentId", pageInfo?.slug, pageInfo?.pageType],
     queryFn: async () => {
       if (!pageInfo?.slug) return null;
 
-      if (pageInfo.isDestination) {
-        console.log('Fetching destination ID for slug:', pageInfo.slug);
-        // Prima troviamo l'ID della destinazione dallo slug
-        const destParams = new URLSearchParams();
-        destParams.append('filter[slug_permalink][_eq]', pageInfo.slug || '');
-        destParams.append('fields[]', 'destinations_id');
+      if (pageInfo.pageType === "magazine") {
+        // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+        const params = new URLSearchParams();
+        params.append('filter[slug_permalink][_eq]', pageInfo.slug || '');
+        params.append('fields[]', 'articles_id');
 
-        const response = await fetch(`/api/directus/items/destinations_translations?${destParams}`);
+        const response = await fetch(`/api/directus/items/articles_translations?${params}`);
         const result = await response.json();
-        console.log('Destination translation response:', result);
+        return { type: "magazine", id: result.data?.[0]?.articles_id };
+      }
 
-        const destinationId = result.data?.[0]?.destinations_id;
-        if (!destinationId) return null;
+      if (pageInfo.pageType === "poi") {
+        // For POI/companies, we use the slug directly since it's the same across languages
+        return { type: "poi", slug: pageInfo.slug };
+      }
 
-        // Poi prendiamo i dettagli della destinazione
+      if (pageInfo.pageType === "destination") {
+        const destinationId = pageInfo.slug;
+        console.log('Fetching destination details for ID:', destinationId);
+        
+        // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
         const destinationParams = new URLSearchParams();
-        destinationParams.append('fields[]', 'id');
+        destinationParams.append('fields[]', 'type');
         destinationParams.append('fields[]', 'region_id');
         destinationParams.append('fields[]', 'province_id');
 
@@ -101,54 +112,6 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           routeType: pageInfo.routeType,
           region_id: destinationDetails.data.region_id,
           province_id: destinationDetails.data.province_id
-        };
-      }
-
-      if (pageInfo.pageType === "magazine") {
-        // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-        const articles = await directusClient.getArticles({
-          lang: 'it', // Get all languages
-          fields: 'minimal',
-          limit: 1,
-          filters: {
-            slug_permalink: pageInfo.slug || ''
-          }
-        });
-
-        const article = Array.isArray(articles) ? articles[0] : null;
-        if (!article?.translations) {
-          return null;
-        }
-
-        return { type: "magazine", id: article.id };
-      }
-
-      if (pageInfo.pageType === "poi") {
-        // For POI/companies, we use the slug directly since it's the same across languages
-        return { type: "poi", slug: pageInfo.slug };
-      }
-
-      if (pageInfo.pageType === "destination") {
-        const destinationId = pageInfo.slug;
-        console.log('Fetching destination details for ID:', destinationId);
-        
-        // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-        const destination = await directusClient.getDestinations({
-          lang: 'it', // Use any language since we need the structure
-          fields: 'full',
-          limit: 1,
-          uuid: destinationId
-        });
-        
-        const destinationDetails = Array.isArray(destination) ? destination[0] : null;
-        console.log('Destination details:', destinationDetails);
-
-        return {
-          type: "destination",
-          id: destinationId,
-          routeType: pageInfo.routeType,
-          region_id: destinationDetails?.region_id,
-          province_id: destinationDetails?.province_id
         };
       }
 
@@ -166,26 +129,35 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       if (contentId.type === "destination") {
         console.log('Fetching destination translations with hierarchy');
         
-        // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-        const destination = await directusClient.getDestinations({
-          lang: 'it', // Get all languages
-          fields: 'full',
-          limit: 1,
-          uuid: contentId.id
-        });
-        
-        const destinationDetails = Array.isArray(destination) ? destination[0] : null;
-        console.log('Destination with hierarchy response:', destinationDetails);
+        // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+        const params = new URLSearchParams();
+        params.append('fields[]', 'type');
+        params.append('fields[]', 'region_id');
+        params.append('fields[]', 'province_id');
+        params.append('fields[]', 'translations.slug_permalink');
+        params.append('fields[]', 'translations.languages_code');
+        params.append('fields[]', 'region_id.translations.slug_permalink');
+        params.append('fields[]', 'region_id.translations.languages_code');
+        params.append('fields[]', 'province_id.translations.slug_permalink');
+        params.append('fields[]', 'province_id.translations.languages_code');
+        params.append('deep[translations][_limit]', '50');
+        params.append('deep[region_id.translations][_limit]', '50');
+        params.append('deep[province_id.translations][_limit]', '50');
 
-        if (!destinationDetails?.translations) {
+        const response = await fetch(`/api/directus/items/destinations/${contentId.id}?${params}`);
+        const result = await response.json();
+        console.log('Destination with hierarchy response:', result);
+
+        const destination = result.data;
+        if (!destination?.translations) {
           console.warn(`No translations found for destination ${contentId.id}`);
           return {};
         }
 
         // Costruisci i link gerarchici corretti per ogni lingua
         const linkMap: Record<string, string> = {};
-        destinationDetails.translations.forEach((translation: any) => {
-          const { type } = destinationDetails;
+        destination.translations.forEach((translation: any) => {
+          const { type } = destination;
           let link = '';
           
           if (type === 'region') {
@@ -193,14 +165,14 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             link = `/${translation.languages_code}/${translation.slug_permalink}`;
           } else if (type === 'province') {
             // Province: /{lang}/{region_slug}/{province_slug}  
-            const regionSlug = destinationDetails.region_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
+            const regionSlug = destination.region_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
             if (regionSlug) {
               link = `/${translation.languages_code}/${regionSlug}/${translation.slug_permalink}`;
             }
           } else if (type === 'municipality') {
             // Municipality: /{lang}/{region_slug}/{province_slug}/{municipality_slug}
-            const regionSlug = destinationDetails.region_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
-            const provinceSlug = destinationDetails.province_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
+            const regionSlug = destination.region_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
+            const provinceSlug = destination.province_id?.translations?.find((t: any) => t.languages_code === translation.languages_code)?.slug_permalink;
             if (regionSlug && provinceSlug) {
               link = `/${translation.languages_code}/${regionSlug}/${provinceSlug}/${translation.slug_permalink}`;
             }
@@ -215,23 +187,18 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       }
 
       if (contentId.type === "magazine") {
-        // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-        const articles = await directusClient.getArticles({
-          lang: 'it', // Get all languages
-          fields: 'minimal',
-          limit: 1,
-          filters: {
-            id: { _eq: contentId.id?.toString() || '' }
-          }
-        });
+        // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+        const params = new URLSearchParams();
+        params.append('filter[articles_id][_eq]', contentId.id?.toString() || '');
+        params.append('fields[]', 'languages_code');
+        params.append('fields[]', 'slug_permalink');
 
-        const article = Array.isArray(articles) ? articles[0] : null;
-        if (!article?.translations) {
-          return {};
-        }
+        const response = await fetch(`/api/directus/items/articles_translations?${params}`);
+        const result = await response.json();
 
+        const translations = result.data || [];
         const slugMap: Record<string, string> = {};
-        article.translations.forEach((translation: any) => {
+        translations.forEach((translation: any) => {
           slugMap[translation.languages_code] = translation.slug_permalink;
         });
         return slugMap;
@@ -306,7 +273,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                   isCurrentLang ? "text-gray-900" : "text-white"
                 }`,
                 style: {
-                  direction: language.direction === "RTL" ? "rtl" : "ltr"
+                  direction: language.direction === "rtl" ? "rtl" : "ltr"
                 }
               },
               language.name

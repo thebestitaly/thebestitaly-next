@@ -6,7 +6,6 @@ import Image from "next/image";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { singletonCache, CACHE_KEYS, CACHE_TTL } from "@/lib/singleton-cache";
-import directusClient from '@/lib/directus-web';
 
 import ArticleGrid from "./ArticleGrid";
 
@@ -63,54 +62,38 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, categ
         setLoading(true);
         setError(null);
 
-        // 🚨 LOAD CATEGORY INFO with DirectusWebClient
+        // 🔍 LOAD CATEGORY INFO via Proxy (client-side CORS fix)
         const categoryData = await singletonCache.get(
           categoryInfoCacheKey,
           async () => {
             // 🔍 DEBUG: Log per debugging
             console.log(`🔍 [DEBUG] Searching for category: ${currentCategory} in lang: ${currentLang}`);
             
-            // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-            const categories = await directusClient.getCategories(currentLang);
-            console.log(`🔍 [DEBUG] All categories:`, categories);
-            
-            // Find category by slug
-            const categoryResult = categories.find(cat => 
-              cat.translations?.some(trans => 
-                trans.slug_permalink === currentCategory && 
-                trans.languages_code === currentLang
-              )
-            );
-            
-            console.log(`🔍 [DEBUG] Found category:`, categoryResult);
+            // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+            const params = new URLSearchParams();
+            params.append('filter[translations][slug_permalink][_eq]', currentCategory);
+            params.append('filter[visible][_eq]', 'true');
+            params.append('fields[]', 'id');
+            params.append('fields[]', 'nome_categoria');
+            params.append('fields[]', 'image');
+            params.append('fields[]', 'visible');
+            params.append('fields[]', 'translations.*');
+            params.append('limit', '1');
 
-            // 🚨 FALLBACK: If no category found with exact lang, try any language
-            if (!categoryResult) {
-              console.log(`🔍 [DEBUG] No category found with lang filter, trying without...`);
-              
-              const fallbackCategory = categories.find(cat => 
-                cat.translations?.some(trans => trans.slug_permalink === currentCategory)
-              );
-              
-              if (fallbackCategory) {
-                console.log(`🔍 [DEBUG] Fallback category found:`, fallbackCategory);
-                // Find translation for current language or use first available
-                const translation = fallbackCategory.translations?.find((t: any) => t.languages_code === currentLang) ||
-                                   fallbackCategory.translations?.[0];
-                
-                return {
-                  ...fallbackCategory,
-                  translations: translation ? [translation] : []
-                };
-              }
+            const response = await fetch(`/api/directus/items/categorias?${params}`);
+            if (!response.ok) {
+              throw new Error(`Category query failed: ${response.status}`);
             }
 
-            return categoryResult || null;
+            const data = await response.json();
+            const categoryResult = data?.data?.[0] || null;
+            console.log(`🔍 [DEBUG] Found category (proxy):`, categoryResult);
+            return categoryResult;
           },
           CACHE_TTL.CATEGORIES // 1 hour cache
         );
 
-        // 🚨 LOAD ARTICLES with DirectusWebClient
+        // 🚨 LOAD ARTICLES via Proxy (client-side CORS fix)
         const articlesData = await singletonCache.get(
           articlesKey,
           async () => {
@@ -118,19 +101,29 @@ const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, categ
 
             console.log(`🔍 [DEBUG] Loading articles for category ID: ${categoryData.id}`);
             
-            // 🚨 USE DIRECTUS CLIENT - Direct CDN call instead of proxy
-            const articles = await directusClient.getArticles({
-              lang: currentLang,
-              fields: 'full',
-              limit: 24,
-              filters: {
-                status: 'published',
-                category_id: { _eq: String(categoryData.id) }
-              }
-            });
+            // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+            const params = new URLSearchParams();
+            params.append('filter[status][_eq]', 'published');
+            params.append('filter[category_id][_eq]', String(categoryData.id));
+            params.append('fields[]', 'id');
+            params.append('fields[]', 'image');
+            params.append('fields[]', 'date_created');
+            params.append('fields[]', 'translations.titolo_articolo');
+            params.append('fields[]', 'translations.slug_permalink');
+            params.append('fields[]', 'translations.seo_summary');
+            params.append('deep[translations][_filter][languages_code][_eq]', currentLang);
+            params.append('sort[]', '-date_created');
+            params.append('limit', '24');
 
-            console.log(`🔍 [DEBUG] Found ${Array.isArray(articles) ? articles.length : 0} articles`);
-            return Array.isArray(articles) ? articles : [];
+            const response = await fetch(`/api/directus/items/articles?${params}`);
+            if (!response.ok) {
+              throw new Error(`Articles query failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const articles = data?.data || [];
+            console.log(`🔍 [DEBUG] Found ${articles.length} articles (proxy)`);
+            return articles;
           },
           CACHE_TTL.ARTICLES // 30 minutes cache
         );
