@@ -1,7 +1,8 @@
 "use client";
 import React from 'react';
 import ArticleCardSidebar from '../magazine/ArticleCardSidebar';
-import { singletonCache, CACHE_KEYS, CACHE_TTL } from '@/lib/singleton-cache';
+import { useQuery } from '@tanstack/react-query';
+import { Article } from '@/lib/directus-web';
 
 interface ArticlesSidebarProps {
   lang: string;
@@ -11,104 +12,66 @@ interface ArticlesSidebarProps {
 
 // 🚨 EMERGENCY SINGLETON CACHE - Load data ONCE and share across all components
 const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleId, categoryId }) => {
-  const [articles, setArticles] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  // 🚨 STABILIZE IDS - Convert to strings only once
-  const stableCurrentArticleId = React.useMemo(() => 
-    currentArticleId ? String(currentArticleId) : undefined, 
-    [currentArticleId]
-  );
-
-  const stableCategoryId = React.useMemo(() => 
-    categoryId ? String(categoryId) : undefined, 
-    [categoryId]
-  );
-
-  // 🚨 STABLE CACHE KEY - Generate once and never change
-  const cacheKey = React.useMemo(() => 
-    CACHE_KEYS.ARTICLES_SIDEBAR(lang, stableCategoryId, stableCurrentArticleId), 
-    [lang, stableCategoryId, stableCurrentArticleId]
-  );
-
-  // 🚨 LOAD DATA ONCE - Using singleton cache
-  React.useEffect(() => {
-    let mounted = true;
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const result = await singletonCache.get(
-          cacheKey,
-          async () => {
-            // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
-            const params = new URLSearchParams();
-            params.append('filter[status][_eq]', 'published');
-            
-            // 🚨 ALWAYS EXCLUDE MAGAZINE CATEGORY (ID 9)
-            params.append('filter[category_id][_neq]', '9');
-            
-            // 🚨 INCLUDE ARTICLES FROM SAME CATEGORY (not exclude!)
-            if (stableCategoryId && stableCategoryId !== '9') {
-              params.append('filter[category_id][_eq]', stableCategoryId);
-            }
-            
-            // 🚨 EXCLUDE CURRENT ARTICLE
-            if (stableCurrentArticleId) {
-              params.append('filter[id][_neq]', stableCurrentArticleId);
-            }
-
-            params.append('fields[]', 'id');
-            params.append('fields[]', 'image');
-            params.append('fields[]', 'date_created');
-            params.append('fields[]', 'translations.titolo_articolo');
-            params.append('fields[]', 'translations.slug_permalink');
-            params.append('fields[]', 'translations.seo_summary');
-            params.append('deep[translations][_filter][languages_code][_eq]', lang);
-            params.append('sort[]', '-date_created');
-            params.append('limit', '8');
-
-            const response = await fetch(`/api/directus/items/articles?${params}`);
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data?.data || [];
-          },
-          CACHE_TTL.SIDEBAR // 2 hours cache
-        );
-
-        if (mounted) {
-          setArticles(result);
-          setLoading(false);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Unknown error');
-          setLoading(false);
-        }
+  
+  // 🚨 EMERGENCY: SOLO REACT QUERY - NO SINGLETON CACHE!
+  const { data: sidebarData, isLoading, error } = useQuery<Article[]>({
+    queryKey: ["sidebar-articles", lang, categoryId, currentArticleId],
+    queryFn: async () => {
+      // 🔧 CLIENT-SIDE: Always use proxy to avoid CORS issues
+      const params = new URLSearchParams();
+      params.append('filter[status][_eq]', 'published');
+      
+      if (categoryId && categoryId !== 9) {
+        // Se abbiamo una categoria e non è Magazine, mostra articoli della stessa categoria
+        params.append('filter[category_id][_eq]', categoryId.toString());
+      } else {
+        // Se non abbiamo categoria o è Magazine, escludi solo Magazine
+        params.append('filter[category_id][_neq]', '9');
       }
-    };
-
-    loadData();
-
-    return () => {
-      mounted = false;
-    };
-  }, [cacheKey, lang, stableCategoryId, stableCurrentArticleId]);
+      
+      if (currentArticleId) {
+        params.append('filter[id][_neq]', currentArticleId.toString());
+      }
+      
+      params.append('fields[]', 'id');
+      params.append('fields[]', 'image');
+      params.append('fields[]', 'date_created');
+      params.append('fields[]', 'translations.titolo_articolo');
+      params.append('fields[]', 'translations.slug_permalink');
+      params.append('fields[]', 'translations.seo_summary');
+      params.append(`deep[translations][_filter][languages_code][_eq]`, lang);
+      params.append('sort[]', '-date_created');
+      params.append('limit', '8');
+      
+      const response = await fetch(`/api/directus/items/articles?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      return result.data || [];
+    },
+    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
+    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 0, // 🚨 EMERGENCY: No retries!
+  });
 
   // 🚨 RENDER WITHOUT QUERIES
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Articoli Correlati</h3>
-        <div className="animate-pulse space-y-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-20 bg-gray-200 rounded"></div>
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Caricamento articoli...
+        </h2>
+        <div className="animate-pulse">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="mb-4 last:mb-0">
+              <div className="w-full h-32 bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -117,33 +80,43 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Articoli Correlati</h3>
-        <p className="text-red-600 text-sm">Errore nel caricamento: {error}</p>
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Errore nel caricamento
+        </h2>
+        <p className="text-gray-600">{error.message}</p>
       </div>
     );
   }
 
-  if (!articles || articles.length === 0) {
+  if (!sidebarData || sidebarData.length === 0) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Articoli Correlati</h3>
-        <p className="text-gray-600 text-sm">Nessun articolo correlato disponibile.</p>
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Nessun articolo trovato
+        </h2>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Articoli Correlati</h3>
-      <div className="space-y-3">
-        {articles.map((article) => (
-          <ArticleCardSidebar
-            key={article.id}
-            article={article}
-            lang={lang}
-          />
-        ))}
+    <div className="bg-white rounded-lg shadow-sm p-6">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">
+        Articoli Consigliati
+      </h2>
+      <div className="space-y-4">
+        {sidebarData.map((article) => {
+          const translation = article.translations?.[0];
+          if (!translation) return null;
+          
+          return (
+            <ArticleCardSidebar
+              key={article.id}
+              article={article}
+              lang={lang}
+            />
+          );
+        })}
       </div>
     </div>
   );

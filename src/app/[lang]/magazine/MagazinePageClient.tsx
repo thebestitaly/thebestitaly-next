@@ -30,7 +30,7 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
     },
   });
 
-  // Query per ottenere le categorie - USA PROXY
+  // Query per ottenere le categorie - SOLO REACT QUERY
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["categories", lang],
     queryFn: async () => {
@@ -53,12 +53,12 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       const result = await response.json();
       return result.data || [];
     },
-    staleTime: 1800000, // 🚨 FIXED: 30 minuti invece di 0!
-    gcTime: 3600000, // 🚨 FIXED: 1 ora garbage collection
-    refetchOnWindowFocus: false, // 🚨 FIXED: No refetch on focus
-    refetchOnMount: false, // 🚨 FIXED: No refetch on mount
-    refetchOnReconnect: false, // 🚨 FIXED: No refetch on reconnect
-    retry: 1, // 🚨 FIXED: Ridotto retry per evitare traffico
+    staleTime: 3600000, // 🚨 EMERGENCY: 1 hour cache!
+    gcTime: 7200000, // 🚨 EMERGENCY: 2 hours garbage collection
+    refetchOnWindowFocus: false, 
+    refetchOnMount: false, 
+    refetchOnReconnect: false, 
+    retry: 0, // 🚨 EMERGENCY: No retries!
   });
 
   const { data: articlesByCategory } = useQuery({
