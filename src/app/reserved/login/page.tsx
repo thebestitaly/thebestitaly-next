@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -39,8 +40,10 @@ export default function LoginPage() {
         throw new Error(data.error || 'Errore durante il login');
       }
 
-      // Successful login - redirect to reserved area
-      router.push('/reserved');
+      // Successful login - redirect to original page or reserved area
+      const returnUrl = searchParams.get('returnUrl') || '/reserved';
+      console.log('✅ Login successful, redirecting to:', returnUrl);
+      router.push(returnUrl);
       router.refresh();
     } catch (error) {
       console.error('Login error:', error);

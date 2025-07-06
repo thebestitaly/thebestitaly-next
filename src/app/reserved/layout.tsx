@@ -1,7 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { Poppins } from 'next/font/google';
 import { useAuth } from '@/hooks/useAuth';
 import AuthLoader from '@/components/auth/AuthLoader';
@@ -16,13 +17,25 @@ const poppins = Poppins({
 
 export default function ReservedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Show loading screen while checking authentication
   if (isLoading) {
     return <AuthLoader />;
   }
 
-  // If not authenticated, show minimal layout (user will be redirected by middleware)
+  // If not authenticated, redirect to login (except on login page)
+  useEffect(() => {
+    if (!user && !isLoading && pathname !== '/reserved/login') {
+      console.log('🔒 User not authenticated, redirecting to login...');
+      // Save the current path to redirect back after login
+      const returnUrl = encodeURIComponent(pathname);
+      router.push(`/reserved/login?returnUrl=${returnUrl}`);
+    }
+  }, [user, isLoading, pathname, router]);
+
+  // If not authenticated, show minimal layout
   if (!user) {
     return <div>{children}</div>;
   }
