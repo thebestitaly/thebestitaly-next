@@ -44,9 +44,23 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
                   const result = await singletonCache.get(
             cacheKey,
             async () => {
-              // 🚨 EMERGENCY QUERY - Same as before but through singleton
+              // 🚨 EMERGENCY QUERY - Fixed category logic
               const params = new URLSearchParams();
               params.append('filter[status][_eq]', 'published');
+              
+              // 🚨 ALWAYS EXCLUDE MAGAZINE CATEGORY (ID 9)
+              params.append('filter[category_id][_neq]', '9');
+              
+              // 🚨 INCLUDE ARTICLES FROM SAME CATEGORY (not exclude!)
+              if (stableCategoryId && stableCategoryId !== '9') {
+                params.append('filter[category_id][_eq]', stableCategoryId);
+              }
+              
+              // 🚨 EXCLUDE CURRENT ARTICLE
+              if (stableCurrentArticleId) {
+                params.append('filter[id][_neq]', stableCurrentArticleId);
+              }
+
               params.append('fields[]', 'id');
               params.append('fields[]', 'image');
               params.append('fields[]', 'date_created');
@@ -56,14 +70,6 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleI
               params.append('deep[translations][_filter][languages_code][_eq]', lang);
               params.append('sort[]', '-date_created');
               params.append('limit', '8');
-
-            // 🚨 EXCLUDE CURRENT ARTICLE AND CATEGORY
-            if (stableCategoryId) {
-              params.append('filter[category_id][_neq]', stableCategoryId);
-            }
-            if (stableCurrentArticleId) {
-              params.append('filter[id][_neq]', stableCurrentArticleId);
-            }
 
             const response = await fetch(`/api/directus/items/articles?${params}`);
             if (!response.ok) {
