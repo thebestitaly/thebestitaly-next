@@ -51,11 +51,16 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       const result = await response.json();
       return result.data || [];
     },
-    staleTime: 0,
+    staleTime: 1800000, // 🚨 FIXED: 30 minuti invece di 0!
+    gcTime: 3600000, // 🚨 FIXED: 1 ora garbage collection
+    refetchOnWindowFocus: false, // 🚨 FIXED: No refetch on focus
+    refetchOnMount: false, // 🚨 FIXED: No refetch on mount
+    refetchOnReconnect: false, // 🚨 FIXED: No refetch on reconnect
+    retry: 1, // 🚨 FIXED: Ridotto retry per evitare traffico
   });
 
   const { data: articlesByCategory } = useQuery({
-    queryKey: ["articlesByCategory", lang, Date.now()],
+    queryKey: ["articlesByCategory", lang], // 🚨 FIXED: No Date.now()!
     queryFn: async () => {
       const allArticles: Record<string, any> = {};
       if (categories) {
@@ -90,6 +95,12 @@ const MagazinePageClient: React.FC<MagazinePageClientProps> = ({ lang }) => {
       return allArticles;
     },
     enabled: !!categories,
+    staleTime: 1800000, // 🚨 FIXED: 30 minuti invece di 0!
+    gcTime: 3600000, // 🚨 FIXED: 1 ora garbage collection
+    refetchOnWindowFocus: false, // 🚨 FIXED: No refetch on focus
+    refetchOnMount: false, // 🚨 FIXED: No refetch on mount
+    refetchOnReconnect: false, // 🚨 FIXED: No refetch on reconnect
+    retry: 1, // 🚨 FIXED: Ridotto retry per evitare traffico
   });
 
   const magazineTranslation = magazineData?.translations?.[0];

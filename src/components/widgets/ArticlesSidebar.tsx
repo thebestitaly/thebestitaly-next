@@ -1,101 +1,144 @@
 "use client";
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import ArticleCardSidebar from '../magazine/ArticleCardSidebar';
+import { singletonCache, CACHE_KEYS, CACHE_TTL } from '@/lib/singleton-cache';
 
 interface ArticlesSidebarProps {
   lang: string;
-  currentArticleId?: string;
-  categoryId?: string;
+  currentArticleId?: string | number;
+  categoryId?: string | number;
 }
 
+// 🚨 EMERGENCY SINGLETON CACHE - Load data ONCE and share across all components
 const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({ lang, currentArticleId, categoryId }) => {
-  const [isClient, setIsClient] = React.useState(false);
+  const [articles, setArticles] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
+  // 🚨 STABILIZE IDS - Convert to strings only once
+  const stableCurrentArticleId = React.useMemo(() => 
+    currentArticleId ? String(currentArticleId) : undefined, 
+    [currentArticleId]
+  );
+
+  const stableCategoryId = React.useMemo(() => 
+    categoryId ? String(categoryId) : undefined, 
+    [categoryId]
+  );
+
+  // 🚨 STABLE CACHE KEY - Generate once and never change
+  const cacheKey = React.useMemo(() => 
+    CACHE_KEYS.ARTICLES_SIDEBAR(lang, stableCategoryId, stableCurrentArticleId), 
+    [lang, stableCategoryId, stableCurrentArticleId]
+  );
+
+  // 🚨 LOAD DATA ONCE - Using singleton cache
   React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+    let mounted = true;
 
-  // Query con React Query caching per articoli sidebar
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['articles', lang, 'sidebar', categoryId, currentArticleId, Date.now()], // Force refresh with timestamp
-    queryFn: async () => {
-      // Usa il proxy Directus invece della chiamata diretta
-      const params = new URLSearchParams();
-      params.append('filter[status][_eq]', 'published');
-      
-      // Escludi categoria 9 (sempre)
-      params.append('filter[category_id][_neq]', '9');
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Se abbiamo un articolo corrente, escludilo
-      if (currentArticleId) {
-        params.append('filter[id][_neq]', currentArticleId);
+                  const result = await singletonCache.get(
+            cacheKey,
+            async () => {
+              // 🚨 EMERGENCY QUERY - Same as before but through singleton
+              const params = new URLSearchParams();
+              params.append('filter[status][_eq]', 'published');
+              params.append('fields[]', 'id');
+              params.append('fields[]', 'image');
+              params.append('fields[]', 'date_created');
+              params.append('fields[]', 'translations.titolo_articolo');
+              params.append('fields[]', 'translations.slug_permalink');
+              params.append('fields[]', 'translations.seo_summary');
+              params.append('deep[translations][_filter][languages_code][_eq]', lang);
+              params.append('sort[]', '-date_created');
+              params.append('limit', '8');
+
+            // 🚨 EXCLUDE CURRENT ARTICLE AND CATEGORY
+            if (stableCategoryId) {
+              params.append('filter[category_id][_neq]', stableCategoryId);
+            }
+            if (stableCurrentArticleId) {
+              params.append('filter[id][_neq]', stableCurrentArticleId);
+            }
+
+            const response = await fetch(`/api/directus/items/articles?${params}`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data?.data || [];
+          },
+          CACHE_TTL.SIDEBAR // 2 hours cache
+        );
+
+        if (mounted) {
+          setArticles(result);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Unknown error');
+          setLoading(false);
+        }
       }
+    };
 
-      // Se abbiamo una categoria, mostra articoli correlati della stessa categoria
-      if (categoryId) {
-        params.append('filter[category_id][_eq]', categoryId);
-      }
+    loadData();
 
-      // Campi necessari
-      params.append('fields[]', 'id');
-      params.append('fields[]', 'image');
-      params.append('fields[]', 'date_created');
-      params.append('fields[]', 'translations.titolo_articolo');
-      params.append('fields[]', 'translations.slug_permalink');
-      params.append('fields[]', 'translations.seo_summary');
-      params.append('deep[translations][_filter][languages_code][_eq]', lang);
-      params.append('sort[]', '-date_created');
-      params.append('limit', '8'); // RIDOTTO: solo 8 articoli invece di 20
+    return () => {
+      mounted = false;
+    };
+  }, [cacheKey, lang, stableCategoryId, stableCurrentArticleId]);
 
-      const response = await fetch(`/api/directus/items/articles?${params}`);
-      const result = await response.json();
-      
-      return {
-        articles: result.data || []
-      };
-    },
-    enabled: isClient,
-    staleTime: 0, // 🚨 FORCE FRESH DATA - No cache
-  });
-
-  if (!isClient || isLoading) {
+  // 🚨 RENDER WITHOUT QUERIES
+  if (loading) {
     return (
-      <div className="p-4">
-        <div className="animate-pulse space-y-4">
-          {Array.from({ length: 15 }).map((_, i) => (
-            <div key={i} className="bg-gray-200 h-24 rounded-lg"></div>
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Articoli Correlati</h3>
+        <div className="animate-pulse space-y-3">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-20 bg-gray-200 rounded"></div>
           ))}
         </div>
       </div>
     );
   }
 
-  if (error || !data?.articles || data.articles.length === 0) {
+  if (error) {
     return (
-      <div className="bg-yellow-50 p-4 rounded-lg">
-        <p className="text-yellow-700">
-          No articles available at the moment. Please check again later.
-        </p>
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Articoli Correlati</h3>
+        <p className="text-red-600 text-sm">Errore nel caricamento: {error}</p>
       </div>
     );
   }
 
-  const getTitle = () => {
-    if (categoryId && data?.articles.length > 0) {
-      return "Articoli Correlati";
-    }
-    return "Articoli Recenti";
-  };
+  if (!articles || articles.length === 0) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Articoli Correlati</h3>
+        <p className="text-gray-600 text-sm">Nessun articolo correlato disponibile.</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h3 className="text-lg font-bold mb-4 text-gray-800">{getTitle()}</h3>
-      <ul className="space-y-4">
-        {data.articles.map((article: any) => (
-          <ArticleCardSidebar key={article.id} article={article} lang={lang} />
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Articoli Correlati</h3>
+      <div className="space-y-3">
+        {articles.map((article) => (
+          <ArticleCardSidebar
+            key={article.id}
+            article={article}
+            lang={lang}
+          />
         ))}
-      </ul>
+      </div>
     </div>
   );
 };

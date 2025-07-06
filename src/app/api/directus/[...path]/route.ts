@@ -1,10 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCache, setCache } from '@/lib/redis-cache';
 
 // Proxy per le operazioni di LETTURA del DirectusClient
 // Le operazioni di SCRITTURA usano le API routes dedicate in /api/admin/
 
 // 1x1 transparent PNG as base64 (43 bytes)
 const TRANSPARENT_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
+// 🚨 EMERGENCY CACHE TTL - Estremamente aggressivo per fermare l'emorragia
+const EMERGENCY_CACHE_TTL = {
+  categories: 14400, // 4 ore - le categorie cambiano raramente
+  articles: 7200, // 2 ore - gli articoli cambiano poco
+  images: 86400, // 24 ore
+  default: 1800 // 30 minuti - anche le query generiche più aggressive
+};
+
+// 🚨 EMERGENCY MEMORY CACHE - Fallback se Redis non funziona
+const emergencyMemoryCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+const MAX_MEMORY_CACHE_SIZE = 500;
+
+// Cache key generator
+function generateCacheKey(path: string, searchParams: string): string {
+  const baseKey = `directus-proxy:${path}`;
+  return searchParams ? `${baseKey}:${searchParams}` : baseKey;
+}
+
+// Determine cache TTL based on path
+function getCacheTTL(path: string): number {
+  if (path.includes('categorias')) return EMERGENCY_CACHE_TTL.categories;
+  if (path.includes('articles')) return EMERGENCY_CACHE_TTL.articles;
+  if (path.includes('assets')) return EMERGENCY_CACHE_TTL.images;
+  return EMERGENCY_CACHE_TTL.default;
+}
+
+// 🚨 EMERGENCY MEMORY CACHE FUNCTIONS
+function getMemoryCache(key: string): any {
+  const cached = emergencyMemoryCache.get(key);
+  if (cached && (Date.now() - cached.timestamp) < (cached.ttl * 1000)) {
+    console.log(`💾 [EMERGENCY MEMORY CACHE HIT] ${key}`);
+    return cached.data;
+  }
+  if (cached) {
+    emergencyMemoryCache.delete(key);
+  }
+  return null;
+}
+
+function setMemoryCache(key: string, data: any, ttl: number): void {
+  // Cleanup old entries if cache is full
+  if (emergencyMemoryCache.size >= MAX_MEMORY_CACHE_SIZE) {
+    const oldestKey = emergencyMemoryCache.keys().next().value;
+    if (oldestKey) {
+      emergencyMemoryCache.delete(oldestKey);
+    }
+  }
+  
+  emergencyMemoryCache.set(key, {
+    data,
+    timestamp: Date.now(),
+    ttl
+  });
+  console.log(`💾 [EMERGENCY MEMORY CACHE STORED] ${key} (TTL: ${ttl}s)`);
+}
 
 export async function GET(
   request: NextRequest,
@@ -69,6 +126,34 @@ export async function GET(
       }
     }
 
+    // Await params per Next.js 15+
+    const resolvedParams = await params;
+    const path = resolvedParams.path.join('/');
+    const searchParams = request.nextUrl.searchParams.toString();
+    
+    // 🚨 EMERGENCY CACHE - Check memory cache first (fastest)
+    const cacheKey = generateCacheKey(path, searchParams);
+    const cacheTTL = getCacheTTL(path);
+    
+    // First check memory cache
+    const memoryResult = getMemoryCache(cacheKey);
+    if (memoryResult) {
+      return NextResponse.json(memoryResult);
+    }
+    
+    // Then check Redis cache
+    try {
+      const cachedData = await getCache(cacheKey);
+      if (cachedData) {
+        console.log(`💾 [EMERGENCY REDIS CACHE HIT] ${path} (saved egress)`);
+        // Store in memory cache for faster subsequent access
+        setMemoryCache(cacheKey, cachedData, cacheTTL);
+        return NextResponse.json(cachedData);
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ Redis cache read failed:', cacheError);
+    }
+
     // 🚨 CRITICAL FIX: NEVER forward directly to Railway!
     // Always use the Railway URL but through our domain for Cloudflare cache
     const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || 'https://directus-production-93f0.up.railway.app';
@@ -80,13 +165,9 @@ export async function GET(
       );
     }
 
-    // Await params per Next.js 15+
-    const resolvedParams = await params;
-    const path = resolvedParams.path.join('/');
-    const searchParams = request.nextUrl.searchParams.toString();
     const fullUrl = `${directusUrl}/${path}${searchParams ? `?${searchParams}` : ''}`;
 
-    console.log(`📖 Directus Proxy (VIA PROXY): GET ${fullUrl}`);
+    console.log(`📖 [CACHE MISS] Directus Proxy: GET ${fullUrl}`);
 
     // Forward della richiesta a Directus con token di lettura
     // Prova prima il token admin, poi quello pubblico
@@ -135,6 +216,17 @@ export async function GET(
     // Try to parse JSON, but handle cases where it might not be valid JSON
     try {
       const data = await response.json();
+      
+      // 🚨 EMERGENCY CACHE - Store in both Redis and memory
+      setMemoryCache(cacheKey, data, cacheTTL);
+      
+      try {
+        await setCache(cacheKey, data, cacheTTL);
+        console.log(`💾 [EMERGENCY CACHE STORED] ${path} (TTL: ${cacheTTL}s)`);
+      } catch (cacheError) {
+        console.warn('⚠️ Redis cache write failed:', cacheError);
+      }
+      
       return NextResponse.json(data);
     } catch (jsonError) {
       // If JSON parsing fails, return the raw text

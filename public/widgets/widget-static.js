@@ -102,7 +102,7 @@ class TheBestItalyStaticWidget {
                 <div class="tbi-widget-header" ${isRTL ? 'style="flex-direction: row-reverse !important;"' : ''}>
                     <div class="tbi-widget-logo">
                         <div class="tbi-widget-logo-icon">
-                            <img src="${this.options.baseUrl}/_next/image?url=%2Fimages%2Flogo-black.webp&w=256&q=75" alt="TheBestItaly" />
+                            <img src="https://cdn.thebestitaly.eu/assets/4f65540f-332a-4ec3-b9fe-8185c06ce8de?width=256&quality=75" alt="TheBestItaly" />
                         </div>
                     </div>
                     ${languageSelector}

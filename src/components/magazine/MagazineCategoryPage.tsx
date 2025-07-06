@@ -2,10 +2,10 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
+import { singletonCache, CACHE_KEYS, CACHE_TTL } from "@/lib/singleton-cache";
 
 import ArticleGrid from "./ArticleGrid";
 
@@ -14,171 +14,224 @@ interface MagazineCategoryPageProps {
   category?: string;
 }
 
-const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang: propLang, category: propCategory }) => {
-  const params = useParams<{ lang: string; category: string }>();
-  const lang = propLang || params?.lang;
-  const category = propCategory || params?.category;
+interface CategoryData {
+  id: number;
+  nome_categoria: string;
+  image: string;
+  visible: boolean;
+  translations: {
+    id: number;
+    languages_code: string;
+    nome_categoria: string;
+    seo_title: string;
+    seo_summary: string;
+    slug_permalink: string;
+  }[];
+}
 
-  const { data: articles } = useQuery({
-    queryKey: ["articles", category, lang, Date.now()],
-    queryFn: async () => {
-      // Usa il proxy Directus invece della chiamata diretta
-      const categoryParams = new URLSearchParams();
-      categoryParams.append('filter[translations][slug_permalink][_eq]', category || '');
-      categoryParams.append('fields[]', 'id');
-      categoryParams.append('limit', '1');
+// 🚨 EMERGENCY SINGLETON CACHE - Load data ONCE and share across all components
+const MagazineCategoryPage: React.FC<MagazineCategoryPageProps> = ({ lang, category }) => {
+  const params = useParams();
+  const currentLang = lang || (params?.lang as string) || 'it';
+  const currentCategory = category || (params?.category as string);
 
-      const categoryResponse = await fetch(`/api/directus/items/categorias?${categoryParams}`);
-      const categoryResult = await categoryResponse.json();
-      
-      if (!categoryResult.data || categoryResult.data.length === 0) {
-        return [];
+  const [categoryInfo, setCategoryInfo] = React.useState<CategoryData | null>(null);
+  const [articles, setArticles] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // 🚨 STABLE CACHE KEYS - Generate once and never change
+  const categoryInfoCacheKey = React.useMemo(() => 
+    CACHE_KEYS.CATEGORY_INFO(currentCategory, currentLang), 
+    [currentCategory, currentLang]
+  );
+
+  const articlesKey = React.useMemo(() => 
+    CACHE_KEYS.CATEGORY_ARTICLES(currentCategory, currentLang), 
+    [currentCategory, currentLang]
+  );
+
+  // 🚨 LOAD DATA ONCE - Using singleton cache
+  React.useEffect(() => {
+    let mounted = true;
+
+    const loadData = async () => {
+      if (!currentCategory) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // 🚨 LOAD CATEGORY INFO
+        const categoryData = await singletonCache.get(
+          categoryInfoCacheKey,
+          async () => {
+            const params = new URLSearchParams();
+            params.append('filter[translations][slug_permalink][_eq]', currentCategory);
+            params.append('fields[]', 'id');
+            params.append('fields[]', 'nome_categoria');
+            params.append('fields[]', 'image');
+            params.append('fields[]', 'visible');
+            params.append('fields[]', 'translations.id');
+            params.append('fields[]', 'translations.languages_code');
+            params.append('fields[]', 'translations.nome_categoria');
+            params.append('fields[]', 'translations.seo_title');
+            params.append('fields[]', 'translations.seo_summary');
+            params.append('fields[]', 'translations.slug_permalink');
+            params.append('deep[translations][_filter][languages_code][_eq]', currentLang);
+            params.append('limit', '1');
+
+            const response = await fetch(`/api/directus/items/categorias?${params}`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data?.data?.[0] || null;
+          },
+          CACHE_TTL.CATEGORIES // 1 hour cache
+        );
+
+        // 🚨 LOAD ARTICLES
+        const articlesData = await singletonCache.get(
+          articlesKey,
+          async () => {
+            if (!categoryData?.id) return [];
+
+            const params = new URLSearchParams();
+            params.append('filter[status][_eq]', 'published');
+            params.append('filter[category_id][_eq]', String(categoryData.id));
+            params.append('fields[]', 'id');
+            params.append('fields[]', 'image');
+            params.append('fields[]', 'date_created');
+            params.append('fields[]', 'translations.titolo_articolo');
+            params.append('fields[]', 'translations.slug_permalink');
+            params.append('fields[]', 'translations.seo_summary');
+            params.append('deep[translations][_filter][languages_code][_eq]', currentLang);
+            params.append('sort[]', '-date_created');
+            params.append('limit', '24');
+
+            const response = await fetch(`/api/directus/items/articles?${params}`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data?.data || [];
+          },
+          CACHE_TTL.ARTICLES // 30 minutes cache
+        );
+
+        if (mounted) {
+          setCategoryInfo(categoryData);
+          setArticles(articlesData);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Unknown error');
+          setLoading(false);
+        }
       }
+    };
 
-      const categoryId = categoryResult.data[0].id;
-      
-      // Ora cerca gli articoli per questa categoria
-      const articlesParams = new URLSearchParams();
-      articlesParams.append('filter[status][_eq]', 'published');
-      articlesParams.append('filter[category_id][_eq]', categoryId.toString());
-      articlesParams.append('fields[]', 'id');
-      articlesParams.append('fields[]', 'image');
-      articlesParams.append('fields[]', 'date_created');
-      articlesParams.append('fields[]', 'translations.titolo_articolo');
-      articlesParams.append('fields[]', 'translations.slug_permalink');
-      articlesParams.append('fields[]', 'translations.seo_summary');
-      articlesParams.append('deep[translations][_filter][languages_code][_eq]', lang || 'it');
-      articlesParams.append('sort[]', '-date_created');
-      articlesParams.append('limit', '24');
+    loadData();
 
-      const articlesResponse = await fetch(`/api/directus/items/articles?${articlesParams}`);
-      const articlesResult = await articlesResponse.json();
-      
-      return articlesResult.data || [];
-    },
-    enabled: !!category,
-    staleTime: 0,
-  });
+    return () => {
+      mounted = false;
+    };
+  }, [categoryInfoCacheKey, articlesKey, currentCategory, currentLang]);
 
-  const { data: categoryInfo } = useQuery({
-    queryKey: ["category", category, lang, Date.now()],
-    queryFn: async () => {
-      // Usa il proxy Directus per ottenere le categorie
-      const params = new URLSearchParams();
-      params.append('filter[visible][_eq]', 'true');
-      params.append('filter[id][_nin]', '10'); // Escludo la categoria Magazine
-      params.append('fields[]', 'id');
-      params.append('fields[]', 'nome_categoria');
-      params.append('fields[]', 'image');
-      params.append('fields[]', 'visible');
-      params.append('fields[]', 'translations.nome_categoria');
-      params.append('fields[]', 'translations.seo_title');
-      params.append('fields[]', 'translations.seo_summary');
-      params.append('fields[]', 'translations.slug_permalink');
-      params.append('deep[translations][_filter][languages_code][_eq]', lang || 'it');
+  // 🚨 RENDER WITHOUT QUERIES
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse space-y-8">
+          <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-80 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      const response = await fetch(`/api/directus/items/categorias?${params}`);
-      const result = await response.json();
-      
-      const categories = result.data || [];
-      const foundCategory = categories.find((cat: any) => 
-        cat.translations.some((t: any) => t.slug_permalink === category)
-      );
-      
-      // Always return a valid object, even if category is not found
-      if (foundCategory) {
-        return foundCategory;
-      }
-      
-      // Create a fallback category with meaningful defaults
-      const fallbackTitle = category ? category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Category';
-      return {
-        id: 0,
-        nome_categoria: fallbackTitle,
-        image: '',
-        visible: true,
-        translations: [{
-          id: 0,
-          languages_code: lang || 'it',
-          nome_categoria: fallbackTitle,
-          seo_title: fallbackTitle,
-          seo_summary: `Discover articles about ${fallbackTitle.toLowerCase()}`,
-          slug_permalink: category || ''
-        }]
-      };
-    },
-    enabled: !!category,
-  });
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-red-800 font-semibold mb-2">Errore nel caricamento</h2>
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
-  const categoryTranslation = categoryInfo?.translations?.[0];
-  
-  // Fallback values if category is not found
-  const displayTitle = categoryTranslation?.nome_categoria || 
-    (category ? category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Category');
-  const displayDescription = categoryTranslation?.seo_summary || 
-    `Discover articles about ${displayTitle.toLowerCase()}`;
+  if (!categoryInfo) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h2 className="text-yellow-800 font-semibold mb-2">Categoria non trovata</h2>
+          <p className="text-yellow-600">La categoria richiesta non è disponibile.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const translation = categoryInfo.translations?.[0];
+  const categoryName = translation?.nome_categoria || categoryInfo.nome_categoria;
+  const seoTitle = translation?.seo_title || categoryName;
+  const seoSummary = translation?.seo_summary || '';
 
   return (
-    <div className="min-h-screen">
-      {/* Mobile Header - Clean style without background image */}
-      <div className="md:hidden">
-        <div className="px-4 pt-6 pb-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {displayTitle}
-          </h1>
-          <p className="text-base text-gray-600 mb-4">
-            {displayDescription}
-          </p>
-        </div>
-      </div>
-
-      {/* Desktop Hero Section */}
-      <div className="hidden md:block relative h-64 sm:h-80 lg:h-[500px]">
-        {/* Always show background, with image if available or gradient if not */}
-        <div className="absolute inset-0 m-4 sm:m-6 lg:m-10">
-          {categoryInfo?.image ? (
-            <>
+    <div className="container mx-auto px-4 py-8">
+      <Breadcrumb />
+      
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row gap-8 items-center">
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {seoTitle}
+            </h1>
+            {seoSummary && (
+              <p className="text-lg text-gray-600 leading-relaxed">
+                {seoSummary}
+              </p>
+            )}
+          </div>
+          
+          {categoryInfo.image && (
+            <div className="flex-shrink-0">
               <Image
-                src={getOptimizedImageUrl(categoryInfo.image, 'HERO_DESKTOP')}
-                alt={categoryTranslation?.nome_categoria || "Category image"}
-                fill
-                className="object-cover rounded-lg sm:rounded-xl lg:rounded-2xl"
-                priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-                unoptimized={true}
+                src={getOptimizedImageUrl(categoryInfo.image)}
+                alt={categoryName}
+                width={200}
+                height={150}
+                className="rounded-lg shadow-lg"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg sm:rounded-xl lg:rounded-2xl" />
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 rounded-lg sm:rounded-xl lg:rounded-2xl" />
+            </div>
           )}
         </div>
-        <div className="relative z-10 h-full flex items-end">
-          <div className="container mx-auto px-4 pb-6 sm:pb-8 lg:pb-12">             
-            <div className="max-w-4xl">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tighter">
-                {displayTitle}
-              </h1>
-              <p className="text-sm sm:text-base lg:text-2xl font-light text-white/90 mb-4 sm:mb-6 leading-relaxed">
-                {displayDescription}
-              </p>
-            </div>
-          </div>        
-        </div>
       </div>
 
-      {/* Breadcrumb - Desktop only */}
-      <div className="hidden md:block">
-        <Breadcrumb />
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+          Articoli di {categoryName}
+        </h2>
+        {articles.length > 0 && (
+          <p className="text-gray-600">
+            {articles.length} articoli trovati
+          </p>
+        )}
       </div>
-
-      <div className="container mx-auto px-4 py-8 md:py-16">
-        <ArticleGrid 
-          articles={articles || []} 
-          lang={lang || 'it'} 
-          columns="3"
-        />
-      </div>
+      
+      <ArticleGrid 
+        articles={articles} 
+        lang={currentLang} 
+      />
     </div>
   );
 };

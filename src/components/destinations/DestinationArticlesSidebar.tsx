@@ -17,10 +17,12 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
 }) => {
   const { translation: featuredArticlesText } = useTranslation('featured_articles', lang, 'general');
 
-  // Ensure articles is always an array
-  const articlesArray = Array.isArray(articles) ? articles : [];
+  // 🚨 STABILIZE ARTICLES ARRAY - Memoize per evitare re-rendering continui
+  const stableArticles = React.useMemo(() => {
+    return Array.isArray(articles) ? articles : [];
+  }, [articles]);
 
-  if (articlesArray.length === 0) {
+  if (stableArticles.length === 0) {
     return (
       <div className="bg-yellow-50 p-4 rounded-lg">
         <p className="text-yellow-700">
@@ -39,7 +41,7 @@ const DestinationArticlesSidebar: React.FC<DestinationArticlesSidebarProps> = ({
           📍 Articoli su questa destinazione
         </h4>
         <ul className="space-y-3">
-          {articlesArray.map((article: any) => (
+          {stableArticles.map((article: any) => (
             <ArticleCardSidebar key={article.id} article={article} lang={lang} />
           ))}
         </ul>

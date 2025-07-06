@@ -384,4 +384,42 @@ export async function invalidateContentCache(type: 'destination' | 'company' | '
     console.log(`🗑️ Invalidated ${totalDeleted} cache entries for ${type}${id ? ` (ID: ${id})` : ''}`);
   }
   return totalDeleted;
+}
+
+// 🚨 EMERGENCY MAGAZINE CACHE KEYS
+export const EMERGENCY_MAGAZINE_CACHE_KEYS = {
+  CATEGORY_ARTICLES: (category: string, lang: string) => `magazine:articles:${category}:${lang}`,
+  CATEGORY_INFO: (category: string, lang: string) => `magazine:category:${category}:${lang}`,
+  ALL_CATEGORIES: (lang: string) => `magazine:categories:${lang}`,
+} as const;
+
+// 🚨 EMERGENCY CACHE TTL - Longer for magazine content
+export const EMERGENCY_CACHE_TTL = {
+  MAGAZINE_ARTICLES: 3600, // 1 ora
+  MAGAZINE_CATEGORIES: 7200, // 2 ore
+  MAGAZINE_CATEGORY_INFO: 3600, // 1 ora
+} as const;
+
+// 🚨 EMERGENCY CACHE HELPERS for Magazine
+export async function getMagazineCache(key: string): Promise<any> {
+  try {
+    const cached = await getCache(key);
+    if (cached) {
+      console.log(`💾 [EMERGENCY MAGAZINE CACHE HIT] ${key}`);
+      return cached;
+    }
+    return null;
+  } catch (error) {
+    console.warn('⚠️ Magazine cache read failed:', error);
+    return null;
+  }
+}
+
+export async function setMagazineCache(key: string, data: any, ttl: number): Promise<void> {
+  try {
+    await setCache(key, data, ttl);
+    console.log(`💾 [EMERGENCY MAGAZINE CACHE STORED] ${key} (TTL: ${ttl}s)`);
+  } catch (error) {
+    console.warn('⚠️ Magazine cache write failed:', error);
+  }
 } 

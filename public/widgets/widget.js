@@ -837,8 +837,8 @@ class TheBestItalyWidget {
 
     getImage() {
         if (!this.content?.image) return null;
-        // 🚨 EMERGENCY: Redirect to Next.js optimized images instead of direct Railway calls
-        return `https://thebestitaly.eu/_next/image?url=https%3A%2F%2Fdirectus-production-93f0.up.railway.app%2Fassets%2F${this.content.image}&w=200&q=40`;
+        // 🚀 FIXED: Direct CDN serving to avoid egress costs
+        return `https://cdn.thebestitaly.eu/assets/${this.content.image}?width=200&quality=40`;
     }
 
     getCurrentLanguage() {
@@ -997,7 +997,7 @@ class TheBestItalyWidget {
                 <!-- Header -->
                 <div class="flex items-center justify-center ${this.config.size === 'small' ? 'mb-2' : 'mb-4'}">
                     <div class="text-center">
-                        <img src="https://thebestitaly.eu/_next/image?url=%2Fimages%2Flogo-black.webp&w=256&q=75" 
+                        <img src="https://cdn.thebestitaly.eu/assets/4f65540f-332a-4ec3-b9fe-8185c06ce8de?width=256&quality=75" 
                              alt="TheBestItaly" 
                              class="${this.config.size === 'small' ? 'h-8' : this.config.size === 'medium' ? 'h-10' : 'h-12'} w-auto" />
                     </div>
