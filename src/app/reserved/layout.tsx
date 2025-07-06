@@ -2,8 +2,17 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { Poppins } from 'next/font/google';
 import { useAuth } from '@/hooks/useAuth';
 import AuthLoader from '@/components/auth/AuthLoader';
+import '../globals.css';
+
+const poppins = Poppins({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-poppins',
+});
 
 export default function ReservedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
@@ -19,7 +28,7 @@ export default function ReservedLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 ${poppins.variable} font-sans`}>
       {/* Header Area Riservata */}
       <nav className="bg-white shadow-lg border-b border-gray-200">
         <div className="container mx-auto px-6 py-4">
