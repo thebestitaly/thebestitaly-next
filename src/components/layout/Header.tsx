@@ -5,7 +5,6 @@ import { Search, X, Menu, ChevronDown, Globe, ChevronLeft, ChevronRight } from '
 import { useSectionTranslations } from '@/hooks/useTranslations';
 import { getOptimizedImageUrl } from '@/lib/imageUtils';
 import InteractiveMap from './InteractiveMap';
-import SearchBar from '../../components/search/SearchBar';
 import { Destination, Category } from '@/lib/directus';
 
 interface HeaderProps {

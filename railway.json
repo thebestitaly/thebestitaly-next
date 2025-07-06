@@ -16,8 +16,8 @@
         "NODE_ENV": "production",
         "NEXT_TELEMETRY_DISABLED": "1",
         "DISABLE_ESLINT_PLUGIN": "true",
-        "NODE_OPTIONS": "--max-old-space-size=4096",
-        "RAILWAY_STATIC_URL": "https://thebestitaly.eu"
+        "NODE_OPTIONS": "--max-old-space-size=1024",
+        "RAILWAY_STATIC_URL": "https://admin.thebestitaly.eu"
       }
     }
   }
